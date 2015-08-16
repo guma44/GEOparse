@@ -15,12 +15,8 @@ with open('HISTORY.rst') as history_file:
     history = history_file.read().replace('.. :changelog:', '')
 
 requirements = [
-                'numpy==1.9.2',
-                'pandas==0.16.2',
-                'python-dateutil==2.4.2',
-                'pytz==2015.4',
-                'six==1.9.0',
-                'wheel==0.23.0',
+                'numpy>=1.7',
+                'pandas>=0.15',
                 ]
 
 test_requirements = [
@@ -29,7 +25,7 @@ test_requirements = [
 
 setup(
     name='GEOparse',
-    version='0.1.0',
+    version='0.1.1',
     description="Python library to access Gene Expression Omnibus Database (GEO)",
     long_description=readme + '\n\n' + history,
     author="Rafal Gumienny",
