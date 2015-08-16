@@ -44,9 +44,9 @@ setup(
     install_requires=requirements,
     license="BSD",
     zip_safe=False,
-    keywords='GEOparse',
+    keywords=['GEOparse', 'GEO', 'Gene Expression Omnibus', 'Bioinformatics', 'Microarray'],
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
         'Natural Language :: English',
