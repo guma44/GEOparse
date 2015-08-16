@@ -9,13 +9,15 @@ Tests for `GEOparse` module.
 """
 
 from sys import path
-from os.path import abspath, join
+from os.path import abspath, join, dirname
 import unittest
 from pandas import DataFrame
 
 path.append(join(abspath(__file__), ".."))
 from GEOparse.GEOTypes import GSE, GSM, GPL, GDS, DataIncompatibilityException
 import GEOparse as GEO
+
+download_geo = dirname(abspath(__file__))
 
 class TestGSM(unittest.TestCase):
 
@@ -50,7 +52,7 @@ class TestGSM(unittest.TestCase):
         self.assertEqual(gsm.table.ix[1, 'b'], 5)
 
     def test_get_geo_and_data(self):
-        gsm = GEO.get_GEO(geo="GSM11805", destdir="./")
+        gsm = GEO.get_GEO(geo="GSM11805", destdir=download_geo)
         self.assertTrue(isinstance(gsm, GSM))
         self.assertEqual(gsm.get_accession(), "GSM11805")
         self.assertEqual(len(gsm.table.index), 22283)
@@ -90,7 +92,7 @@ class TestGPL(unittest.TestCase):
         self.assertEqual(gpl.table.ix[1, 'b'], 5)
 
     def test_get_geo_and_data(self):
-        gpl = GEO.get_GEO(geo="GPL96", destdir="./")
+        gpl = GEO.get_GEO(geo="GPL96", destdir=download_geo)
         self.assertTrue(isinstance(gpl, GPL))
         self.assertEqual(gpl.get_accession(), "GPL96")
         self.assertEqual(len(gpl.table.index), 22283)
@@ -167,7 +169,8 @@ class TestGSE(unittest.TestCase):
         GSE(name='name', metadata=self.metadata, gpls=self.gpls, gsms=self.gsms)
 
     def test_soft_format_gse(self):
-        gse = GEO.get_GEO(geo="GSE1563", destdir="./")
+        print download_geo
+        gse = GEO.get_GEO(geo="GSE1563", destdir=download_geo)
         self.assertTrue(isinstance(gse, GSE))
         self.assertEqual(gse.get_accession(), "GSE1563")
         self.assertEqual(len(gse.gsms.keys()), 62)
