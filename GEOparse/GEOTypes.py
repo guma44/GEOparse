@@ -3,7 +3,7 @@ Classes that represent different GEO entities
 """
 
 from pandas import DataFrame
-from sys import stderr
+from sys import stderr, stdout
 
 class DataIncompatibilityException(Exception): pass
 
@@ -40,6 +40,93 @@ class BaseGEO(object):
         """
         return self.metadata["geo_accession"][0]
 
+    def head(self):
+        """Return short description of the object
+        """
+        stdout.write("%s %s" % (self.geotype, self.name) + "\n")
+        stdout.write(" - Metadata:" + "\n")
+        stdout.write("\n".join(self.__get_metadata_as_string().split("\n")[:5]) + "\n")
+        stdout.write("\n")
+        stdout.write(" - Columns:" + "\n")
+        stdout.write(self.columns.to_string() + "\n")
+        stdout.write("\n")
+        stdout.write(" - Table:" + "\n")
+        stdout.write("\t".join(["Index"] + self.table.columns.tolist()) + "\n")
+        stdout.write(self.table.head().to_string(header=None) + "\n")
+        stdout.write(" "*40 + "..." + " "*40 + "\n")
+        stdout.write(" "*40 + "..." + " "*40 + "\n")
+        stdout.write(" "*40 + "..." + " "*40 + "\n")
+        stdout.write(self.table.tail().to_string(header=None) + "\n")
+
+    def to_soft(self, path_or_handle):
+        """Save the object in a SOFT format.
+
+        :param path_or_handle: path or handle to output file
+        """
+        if isinstance(path_or_handle, str):
+            with open(path_or_handle, 'w') as outfile:
+                outfile.write(self.__get_object_as_soft())
+        else:
+            path_or_handle.write(self.__get_object_as_soft())
+
+    def show_columns(self):
+        """Show columns in SOFT format
+        """
+        print self.columns
+
+    def show_metadata(self):
+        """
+         Show metadat in SOFT format
+        """
+        print self.__get_metadata_as_string()
+
+    def show_table(self, number_of_lines=5):
+        """
+        Show few lines of the table the table as pandas.DataFrame
+
+        :param number_of_lines: int -- number of lines to show
+        """
+        print self.table.head(number_of_lines)
+
+    def __get_object_as_soft(self):
+        """
+         Return object as SOFT formated string.
+        """
+        soft = ["^%s = %s" % (self.geotype, self.name),
+                self.__get_metadata_as_string(),
+                self.__get_columns_as_string(),
+                self.__get_table_as_string()]
+        return "\n".join(soft)
+
+    def __get_metadata_as_string(self):
+        """Returns metadata as SOFT formated string
+        """
+        metalist = []
+        for metaname, meta in self.metadata.iteritems():
+            assert isinstance(meta, list), "Single value in metadata dictionary should be a list!"
+            for data in meta:
+                if data:
+                    metalist.append("!%s_%s = %s" % (self.geotype, metaname, data))
+        return "\n".join(metalist)
+
+    def __get_table_as_string(self):
+        """Returns table as SOFT formated string
+        """
+        tablelist = []
+        tablelist.append("!%s_table_begin" % self.geotype.lower())
+        tablelist.append("\t".join(self.table.columns))
+        for idx, row in self.table.iterrows():
+            tablelist.append("\t".join(map(str, row)))
+        tablelist.append("!%s_table_end" % self.geotype.lower())
+        return "\n".join(tablelist)
+
+    def __get_columns_as_string(self):
+        """Returns columns  as SOFT formated string
+        """
+        columnslist = []
+        for rowidx, row in self.columns.iterrows():
+            columnslist.append("#%s = %s" % (rowidx, row.description))
+        return "\n".join(columnslist)
 
 class GSM(BaseGEO):
 
