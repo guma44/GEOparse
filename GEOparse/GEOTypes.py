@@ -45,7 +45,7 @@ class BaseGEO(object):
         """
         stdout.write("%s %s" % (self.geotype, self.name) + "\n")
         stdout.write(" - Metadata:" + "\n")
-        stdout.write("\n".join(self.__get_metadata_as_string().split("\n")[:5]) + "\n")
+        stdout.write("\n".join(self._get_metadata_as_string().split("\n")[:5]) + "\n")
         stdout.write("\n")
         stdout.write(" - Columns:" + "\n")
         stdout.write(self.columns.to_string() + "\n")
@@ -65,9 +65,9 @@ class BaseGEO(object):
         """
         if isinstance(path_or_handle, str):
             with open(path_or_handle, 'w') as outfile:
-                outfile.write(self.__get_object_as_soft())
+                outfile.write(self._get_object_as_soft())
         else:
-            path_or_handle.write(self.__get_object_as_soft())
+            path_or_handle.write(self._get_object_as_soft())
 
     def show_columns(self):
         """Show columns in SOFT format
@@ -78,7 +78,7 @@ class BaseGEO(object):
         """
          Show metadat in SOFT format
         """
-        print self.__get_metadata_as_string()
+        print self._get_metadata_as_string()
 
     def show_table(self, number_of_lines=5):
         """
@@ -88,17 +88,17 @@ class BaseGEO(object):
         """
         print self.table.head(number_of_lines)
 
-    def __get_object_as_soft(self):
+    def _get_object_as_soft(self):
         """
          Return object as SOFT formated string.
         """
         soft = ["^%s = %s" % (self.geotype, self.name),
-                self.__get_metadata_as_string(),
-                self.__get_columns_as_string(),
-                self.__get_table_as_string()]
+                self._get_metadata_as_string(),
+                self._get_columns_as_string(),
+                self._get_table_as_string()]
         return "\n".join(soft)
 
-    def __get_metadata_as_string(self):
+    def _get_metadata_as_string(self):
         """Returns metadata as SOFT formated string
         """
         metalist = []
@@ -109,7 +109,7 @@ class BaseGEO(object):
                     metalist.append("!%s_%s = %s" % (self.geotype, metaname, data))
         return "\n".join(metalist)
 
-    def __get_table_as_string(self):
+    def _get_table_as_string(self):
         """Returns table as SOFT formated string
         """
         tablelist = []
@@ -120,13 +120,19 @@ class BaseGEO(object):
         tablelist.append("!%s_table_end" % self.geotype.lower())
         return "\n".join(tablelist)
 
-    def __get_columns_as_string(self):
+    def _get_columns_as_string(self):
         """Returns columns  as SOFT formated string
         """
         columnslist = []
         for rowidx, row in self.columns.iterrows():
             columnslist.append("#%s = %s" % (rowidx, row.description))
         return "\n".join(columnslist)
+
+    def __str__(self):
+        return str("<%s: %s>" % (self.geotype, self.name))
+
+    def __repr__(self):
+        return str("<%s: %s>" % (self.geotype, self.name))
 
 class GSM(BaseGEO):
 
@@ -244,6 +250,7 @@ class GSE(object):
         self.metadata = metadata
         self.gpls = gpls
         self.gsms = gsms
+        self.geotype = "SERIES"
 
     def get_accession(self):
         """Return accession ID of the sample
@@ -292,3 +299,48 @@ class GSE(object):
             return data[0]
         else:
             return data[0].join(data[1:])
+
+    def to_soft(self, path_or_handle):
+        """
+         Save the GSE object as SOFT file
+
+         :param path_or_handle: str -- path to file of file handle
+        """
+        if isinstance(path_or_handle, str):
+            with open(path_or_handle, 'w') as outfile:
+                outfile.write(self._get_object_as_soft() + "\n")
+                for gsm in self.gsms.itervalues():
+                    outfile.write(gsm._get_object_as_soft() + "\n")
+                for gpl in self.gpls.itervalues():
+                    outfile.write(gsm._get_object_as_soft() + "\n")
+        else:
+                path_or_handle.write(self._get_object_as_soft() + "\n")
+                for gsm in self.gsms.itervalues():
+                    path_or_handle.write(gsm._get_object_as_soft() + "\n")
+                for gpl in self.gpls.itervalues():
+                    path_or_handle.write(gsm._get_object_as_soft() + "\n")
+
+    def _get_object_as_soft(self):
+        """
+         Return object as SOFT formated string.
+        """
+        soft = ["^%s = %s" % (self.geotype, self.name),
+                self._get_metadata_as_string()]
+        return "\n".join(soft)
+
+    def _get_metadata_as_string(self):
+        """Returns metadata as SOFT formated string
+        """
+        metalist = []
+        for metaname, meta in self.metadata.iteritems():
+            assert isinstance(meta, list), "Single value in metadata dictionary should be a list!"
+            for data in meta:
+                if data:
+                    metalist.append("!%s_%s = %s" % (self.geotype, metaname, data))
+        return "\n".join(metalist)
+
+    def __str__(self):
+        return str("<%s: %s - %i SERIES, %i PLATFORM(s)>" % (self.geotype, self.name, len(self.gsms), len(self.gpls)))
+
+    def __repr__(self):
+        return str("<%s: %s - %i SERIES, %i PLATFORM(s)>" % (self.geotype, self.name, len(self.gsms), len(self.gpls)))
