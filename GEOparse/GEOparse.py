@@ -12,7 +12,7 @@ from urllib2 import urlopen
 from contextlib import closing
 from pandas import DataFrame
 import gzip
-from GEOTypes import GSE, GSM, GPL, GDS
+from GEOTypes import GSE, GSM, GPL, GDS, GDSSubset, GEODatabase
 
 
 class UnknownGEOTypeException(Exception):
@@ -50,7 +50,6 @@ def get_GEO(geo=None, filepath=None, destdir="./", how='full'):
     elif geotype == 'GPL':
         return parse_GPL(filepath)
     elif geotype == 'GDS':
-        raise NotImplementedError("GDS parsing is not yet implemented" % geotype)
         return parse_GDS(filepath)
     else:
         raise NotImplementedError("Unknown GEO type: %s" % geotype)
@@ -204,6 +203,36 @@ def parse_columns(lines):
     return DataFrame(data, index=index, columns=['description'])
 
 
+def parse_GDS_columns(lines, subsets):
+    """Parse list of line with columns description from SOFT file
+    of GDS (GEO Dataset)
+
+    :param lines: iterable -- iterator over lines
+    :returns: pandas.DataFrame -- columns description
+
+    """
+    data = []
+    index = []
+    for line in lines:
+        line = line.rstrip()
+        if line.startswith("#"):
+            tmp = __parse_entry(line)
+            data.append(tmp[1])
+            index.append(tmp[0])
+
+    df = DataFrame(data, index=index, columns=['description'])
+    subset_ids = {"disease_state": {}, "individual": {}}
+    for subsetname, subset in subsets.iteritems():
+        for expid in subset.metadata["sample_id"][0].split(","):
+            if subset.get_type() == "disease state":
+                subset_ids["disease_state"][expid] = subset.metadata["description"][0]
+            elif subset.get_type() == "individual":
+                subset_ids["individual"][expid] = subset.metadata["description"][0]
+            else:
+                stderr("Unknown subset type: %s for subset %s\n" % (subset.get_type(), subsetname))
+
+    return df.join(DataFrame(subset_ids)).dropna()
+
 def parse_table_data(lines):
     """Parse list of lines from SOFT file into DataFrame
 
@@ -356,8 +385,7 @@ def parse_GSE(filepath):
     return gse
 
 
-
-def parse_GDS(gds):
+def parse_GDS(filepath):
     """NOT IMPLEMENTED.
     Parse GDS from SOFT file
 
@@ -365,4 +393,34 @@ def parse_GDS(gds):
     :returns: @todo
 
     """
-    pass
+    if filepath[-2:] == "gz":
+        mode = "rb"
+        fopen = gzip.open
+    else:
+        mode = "r"
+        fopen = open
+    dataset_lines = []
+    subsets = {}
+    with fopen(filepath, mode) as soft:
+        groupper = groupby(soft, lambda x: x.startswith("^"))
+        for is_new_entry, group in groupper:
+            if is_new_entry:
+                entry_type, entry_name = __parse_entry(group.next())
+                stderr.write(" - %s : %s\n" % (entry_type.upper(), entry_name))
+                if entry_type == "SUBSET":
+                    is_data, data_group = groupper.next()
+                    assert not is_data, "The key is not False, probably there is an error in the SOFT file"
+                    subset_metadata = parse_metadata(data_group)
+                    subsets[entry_name] = GDSSubset(name=entry_name, metadata=subset_metadata)
+                elif entry_type == "DATASET":
+                    is_data, data_group = groupper.next()
+                    dataset_name = entry_name
+                    for line in data_group:
+                        dataset_lines.append(line.rstrip())
+                else:
+                    stderr.write("Cannot recognize type %s\n" % entry_type)
+
+    metadata = parse_metadata(dataset_lines)
+    columns = parse_GDS_columns(dataset_lines, subsets)
+    table = parse_table_data(dataset_lines)
+    return GDS(name=dataset_name, metadata=metadata, columns=columns, table=table, subsets=subsets)

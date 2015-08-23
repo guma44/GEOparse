@@ -202,12 +202,49 @@ class GPL(BaseGEO):
         BaseGEO.__init__(self, name=name, table=table, metadata=metadata, columns=columns)
         self.geotype = "PLATFORM"
 
+class GDSSubset(object):
 
-class GDS(BaseGEO):
+    """Class that represents a subset from GEO GDS object"""
+
+    def __init__(self, name, metadata):
+        """Initialize GDSSubset
+
+        :param name: str -- name of the object
+        :param metadata: dict -- metadata information
+        """
+        if not isinstance(metadata, dict):
+            raise ValueError("Metadata should be a dictionary not a %s" % str(type(metadata)))
+        self.name = name
+        self.metadata = metadata
+        self.geotype = "SUBSET"
+
+    def get_type(self):
+        """Return type of a subset
+        """
+        return self.metadata["type"][0]
+
+class GEODatabase(object):
+
+    """Class that represents a subset from GEO GDS object"""
+
+    def __init__(self, name, metadata):
+        """Initialize GEODatabase
+
+        :param name: str -- name of the object
+        :param metadata: dict -- metadata information
+        """
+        if not isinstance(metadata, dict):
+            raise ValueError("Metadata should be a dictionary not a %s" % str(type(metadata)))
+        self.name = name
+        self.metadata = metadata
+        self.geotype = "DATABASE"
+
+
+class GDS(object):
 
     """Class that represents a dataset from GEO database"""
 
-    def __init__(self, name, table, metadata, columns):
+    def __init__(self, name, table, metadata, columns, subsets):
         """Initialize GDS
 
         :param name: str -- name of the object
@@ -216,9 +253,31 @@ class GDS(BaseGEO):
         :param columns: pandas.DataFrame -- description of the columns, number of columns, order, and names
         represented as index in this DataFrame has to be the same as table.columns.
         """
+        if not isinstance(table, DataFrame):
+            raise ValueError("Table data should be an instance of pandas.DataFrame not %s" % str(type(table)))
+        if not isinstance(columns, DataFrame):
+            raise ValueError("Columns description should be an instance of pandas.DataFrame not %s" % str(type(columns)))
+        if not isinstance(metadata, dict):
+            raise ValueError("Metadata should be a dictionary not a %s" % str(type(metadata)))
+        if not isinstance(subsets, dict):
+            raise ValueError("Subsets should be a dictionary not a %s" % str(type(subsets)))
 
-        BaseGEO.__init__(self, name=name, table=table, metadata=metadata, columns=columns)
+        self.name = name
+        self.table = table
+        self.metadata = metadata
+        self.columns = columns
+        self.subsets = subsets
         self.geotype = "DATASET"
+
+        for subset_name, subset in subsets.iteritems():
+            assert isinstance(subset, GDSSubset), "All subsets should be of type GDSSubset"
+
+    def __str__(self):
+        return str("<%s: %s>" % (self.geotype, self.name)
+
+    def __repr__(self):
+        return str("<%s: %s>" % (self.geotype, self.name)
+
 
 class GSE(object):
 
