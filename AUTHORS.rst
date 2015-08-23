@@ -5,7 +5,7 @@ Credits
 Development Lead
 ----------------
 
-* Rafal Gumienny <guma44@gmail.com>
+* Rafal Gumienny <guma44@gmail.com>, <r.gumienny@unibas.ch>
 
 Contributors
 ------------

@@ -2,9 +2,6 @@
 GEOparse
 ===============================
 
-.. image:: https://img.shields.io/travis/guma44/GEOparse.svg
-        :target: https://travis-ci.org/guma44/GEOparse
-
 .. image:: https://img.shields.io/pypi/v/GEOparse.svg
         :target: https://pypi.python.org/pypi/GEOparse
 
@@ -20,4 +17,22 @@ The inspiration and the base for it is great R library GEOquery.
 Features
 --------
 
-* TODO
+* Download GEO series, datasets etc. as SOFT files
+* Load GEO SOFT as easy to use and manipulate objects
+* Prepare your data for GEO upload
+
+Installation
+------------
+
+At the command line::
+
+    $ pip install GEOparse
+
+TODO
+----
+
+There is still work to do so any contribution is welcome.
+The main issues are:
+* update documentation
+* expand GEOTypes objects with useful functions for differential
+expression analysis
