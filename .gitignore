@@ -45,6 +45,9 @@ docs/_build
 # bash history
 .bash_history
 
+# swap files
+*.swp
+
 # test files
 *.soft
 *.soft.gz

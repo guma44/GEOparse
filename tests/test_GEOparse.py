@@ -14,7 +14,7 @@ import unittest
 from pandas import DataFrame
 
 path.append(join(abspath(__file__), ".."))
-from GEOparse.GEOTypes import GSE, GSM, GPL, GDS, DataIncompatibilityException
+from GEOparse.GEOTypes import GSE, GSM, GPL, GDS, DataIncompatibilityException, GDSSubset, GEODatabase
 import GEOparse as GEO
 
 download_geo = dirname(abspath(__file__))
@@ -98,45 +98,43 @@ class TestGPL(unittest.TestCase):
         self.assertEqual(len(gpl.table.index), 22283)
         self.assertEqual(len(gpl.columns), 16)
 
-# class TestGDS(unittest.TestCase):
+class TestGDS(unittest.TestCase):
 
-#     """Test GDS class"""
+    """Test GDS class"""
 
-#     def setUp(self):
-#         self.header1 = ['a', 'b', 'c']
-#         self.header2 = ['a', 'b', 'd']
-#         self.columns_desc = [['first column', 'second column', 'third column']]
-#         self.data = [[1, 2, 3],
-#                      [4, 5, 6]]
-#         self.table1 = DataFrame(self.data, columns=self.header1)
-#         self.table2 = DataFrame(self.data, columns=self.header2)
-#         self.columns1 = DataFrame(self.columns_desc, self.header1)
-#         self.columns2 = DataFrame(self.columns_desc, self.header2)
-#         self.metadata = {'name': 'PLATFORM'}
+    def setUp(self):
+        self.header1 = ['a', 'b', 'c']
+        self.header2 = ['a', 'b', 'd']
+        self.columns_desc = [['first column', 'second column', 'third column']]
+        self.data = [[1, 2, 3],
+                     [4, 5, 6]]
+        self.subsets = {'s1': GDSSubset(name='subset', metadata={'type': 'subset'})}
+        self.table1 = DataFrame(self.data, columns=self.header1)
+        self.table2 = DataFrame(self.data, columns=self.header2)
+        self.columns1 = DataFrame(self.columns_desc, self.header1)
+        self.columns2 = DataFrame(self.columns_desc, self.header2)
+        self.metadata = {'name': 'DATASET'}
 
-#     def test_creation_of_object(self):
-#         with self.assertRaises(ValueError):
-#             GDS(name='name', table=['a'], metadata=self.metadata, columns=self.columns1)
-#         with self.assertRaises(ValueError):
-#             GDS(name='name', table=self.table1, metadata=[], columns=self.columns1)
-#         with self.assertRaises(ValueError):
-#             GDS(name='name', table=self.table1, metadata=self.metadata, columns=[])
-#         with self.assertRaises(DataIncompatibilityException):
-#             GDS(name='name', table=self.table1, metadata=self.metadata, columns=self.columns2)
-#         GDS(name='name', table=self.table1, metadata=self.metadata, columns=self.columns1)
+    def test_creation_of_object(self):
+        with self.assertRaises(ValueError):
+            GDS(name='name', table=['a'], metadata=self.metadata, columns=self.columns1, subsets=self.subsets)
+        with self.assertRaises(ValueError):
+            GDS(name='name', table=self.table1, metadata=[], columns=self.columns1, subsets=self.subsets)
+        with self.assertRaises(ValueError):
+            GDS(name='name', table=self.table1, metadata=self.metadata, columns=[], subsets=self.subsets)
+        GDS(name='name', table=self.table1, metadata=self.metadata, columns=self.columns1, subsets=self.subsets)
 
-#     def test_simple_data(self):
-#         gsm = GDS(name='name', table=self.table1, metadata=self.metadata, columns=self.columns1)
-#         self.assertEqual(gsm.table.ix[0, 'a'], 1)
-#         self.assertEqual(gsm.table.ix[1, 'b'], 5)
+    def test_simple_data(self):
+        gsm = GDS(name='name', table=self.table1, metadata=self.metadata, columns=self.columns1, subsets=self.subsets)
+        self.assertEqual(gsm.table.ix[0, 'a'], 1)
+        self.assertEqual(gsm.table.ix[1, 'b'], 5)
 
-#     def test_get_geo_and_data(self):
-#         gds = GEO.get_GEO(geo="GDS507", destdir="./")
-#         self.assertTrue(isinstance(gds, GDS))
-#         self.assertEqual(gds.get_accession(), "GDS507")
-#         self.assertEqual(len(gds.table.index), 22645)
-#         self.assertEqual(len(gds.columns), 19)
-#         self.assertEqual(len(gds.metadata.keys()), 23)
+    def test_get_geo_and_data(self):
+        gds = GEO.get_GEO(geo="GDS507", destdir="./")
+        self.assertTrue(isinstance(gds, GDS))
+        self.assertEqual(len(gds.table.index), 22645)
+        self.assertEqual(len(gds.table.columns), 19)
+        self.assertEqual(len(gds.metadata.keys()), 16) # we omit DATABASE and SUBSET ! entries
 
 class TestGSE(unittest.TestCase):
 
