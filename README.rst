@@ -33,6 +33,6 @@ TODO
 
 There is still work to do so any contribution is welcome.
 The main issues are:
+
 * update documentation
-* expand GEOTypes objects with useful functions for differential
-expression analysis
+* expand GEOTypes objects with useful functions for differential expression analysis
