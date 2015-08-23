@@ -135,6 +135,10 @@ class TestGDS(unittest.TestCase):
         self.assertEqual(len(gds.table.index), 22645)
         self.assertEqual(len(gds.table.columns), 19)
         self.assertEqual(len(gds.metadata.keys()), 16) # we omit DATABASE and SUBSET ! entries
+        self.assertEqual(len(gds.database.metadata.keys()), 5)
+        for subset_name, subset in gds.subsets.iteritems():
+            self.assertEqual(len(subset.metadata.keys()), 4)
+            self.assertTrue(isinstance(subset, GDSSubset))
 
 class TestGSE(unittest.TestCase):
 

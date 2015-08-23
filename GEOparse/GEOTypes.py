@@ -244,7 +244,7 @@ class GDS(object):
 
     """Class that represents a dataset from GEO database"""
 
-    def __init__(self, name, table, metadata, columns, subsets):
+    def __init__(self, name, table, metadata, columns, subsets, database=None):
         """Initialize GDS
 
         :param name: str -- name of the object
@@ -261,12 +261,16 @@ class GDS(object):
             raise ValueError("Metadata should be a dictionary not a %s" % str(type(metadata)))
         if not isinstance(subsets, dict):
             raise ValueError("Subsets should be a dictionary not a %s" % str(type(subsets)))
+        if database is not None:
+            if not isinstance(database, GEODatabase):
+                raise ValueError("Database should be a GEODatabase not a %s" % str(type(database)))
 
         self.name = name
         self.table = table
         self.metadata = metadata
         self.columns = columns
         self.subsets = subsets
+        self.database = database
         self.geotype = "DATASET"
 
         for subset_name, subset in subsets.iteritems():
@@ -283,7 +287,7 @@ class GSE(object):
 
     """Class representing GEO series"""
 
-    def __init__(self, name, metadata, gpls, gsms):
+    def __init__(self, name, metadata, gpls, gsms, database=None):
         """Initialize GSE
 
         :param name: str -- name of the object
@@ -304,11 +308,15 @@ class GSE(object):
             assert isinstance(gsm, GSM), "All GSMs should be of type GSM"
         for gpl_name, gpl in gpls.iteritems():
             assert isinstance(gpl, GPL), "All GPLs should be of type GPL"
+        if database is not None:
+            if not isinstance(database, GEODatabase):
+                raise ValueError("Database should be a GEODatabase not a %s" % str(type(database)))
 
         self.name = name
         self.metadata = metadata
         self.gpls = gpls
         self.gsms = gsms
+        self.database = database
         self.geotype = "SERIES"
 
     def get_accession(self):

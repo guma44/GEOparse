@@ -357,6 +357,7 @@ def parse_GSE(filepath):
     gpls = {}
     gsms = {}
     series_counter = 0
+    database = None
     with fopen(filepath, mode) as soft:
         groupper = groupby(soft, lambda x: x.startswith("^"))
         for is_new_entry, group in groupper:
@@ -376,12 +377,17 @@ def parse_GSE(filepath):
                 elif entry_type == "PLATFORM":
                     is_data, data_group = groupper.next()
                     gpls[entry_name] = parse_GPL(data_group, entry_name)
+                elif entry_type == "DATABASE":
+                    is_data, data_group = groupper.next()
+                    database_metadata = parse_metadata(data_group)
+                    database = GEODatabase(name=entry_name, metadata=database_metadata)
                 else:
                     stderr.write("Cannot recognize type %s\n" % entry_type)
     gse = GSE(name=entry_name,
               metadata=metadata,
               gpls=gpls,
-              gsms=gsms)
+              gsms=gsms,
+              database=database)
     return gse
 
 
@@ -401,6 +407,7 @@ def parse_GDS(filepath):
         fopen = open
     dataset_lines = []
     subsets = {}
+    database = None
     with fopen(filepath, mode) as soft:
         groupper = groupby(soft, lambda x: x.startswith("^"))
         for is_new_entry, group in groupper:
@@ -412,6 +419,11 @@ def parse_GDS(filepath):
                     assert not is_data, "The key is not False, probably there is an error in the SOFT file"
                     subset_metadata = parse_metadata(data_group)
                     subsets[entry_name] = GDSSubset(name=entry_name, metadata=subset_metadata)
+                elif entry_type == "DATABASE":
+                    is_data, data_group = groupper.next()
+                    assert not is_data, "The key is not False, probably there is an error in the SOFT file"
+                    database_metadata = parse_metadata(data_group)
+                    database = GEODatabase(name=entry_name, metadata=database_metadata)
                 elif entry_type == "DATASET":
                     is_data, data_group = groupper.next()
                     dataset_name = entry_name
@@ -423,4 +435,4 @@ def parse_GDS(filepath):
     metadata = parse_metadata(dataset_lines)
     columns = parse_GDS_columns(dataset_lines, subsets)
     table = parse_table_data(dataset_lines)
-    return GDS(name=dataset_name, metadata=metadata, columns=columns, table=table, subsets=subsets)
+    return GDS(name=dataset_name, metadata=metadata, columns=columns, table=table, subsets=subsets, database=database)
