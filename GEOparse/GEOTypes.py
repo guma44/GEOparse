@@ -5,7 +5,9 @@ Classes that represent different GEO entities
 from pandas import DataFrame
 from sys import stderr, stdout
 
+
 class DataIncompatibilityException(Exception): pass
+
 
 class BaseGEO(object):
 
@@ -134,22 +136,12 @@ class BaseGEO(object):
     def __repr__(self):
         return str("<%s: %s>" % (self.geotype, self.name))
 
+
 class GSM(BaseGEO):
 
     """Class that represents sample from GEO database"""
 
-    def __init__(self, name, table, metadata, columns):
-        """Initialize GSM sample
-
-        :param name: str -- name of the object
-        :param table: pandas.DataFrame -- table with the data from SOFT file
-        :param metadata: dict -- metadata information
-        :param columns: pandas.DataFrame -- description of the columns, number of columns, order, and names
-        represented as index in this DataFrame has to be the same as table.columns.
-        """
-
-        BaseGEO.__init__(self, name=name, table=table, metadata=metadata, columns=columns)
-        self.geotype = "SAMPLE"
+    geotype = 'SAMPLE'
 
     def annotate_and_average(self, gpl, expression_column, group_by_column, rename=True,
                              force=False, merge_on_column=None, gsm_on=None, gpl_on=None):
@@ -189,18 +181,8 @@ class GPL(BaseGEO):
 
     """Class that represents platform from GEO database"""
 
-    def __init__(self, name, table, metadata, columns):
-        """Initialize GPL
+    geotype = "PLATFORM"
 
-        :param name: str -- name of the object
-        :param table: pandas.DataFrame -- table with the data from SOFT file
-        :param metadata: dict -- metadata information
-        :param columns: pandas.DataFrame -- description of the columns, number of columns, order, and names
-        represented as index in this DataFrame has to be the same as table.columns.
-        """
-
-        BaseGEO.__init__(self, name=name, table=table, metadata=metadata, columns=columns)
-        self.geotype = "PLATFORM"
 
 class GDSSubset(object):
 
@@ -223,9 +205,12 @@ class GDSSubset(object):
         """
         return self.metadata["type"][0]
 
+
 class GEODatabase(object):
 
     """Class that represents a subset from GEO GDS object"""
+
+    geotype = "DATABASE"
 
     def __init__(self, name, metadata):
         """Initialize GEODatabase
@@ -237,12 +222,13 @@ class GEODatabase(object):
             raise ValueError("Metadata should be a dictionary not a %s" % str(type(metadata)))
         self.name = name
         self.metadata = metadata
-        self.geotype = "DATABASE"
 
 
 class GDS(object):
 
     """Class that represents a dataset from GEO database"""
+
+    geotype = "DATASET"
 
     def __init__(self, name, table, metadata, columns, subsets, database=None):
         """Initialize GDS
@@ -271,7 +257,6 @@ class GDS(object):
         self.columns = columns
         self.subsets = subsets
         self.database = database
-        self.geotype = "DATASET"
 
         for subset_name, subset in subsets.iteritems():
             assert isinstance(subset, GDSSubset), "All subsets should be of type GDSSubset"
@@ -286,6 +271,8 @@ class GDS(object):
 class GSE(object):
 
     """Class representing GEO series"""
+
+    geotype = "SERIES"
 
     def __init__(self, name, metadata, gpls, gsms, database=None):
         """Initialize GSE
@@ -317,7 +304,6 @@ class GSE(object):
         self.gpls = gpls
         self.gsms = gsms
         self.database = database
-        self.geotype = "SERIES"
 
     def get_accession(self):
         """Return accession ID of the sample
