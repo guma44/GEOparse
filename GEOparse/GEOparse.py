@@ -4,11 +4,10 @@ from re import sub
 from sys import stderr
 from StringIO import StringIO
 from tempfile import mkdtemp
-from shutil import rmtree
 from itertools import groupby
 from collections import defaultdict
 from shutil import copyfileobj
-from urllib2 import urlopen
+from urllib2 import urlopen, URLError
 from contextlib import closing
 from pandas import DataFrame
 import gzip
@@ -21,8 +20,14 @@ class UnknownGEOTypeException(Exception):
     """
     pass
 
+class NoEntriesException(Exception):
+    """
+    Exception raised when no entries could be found in the SOFT file.
+    """
+    pass
 
-def get_GEO(geo=None, filepath=None, destdir="./", how='full'):
+
+def get_GEO(geo=None, filepath=None, destdir="./", how='full', annotate_gpl=False):
     """Get the GEO entry directly from the GEO database or read it from SOFT file.
 
     :param geo: str -- GEO database identifier
@@ -38,7 +43,7 @@ def get_GEO(geo=None, filepath=None, destdir="./", how='full'):
         raise Exception("You can specify filename or GEO accession - not both!")
 
     if filepath is None:
-        filepath, geotype = get_GEO_file(geo, destdir=destdir, how=how)
+        filepath, geotype = get_GEO_file(geo, destdir=destdir, how=how, annotate_gpl=annotate_gpl)
     else:
         geotype = filepath.split("/")[-1][:3]
 
@@ -97,22 +102,26 @@ def get_GEO_file(geo, destdir=None, annotate_gpl=False, how="full"):
     elif geotype == "GPL":
         if annotate_gpl:
             gplurl = "ftp://ftp.ncbi.nlm.nih.gov/geo/{root}/{range_subdir}/{record}/annot/{record_file}"
-            url = gseurl.format(root="platforms",
+            url = gplurl.format(root="platforms",
                                 range_subdir=range_subdir,
                                 record=geo,
                                 record_file="%s.annot.gz" % geo)
             filepath = path.join(tmpdir, "{record}.annot.gz".format(record=geo))
             if not path.isfile(filepath):
-                with closing(urlopen(url)) as r:
-                    with open(filepath, mode=mode) as f:
-                        stderr.write("Downloading %s to %s\n" % (url, filepath))
-                        copyfileobj(r, f)
+                try:
+                    with closing(urlopen(url)) as r:
+                        with open(filepath, mode=mode) as f:
+                            stderr.write("Downloading %s to %s\n" % (url, filepath))
+                            copyfileobj(r, f)
+                    return filepath, geotype
+                except URLError:
+                    stderr.write("Annotations for %s are not available, trying submitter GPL\n" % geo)
             else:
                 stderr.write("File already exist: using local version.\n")
-            return filepath, geotype
+                return filepath, geotype
 
-        gseurl = "http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?targ=self&acc={record}&form=text&view={how}"
-        url = gseurl.format(record=geo, how=how)
+        gplurl = "http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?targ=self&acc={record}&form=text&view={how}"
+        url = gplurl.format(record=geo, how=how)
         filepath = path.join(tmpdir, "{record}.soft".format(record=geo))
         mode = 'w'
         if not path.isfile(filepath):
@@ -280,7 +289,10 @@ def parse_GSM(filepath, entry_name=None):
 
     if entry_name is None:
         sets = [i for i in soft if i.startswith("^")]
-        assert len(sets) == 1, "More than one entry in GPL"
+        if len(sets) > 1:
+            raise Exception("More than one entry in GPL")
+        if len(sets) == 0:
+            raise NoEntriesException("No entries found. Check the if accession is correct!")
         entry_name = parse_entry_name(sets[0])
 
     columns = parse_columns(soft)
@@ -330,7 +342,10 @@ def parse_GPL(filepath, entry_name=None):
 
     if entry_name is None:
         sets = [i for i in soft if i.startswith("^")]
-        assert len(sets) == 1, "More than one entry in GPL"
+        if len(sets) > 1:
+            raise Exception("More than one entry in GPL")
+        if len(sets) == 0:
+            raise NoEntriesException("No entries found. Check the if accession is correct!")
         entry_name = parse_entry_name(sets[0])
     columns = parse_columns(soft)
     metadata = parse_metadata(soft)

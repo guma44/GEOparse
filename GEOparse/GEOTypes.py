@@ -5,6 +5,7 @@ Classes that represent different GEO entities
 from pandas import DataFrame
 from sys import stderr, stdout
 import abc
+import gzip
 
 
 class DataIncompatibilityException(Exception): pass
@@ -81,14 +82,19 @@ class BaseGEO(object):
         """
         print self._get_metadata_as_string()
 
-    def to_soft(self, path_or_handle):
+    def to_soft(self, path_or_handle, as_gzip=False):
         """Save the object in a SOFT format.
 
         :param path_or_handle: path or handle to output file
+        :param gzip: bool -- save as gzip
         """
         if isinstance(path_or_handle, str):
-            with open(path_or_handle, 'w') as outfile:
-                outfile.write(self._get_object_as_soft())
+            if as_gzip:
+                with gzip.open(path_or_handle, 'wb') as outfile:
+                    outfile.write(self._get_object_as_soft())
+            else:
+                with open(path_or_handle, 'w') as outfile:
+                    outfile.write(self._get_object_as_soft())
         else:
             path_or_handle.write(self._get_object_as_soft())
 

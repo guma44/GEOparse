@@ -52,3 +52,4 @@ docs/_build
 # test files
 *.soft
 *.soft.gz
+*.gz
