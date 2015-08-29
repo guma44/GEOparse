@@ -4,14 +4,112 @@ Classes that represent different GEO entities
 
 from pandas import DataFrame
 from sys import stderr, stdout
+import abc
 
 
 class DataIncompatibilityException(Exception): pass
+class NoMetadataException(Exception): pass
 
 
 class BaseGEO(object):
 
-    def __init__(self, name, table, metadata, columns):
+    __metaclass__ = abc.ABCMeta
+
+    geotype = None
+
+    def __init__(self, name, metadata):
+        """base GEO object
+
+        :param name: str -- name of the object
+        :param metadata: dict -- metadata information
+        """
+
+        if not isinstance(metadata, dict):
+            raise ValueError("Metadata should be a dictionary not a %s" % str(type(metadata)))
+
+        self.name = name
+        self.metadata = metadata
+
+    def get_metadata_attribute(self, metaname):
+        """Get the metadata attribute by the name.
+
+        :param metaname: str -- name of the attribute
+        :returns: list or str -- if there is more than one attribute it returns a list
+        otherwise it returns a string
+
+        """
+        metadata_value = self.metadata.get(metaname, None)
+        assert isinstance(metadata_value, list), "Metadata value is not a list?"
+
+        if metadata_value is None:
+            raise NoMetadataException("No metadata attribute named %s" % metaname)
+        elif len(metadata_value) > 1:
+            return metadata_value
+        else:
+            return metadata_value[0]
+
+    def get_accession(self):
+        """Return accession ID of the sample
+        :returns: str
+
+        """
+        return self.get_metadata_attribute("geo_accession")
+
+    def get_type(self):
+        """Return type of a subset
+        """
+        try:
+            return self.get_metadata_attribute("type")
+        except NoMetadataException:
+            return None
+
+    def _get_metadata_as_string(self):
+        """Returns metadata as SOFT formated string
+        """
+        metalist = []
+        for metaname, meta in self.metadata.iteritems():
+            assert isinstance(meta, list), "Single value in metadata dictionary should be a list!"
+            for data in meta:
+                if data:
+                    metalist.append("!%s_%s = %s" % (self.geotype, metaname, data))
+        return "\n".join(metalist)
+
+    def show_metadata(self):
+        """
+         Show metadat in SOFT format
+        """
+        print self._get_metadata_as_string()
+
+    def to_soft(self, path_or_handle):
+        """Save the object in a SOFT format.
+
+        :param path_or_handle: path or handle to output file
+        """
+        if isinstance(path_or_handle, str):
+            with open(path_or_handle, 'w') as outfile:
+                outfile.write(self._get_object_as_soft())
+        else:
+            path_or_handle.write(self._get_object_as_soft())
+
+    @abc.abstractmethod
+    def _get_object_as_soft(self):
+        """
+         Return object as SOFT formated string.
+        """
+        raise NotImplementedError("Method not implemented")
+
+    def __str__(self):
+        return str("<%s: %s>" % (self.geotype, self.name))
+
+    def __repr__(self):
+        return str("<%s: %s>" % (self.geotype, self.name))
+
+
+class SimpleGEO(BaseGEO):
+
+    __metaclass__ = abc.ABCMeta
+
+    def __init__(self, name, metadata, table, columns):
         """base GEO object
 
         :param name: str -- name of the object
@@ -25,22 +123,13 @@ class BaseGEO(object):
             raise ValueError("Table data should be an instance of pandas.DataFrame not %s" % str(type(table)))
         if not isinstance(columns, DataFrame):
             raise ValueError("Columns description should be an instance of pandas.DataFrame not %s" % str(type(columns)))
-        if not isinstance(metadata, dict):
-            raise ValueError("Metadata should be a dictionary not a %s" % str(type(metadata)))
 
-        self.name = name
+        BaseGEO.__init__(self, name=name, metadata=metadata)
+
         self.table = table
-        self.metadata = metadata
         self.columns = columns
         if self.columns.index.tolist() != self.table.columns.tolist():
             raise DataIncompatibilityException("Data columns do not match columns description index in %s" % (self.name))
-
-    def get_accession(self):
-        """Return accession ID of the sample
-        :returns: str
-
-        """
-        return self.metadata["geo_accession"][0]
 
     def head(self):
         """Return short description of the object
@@ -60,27 +149,10 @@ class BaseGEO(object):
         stdout.write(" "*40 + "..." + " "*40 + "\n")
         stdout.write(self.table.tail().to_string(header=None) + "\n")
 
-    def to_soft(self, path_or_handle):
-        """Save the object in a SOFT format.
-
-        :param path_or_handle: path or handle to output file
-        """
-        if isinstance(path_or_handle, str):
-            with open(path_or_handle, 'w') as outfile:
-                outfile.write(self._get_object_as_soft())
-        else:
-            path_or_handle.write(self._get_object_as_soft())
-
     def show_columns(self):
         """Show columns in SOFT format
         """
         print self.columns
-
-    def show_metadata(self):
-        """
-         Show metadat in SOFT format
-        """
-        print self._get_metadata_as_string()
 
     def show_table(self, number_of_lines=5):
         """
@@ -99,17 +171,6 @@ class BaseGEO(object):
                 self._get_columns_as_string(),
                 self._get_table_as_string()]
         return "\n".join(soft)
-
-    def _get_metadata_as_string(self):
-        """Returns metadata as SOFT formated string
-        """
-        metalist = []
-        for metaname, meta in self.metadata.iteritems():
-            assert isinstance(meta, list), "Single value in metadata dictionary should be a list!"
-            for data in meta:
-                if data:
-                    metalist.append("!%s_%s = %s" % (self.geotype, metaname, data))
-        return "\n".join(metalist)
 
     def _get_table_as_string(self):
         """Returns table as SOFT formated string
@@ -130,14 +191,8 @@ class BaseGEO(object):
             columnslist.append("#%s = %s" % (rowidx, row.description))
         return "\n".join(columnslist)
 
-    def __str__(self):
-        return str("<%s: %s>" % (self.geotype, self.name))
 
-    def __repr__(self):
-        return str("<%s: %s>" % (self.geotype, self.name))
-
-
-class GSM(BaseGEO):
+class GSM(SimpleGEO):
 
     """Class that represents sample from GEO database"""
 
@@ -177,60 +232,50 @@ class GSM(BaseGEO):
         return tmp_data
 
 
-class GPL(BaseGEO):
+class GPL(SimpleGEO):
 
     """Class that represents platform from GEO database"""
 
     geotype = "PLATFORM"
 
 
-class GDSSubset(object):
+class GDSSubset(BaseGEO):
 
     """Class that represents a subset from GEO GDS object"""
 
-    def __init__(self, name, metadata):
-        """Initialize GDSSubset
+    geotype = "SUBSET"
 
-        :param name: str -- name of the object
-        :param metadata: dict -- metadata information
+    def _get_object_as_soft(self):
         """
-        if not isinstance(metadata, dict):
-            raise ValueError("Metadata should be a dictionary not a %s" % str(type(metadata)))
-        self.name = name
-        self.metadata = metadata
-        self.geotype = "SUBSET"
-
-    def get_type(self):
-        """Return type of a subset
+         Return object as SOFT formated string.
         """
-        return self.metadata["type"][0]
+        soft = ["^%s = %s" % (self.geotype, self.name),
+                self._get_metadata_as_string()]
+        return "\n".join(soft)
 
 
-class GEODatabase(object):
+class GEODatabase(BaseGEO):
 
     """Class that represents a subset from GEO GDS object"""
 
     geotype = "DATABASE"
 
-    def __init__(self, name, metadata):
-        """Initialize GEODatabase
-
-        :param name: str -- name of the object
-        :param metadata: dict -- metadata information
+    def _get_object_as_soft(self):
         """
-        if not isinstance(metadata, dict):
-            raise ValueError("Metadata should be a dictionary not a %s" % str(type(metadata)))
-        self.name = name
-        self.metadata = metadata
+         Return object as SOFT formated string.
+        """
+        soft = ["^%s = %s" % (self.geotype, self.name),
+                self._get_metadata_as_string()]
+        return "\n".join(soft)
 
 
-class GDS(object):
+class GDS(SimpleGEO):
 
     """Class that represents a dataset from GEO database"""
 
     geotype = "DATASET"
 
-    def __init__(self, name, table, metadata, columns, subsets, database=None):
+    def __init__(self, name, metadata, table, columns, subsets, database=None):
         """Initialize GDS
 
         :param name: str -- name of the object
@@ -238,37 +283,30 @@ class GDS(object):
         :param metadata: dict -- metadata information
         :param columns: pandas.DataFrame -- description of the columns, number of columns, order, and names
         represented as index in this DataFrame has to be the same as table.columns.
+        :param subsets: dict -- dictionary of GDSSubset from GDS soft file
+        :param database: GEODatabase -- Database from SOFT file
         """
-        if not isinstance(table, DataFrame):
-            raise ValueError("Table data should be an instance of pandas.DataFrame not %s" % str(type(table)))
-        if not isinstance(columns, DataFrame):
-            raise ValueError("Columns description should be an instance of pandas.DataFrame not %s" % str(type(columns)))
-        if not isinstance(metadata, dict):
-            raise ValueError("Metadata should be a dictionary not a %s" % str(type(metadata)))
         if not isinstance(subsets, dict):
             raise ValueError("Subsets should be a dictionary not a %s" % str(type(subsets)))
         if database is not None:
             if not isinstance(database, GEODatabase):
                 raise ValueError("Database should be a GEODatabase not a %s" % str(type(database)))
 
-        self.name = name
-        self.table = table
-        self.metadata = metadata
-        self.columns = columns
+
+        SimpleGEO.__init__(self, name=name, metadata=metadata, table=table, columns=columns)
         self.subsets = subsets
         self.database = database
 
         for subset_name, subset in subsets.iteritems():
             assert isinstance(subset, GDSSubset), "All subsets should be of type GDSSubset"
 
-    def __str__(self):
-        return str("<%s: %s>" % (self.geotype, self.name))
+    def _get_object_as_soft(self):
+        """
+         Return object as SOFT formated string.
+        """
+        raise NotImplementedError
 
-    def __repr__(self):
-        return str("<%s: %s>" % (self.geotype, self.name))
-
-
-class GSE(object):
+class GSE(BaseGEO):
 
     """Class representing GEO series"""
 
@@ -281,11 +319,9 @@ class GSE(object):
         :param metadata: dict -- metadata information
         :param gpls: list -- list of GPL objects
         :param gsms: list -- list of GSM objects
-
+        :param database: GEODatabase -- Database from SOFT file
         """
 
-        if not isinstance(metadata, dict):
-            raise ValueError("Metadata should be a dictionary not a %s" % str(type(metadata)))
         if not isinstance(gpls, dict):
             raise ValueError("GPLs should be a dictionary not a %s" % str(type(gpls)))
         if not isinstance(gsms, dict):
@@ -299,18 +335,11 @@ class GSE(object):
             if not isinstance(database, GEODatabase):
                 raise ValueError("Database should be a GEODatabase not a %s" % str(type(database)))
 
-        self.name = name
-        self.metadata = metadata
+        BaseGEO.__init__(self, name=name, metadata=metadata)
+
         self.gpls = gpls
         self.gsms = gsms
         self.database = database
-
-    def get_accession(self):
-        """Return accession ID of the sample
-        :returns: str
-
-        """
-        return self.metadata["geo_accession"][0]
 
     def merge_and_average(self, platform, expression_column, group_by_column,
                           force=False, merge_on_column=None, gsm_on=None, gpl_on=None):
@@ -353,44 +382,18 @@ class GSE(object):
         else:
             return data[0].join(data[1:])
 
-    def to_soft(self, path_or_handle):
-        """
-         Save the GSE object as SOFT file
-
-         :param path_or_handle: str -- path to file of file handle
-        """
-        if isinstance(path_or_handle, str):
-            with open(path_or_handle, 'w') as outfile:
-                outfile.write(self._get_object_as_soft() + "\n")
-                for gsm in self.gsms.itervalues():
-                    outfile.write(gsm._get_object_as_soft() + "\n")
-                for gpl in self.gpls.itervalues():
-                    outfile.write(gsm._get_object_as_soft() + "\n")
-        else:
-                path_or_handle.write(self._get_object_as_soft() + "\n")
-                for gsm in self.gsms.itervalues():
-                    path_or_handle.write(gsm._get_object_as_soft() + "\n")
-                for gpl in self.gpls.itervalues():
-                    path_or_handle.write(gsm._get_object_as_soft() + "\n")
-
     def _get_object_as_soft(self):
         """
          Return object as SOFT formated string.
         """
         soft = ["^%s = %s" % (self.geotype, self.name),
                 self._get_metadata_as_string()]
-        return "\n".join(soft)
+        for gsm in self.gsms.itervalues():
+            soft.append(gsm._get_object_as_soft())
+        for gpl in self.gpls.itervalues():
+            soft.append(gsm._get_object_as_soft())
 
-    def _get_metadata_as_string(self):
-        """Returns metadata as SOFT formated string
-        """
-        metalist = []
-        for metaname, meta in self.metadata.iteritems():
-            assert isinstance(meta, list), "Single value in metadata dictionary should be a list!"
-            for data in meta:
-                if data:
-                    metalist.append("!%s_%s = %s" % (self.geotype, metaname, data))
-        return "\n".join(metalist)
+        return "\n".join(soft)
 
     def __str__(self):
         return str("<%s: %s - %i SERIES, %i PLATFORM(s)>" % (self.geotype, self.name, len(self.gsms), len(self.gpls)))

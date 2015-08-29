@@ -136,6 +136,7 @@ def get_GEO_file(geo, destdir=None, annotate_gpl=False, how="full"):
 
     return filepath, geotype
 
+
 def __parse_entry(entry_line):
     """Parse the SOFT file entry name line that starts with '^', '!' or '#'.
 
@@ -164,6 +165,7 @@ def parse_entry_name(nameline):
     """
     entry_type, entry_name = __parse_entry(nameline)
     return entry_name
+
 
 def parse_metadata(lines):
     """Parse list of lines with metadata information from SOFT file
@@ -231,7 +233,8 @@ def parse_GDS_columns(lines, subsets):
             else:
                 stderr("Unknown subset type: %s for subset %s\n" % (subset.get_type(), subsetname))
 
-    return df.join(DataFrame(subset_ids)).dropna()
+    return df.join(DataFrame(subset_ids))
+
 
 def parse_table_data(lines):
     """Parse list of lines from SOFT file into DataFrame
@@ -243,6 +246,7 @@ def parse_table_data(lines):
     # filter lines that do not start with symbols
     data = "\n".join([i.rstrip() for i in lines if i[0] not in ("^", "!", "#")])
     return DataFrame.from_csv(StringIO(data), index_col=None, sep="\t")
+
 
 def parse_GSM(filepath, entry_name=None):
     """Parse GSM entry from SOFT file
@@ -342,6 +346,7 @@ def parse_GPL(filepath, entry_name=None):
 
     return gpl
 
+
 def parse_GSE(filepath):
     """Parse GSE from SOFT file
 
@@ -392,7 +397,7 @@ def parse_GSE(filepath):
 
 
 def parse_GDS(filepath):
-    """NOT IMPLEMENTED.
+    """
     Parse GDS from SOFT file
 
     :param gds: @todo
