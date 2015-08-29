@@ -71,7 +71,8 @@ class BaseGEO(object):
             assert isinstance(meta, list), "Single value in metadata dictionary should be a list!"
             for data in meta:
                 if data:
-                    metalist.append("!%s_%s = %s" % (self.geotype, metaname, data))
+                    metalist.append("!%s_%s = %s" % (self.geotype.capitalize(),
+                                                     metaname, data))
         return "\n".join(metalist)
 
     def show_metadata(self):
@@ -180,7 +181,7 @@ class SimpleGEO(BaseGEO):
         tablelist.append("\t".join(self.table.columns))
         for idx, row in self.table.iterrows():
             tablelist.append("\t".join(map(str, row)))
-        tablelist.append("!%s_table_end" % self.geotype.lower())
+        tablelist.append("!%s_table_end\n" % self.geotype.lower())
         return "\n".join(tablelist)
 
     def _get_columns_as_string(self):
@@ -304,7 +305,18 @@ class GDS(SimpleGEO):
         """
          Return object as SOFT formated string.
         """
-        raise NotImplementedError
+        soft = []
+        if self.database is not None:
+            soft.append(self.database._get_object_as_soft())
+        soft += ["^%s = %s" % (self.geotype, self.name),
+                 self._get_metadata_as_string()]
+        for subset in self.subsets.values():
+            soft.append(subset._get_object_as_soft())
+        soft += ["^%s = %s" % (self.geotype, self.name),
+                 self._get_columns_as_string(),
+                 self._get_table_as_string()]
+        return "\n".join(soft)
+
 
 class GSE(BaseGEO):
 
@@ -386,8 +398,11 @@ class GSE(BaseGEO):
         """
          Return object as SOFT formated string.
         """
-        soft = ["^%s = %s" % (self.geotype, self.name),
-                self._get_metadata_as_string()]
+        soft = []
+        if self.database is not None:
+            soft.append(self.database._get_object_as_soft())
+        soft += ["^%s = %s" % (self.geotype, self.name),
+                 self._get_metadata_as_string()]
         for gsm in self.gsms.itervalues():
             soft.append(gsm._get_object_as_soft())
         for gpl in self.gpls.itervalues():
