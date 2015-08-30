@@ -187,7 +187,7 @@ class SimpleGEO(BaseGEO):
         tablelist.append("\t".join(self.table.columns))
         for idx, row in self.table.iterrows():
             tablelist.append("\t".join(map(str, row)))
-        tablelist.append("!%s_table_end\n" % self.geotype.lower())
+        tablelist.append("!%s_table_end" % self.geotype.lower())
         return "\n".join(tablelist)
 
     def _get_columns_as_string(self):
@@ -431,7 +431,7 @@ class GSE(BaseGEO):
         for gsm in self.gsms.itervalues():
             soft.append(gsm._get_object_as_soft())
         for gpl in self.gpls.itervalues():
-            soft.append(gsm._get_object_as_soft())
+            soft.append(gpl._get_object_as_soft())
 
         return "\n".join(soft)
 

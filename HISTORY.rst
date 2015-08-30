@@ -3,6 +3,15 @@
 History
 -------
 
+0.1.3 (2015-08-30)
+---------------------
+
+* Updated documentation
+* Added pivot_samples to GSE object
+* Code of GEOTypes was refactored
+* All objects now have to_soft function
+* Various bugfixes
+
 0.1.2 (2015-08-23)
 ---------------------
 
@@ -19,4 +28,3 @@ History
 ---------------------
 
 * First release on PyPI.
-

@@ -56,7 +56,7 @@ docs:
 	sphinx-apidoc -o docs/ GEOparse
 	$(MAKE) -C docs clean
 	$(MAKE) -C docs html
-	open docs/_build/html/index.html
+	# open docs/_build/html/index.html
 
 release: clean
 	python setup.py register -r pypi

@@ -1,7 +1,10 @@
-API
+GEOparse package
 ================
 
-GEOparse.GEOTypes
+Submodules
+----------
+
+GEOparse.GEOTypes module
 ------------------------
 
 .. automodule:: GEOparse.GEOTypes
@@ -9,7 +12,7 @@ GEOparse.GEOTypes
     :undoc-members:
     :show-inheritance:
 
-GEOparse.GEOparse
+GEOparse.GEOparse module
 ------------------------
 
 .. automodule:: GEOparse.GEOparse
