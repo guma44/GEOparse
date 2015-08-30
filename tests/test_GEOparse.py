@@ -130,7 +130,7 @@ class TestGDS(unittest.TestCase):
         self.assertEqual(gsm.table.ix[1, 'b'], 5)
 
     def test_get_geo_and_data(self):
-        gds = GEO.get_GEO(geo="GDS507", destdir="./")
+        gds = GEO.get_GEO(geo="GDS507", destdir=download_geo)
         self.assertTrue(isinstance(gds, GDS))
         self.assertEqual(len(gds.table.index), 22645)
         self.assertEqual(len(gds.table.columns), 19)
