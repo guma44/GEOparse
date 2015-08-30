@@ -2,7 +2,7 @@
 Classes that represent different GEO entities
 """
 
-from pandas import DataFrame
+from pandas import DataFrame, concat
 from sys import stderr, stdout
 import abc
 import gzip
@@ -301,6 +301,7 @@ class GDS(SimpleGEO):
 
 
         SimpleGEO.__init__(self, name=name, metadata=metadata, table=table, columns=columns)
+        self.columns = self.columns.dropna() # effectively deletes the columns with ID_REF
         self.subsets = subsets
         self.database = database
 
@@ -399,6 +400,24 @@ class GSE(BaseGEO):
             return data[0]
         else:
             return data[0].join(data[1:])
+
+    def pivot_samples(self, values, index="ID_REF"):
+        """Construct a table in which columns (names) are the samples, index
+        is a specified column eg. ID_REF and values in the columns are of one
+        specified type.
+
+        :param values: str -- column name present in the GSMs (all)
+        :param index: str -- column name that will become an index in pivoted table
+        :returns: pandas.DataFrame
+
+        """
+        data = []
+        for gsm in self.gsms.values():
+            tmp_data = gsm.table.copy()
+            tmp_data["name"] = gsm.name
+            data.append(tmp_data)
+        ndf = concat(data).pivot(index=index, values=values, columns="name")
+        return ndf
 
     def _get_object_as_soft(self):
         """
