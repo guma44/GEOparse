@@ -40,11 +40,12 @@ class BaseGEO(object):
 
         """
         metadata_value = self.metadata.get(metaname, None)
-        assert isinstance(metadata_value, list), "Metadata value is not a list?"
-
         if metadata_value is None:
             raise NoMetadataException("No metadata attribute named %s" % metaname)
-        elif len(metadata_value) > 1:
+        if not isinstance(metadata_value, list):
+            raise TypeError("Metadata is not a list and it should be.")
+
+        if len(metadata_value) > 1:
             return metadata_value
         else:
             return metadata_value[0]

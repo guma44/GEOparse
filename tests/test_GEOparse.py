@@ -14,7 +14,11 @@ import unittest
 from pandas import DataFrame
 
 path.append(join(abspath(__file__), ".."))
-from GEOparse.GEOTypes import GSE, GSM, GPL, GDS, DataIncompatibilityException, GDSSubset, GEODatabase
+from GEOparse.GEOTypes import (GSE, GSM, GPL, GDS,
+                               GDSSubset, GEODatabase,
+                               DataIncompatibilityException,
+                               NoMetadataException,
+                               )
 import GEOparse as GEO
 
 download_geo = dirname(abspath(__file__))
@@ -33,7 +37,7 @@ class TestGSM(unittest.TestCase):
         self.table2 = DataFrame(self.data, columns=self.header2)
         self.columns1 = DataFrame(self.columns_desc, self.header1)
         self.columns2 = DataFrame(self.columns_desc, self.header2)
-        self.metadata = {'name': 'SAMPLE'}
+        self.metadata = {'name': ['SAMPLE']}
 
     def test_creation_of_object(self):
         with self.assertRaises(ValueError):
@@ -58,6 +62,16 @@ class TestGSM(unittest.TestCase):
         self.assertEqual(len(gsm.table.index), 22283)
         self.assertEqual(len(gsm.columns), 3)
         self.assertEqual(len(gsm.metadata.keys()), 28)
+
+    def test_get_metadata_attribute(self):
+        metadata = {'name': 'SAMPLE', 'samples': ["sam1", "sam2"]}
+        gsm = GSM(name='name', table=self.table1, metadata=self.metadata, columns=self.columns1)
+        gsm2 = GSM(name='name', table=self.table1, metadata=metadata, columns=self.columns1)
+        self.assertRaises(TypeError, gsm2.get_metadata_attribute, ('name',))
+        self.assertEqual(gsm.get_metadata_attribute('name'), "SAMPLE")
+        self.assertEqual(gsm2.get_metadata_attribute('samples'), ["sam1", "sam2"])
+        self.assertRaises(NoMetadataException, gsm.get_metadata_attribute, ('dupa',))
+
 
 class TestGPL(unittest.TestCase):
 
