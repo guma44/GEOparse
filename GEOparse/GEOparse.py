@@ -27,7 +27,7 @@ class NoEntriesException(Exception):
     pass
 
 
-def get_GEO(geo=None, filepath=None, destdir="./", how='full', annotate_gpl=False):
+def get_GEO(geo=None, filepath=None, destdir="./", how='full', annotate_gpl=False, geotype=None):
     """Get the GEO entry directly from the GEO database or read it from SOFT file.
 
     :param geo: str -- GEO database identifier
@@ -45,19 +45,20 @@ def get_GEO(geo=None, filepath=None, destdir="./", how='full', annotate_gpl=Fals
     if filepath is None:
         filepath, geotype = get_GEO_file(geo, destdir=destdir, how=how, annotate_gpl=annotate_gpl)
     else:
-        geotype = filepath.split("/")[-1][:3]
+        if geotype is None:
+            geotype = filepath.split("/")[-1][:3]
 
     stderr.write("Parsing %s:\n" % filepath)
-    if geotype == "GSM":
+    if geotype.upper() == "GSM":
         return parse_GSM(filepath)
-    elif geotype == "GSE":
+    elif geotype.upper() == "GSE":
         return parse_GSE(filepath)
-    elif geotype == 'GPL':
+    elif geotype.upper() == 'GPL':
         return parse_GPL(filepath)
-    elif geotype == 'GDS':
+    elif geotype.upper() == 'GDS':
         return parse_GDS(filepath)
     else:
-        raise NotImplementedError("Unknown GEO type: %s" % geotype)
+        raise ValueError("Unknown GEO type: %s. Available types: GSM, GSE, GPL and GDS." % geotype.upper())
 
 
 def get_GEO_file(geo, destdir=None, annotate_gpl=False, how="full"):

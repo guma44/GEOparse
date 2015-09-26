@@ -137,7 +137,18 @@ class SimpleGEO(BaseGEO):
         self.table = table
         self.columns = columns
         if self.columns.index.tolist() != self.table.columns.tolist():
-            raise DataIncompatibilityException("Data columns do not match columns description index in %s" % (self.name))
+            if sorted(self.columns.index.tolist()) == sorted(self.table.columns.tolist()):
+                stderr.write("Data columns in %s %s are not in order. Reordering.\n" % (self.geotype, self.name))
+                self.columns = self.columns.ix[self.table.columns]
+            else:
+                rows_in_columns = ", ".join(self.columns.index.tolist())
+                columns_in_table = ", ".join(self.table.columns.tolist())
+                raise DataIncompatibilityException("\nData columns do not match columns description index in %s\n" % (self.name) +
+                                                   "Columns in table are: %s\n" % columns_in_table +
+                                                   "Index in columns are: %s\n" % rows_in_columns
+                                                   )
+        if self.columns.columns[0] != 'description':
+            raise ValueError("Columns table must contain a column named 'description'. Here columns are: %s" % ", ".join(map(str, self.columns.columns)))
 
     def head(self):
         """Return short description of the object
@@ -205,6 +216,33 @@ class GSM(SimpleGEO):
     """Class that represents sample from GEO database"""
 
     geotype = 'SAMPLE'
+
+    def annotate(self, gpl, annotation_column, gpl_on="ID", gsm_on="ID_REF", in_place=False):
+        """Annotate GSM with provided GPL
+
+        :param gpl: pandas.DataFrame or GPL -- a Platform or DataFrame to annotate with
+        :param annotation_column: str -- column in table for annotation
+        :param gsm_on: str -- use this column in GSM to merge, defaults to ID_REF
+        :param gpl_on: str -- use this column in GPL to merge, defaults to ID
+        :param in_place: bool -- if True substitute table in GSM by new annotated table, defaults to False
+        :returns: DataFrame or None if in_place=True
+
+        """
+        if isinstance(gpl, GPL):
+            annotation_table = gpl.table
+        elif isinstance(gpl, DataFrame):
+            annotation_table = gpl
+        else:
+            raise TypeError("gpl should be a GPL object or a pandas.DataFrame")
+
+        # annotate by merging
+        annotated = self.table.merge(annotation_table[[gpl_on, annotation_column]], left_on=gsm_on, right_on=gpl_on)
+        del annotated[gpl_on]
+        if in_place:
+            self.table = annotated
+            return None
+        else:
+            return annotated
 
     def annotate_and_average(self, gpl, expression_column, group_by_column, rename=True,
                              force=False, merge_on_column=None, gsm_on=None, gpl_on=None):
@@ -418,6 +456,29 @@ class GSE(BaseGEO):
             tmp_data["name"] = gsm.name
             data.append(tmp_data)
         ndf = concat(data).pivot(index=index, values=values, columns="name")
+        return ndf
+
+    def pivot_and_annotate(self, values, gpl, annotation_column, gpl_on="ID", gsm_on="ID_REF"):
+        """Annotate GSM with provided GPL
+
+        :param gpl: pandas.DataFrame or GPL -- a Platform or DataFrame to annotate with
+        :param annotation_column: str -- column in table for annotation
+        :param gsm_on: str -- use this column in GSM to merge, defaults to ID_REF
+        :param gpl_on: str -- use this column in GPL to merge, defaults to ID
+        :returns: pandas.DataFrame
+
+        """
+        if isinstance(gpl, GPL):
+            annotation_table = gpl.table
+        elif isinstance(gpl, DataFrame):
+            annotation_table = gpl
+        else:
+            raise TypeError("gpl should be a GPL object or a pandas.DataFrame")
+        pivoted_samples = self.pivot_samples(values=values, index=gsm_on)
+        ndf = pivoted_samples.reset_index().merge(annotation_table[[gpl_on, annotation_column]],
+                                                  left_on=gsm_on,
+                                                  right_on=gpl_on).set_index(gsm_on)
+        del ndf[gpl_on]
         return ndf
 
     def _get_object_as_soft(self):
