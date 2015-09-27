@@ -3,6 +3,14 @@
 History
 -------
 
+0.1.4 (2015-09-27)
+---------------------
+
+* Updated documentation including example
+* Updated tests: they now cover 80% of library with all important functions
+* Added pivot_and_annotate method to GSE object
+* Bugfixes
+
 0.1.3 (2015-08-30)
 ---------------------
 

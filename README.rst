@@ -34,5 +34,5 @@ TODO
 There is still work to do so any contribution is welcome.
 The main issues are:
 
-* update documentation
+* add checking for compatibility with SOFT files
 * expand GEOTypes objects with useful functions for differential expression analysis
