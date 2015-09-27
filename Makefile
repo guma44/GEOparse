@@ -48,7 +48,7 @@ coverage:
 	coverage run --source GEOparse setup.py test
 	coverage report -m
 	coverage html
-	open htmlcov/index.html
+	# open htmlcov/index.html
 
 docs:
 	rm -f docs/GEOparse.rst

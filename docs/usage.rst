@@ -158,11 +158,13 @@ GSM (Sample)
 A GSM (or a Sample) contains information the conditions and preparation of a Sample. In the GEO database
 sample is assigned to unique and stable GEO accession number that is composed of  'GSM' followed by numbers eg. GSM906.
 
-In GEO Sample is represented by GEOparse.GSM object that is contains tree main attributes:
+In GEOparse Sample is represented by GEOparse.GSM object that contains tree main attributes:
  * inherited from BaseGEO :attr:`metadata`
  * :attr:`table` -- :class:`pandas.DataFrame` with the data table from SOFT file
  * :attr:`columns` -- :class:`pandas.DataFrame` that contains *description* column with the
    information about columns in the :attr:`table`
+
+See API for more information.
 
 GPL (Platform)
 --------------
@@ -171,19 +173,48 @@ A GPL (or a Platform) contains a tab-delimited table containing the array defini
 RefSeq IDs. Similarly to GSM, it is assigned to unique and stable GEO accession number that is composed of  'GPL'
 followed by numbers eg. GPL2020.
 
-In GEO Platform is represented by GEOparse.GSM object that is contains tree main attributes:
+In GEOparse Platform is represented by GEOparse.GSM object that contains tree main attributes:
  * inherited from BaseGEO :attr:`metadata`
  * :attr:`table` -- :class:`pandas.DataFrame` with the data table from SOFT file
  * :attr:`columns` -- :class:`pandas.DataFrame` that contains *description* column with the
    information about columns in the :attr:`table`
 
+See API for more information.
+
 GSE (Series)
 ------------
+
+A GSE (or a Series) is an original submitter-supplied record that summarizes whole study including samples and platforms.
+GSE is assigned to unique and stable GEO accession number that starts at GSE followed by numbers eg. GSE1563.
+
+In GEOparse Series is represented by GEOparse.GSE object that contains tree main attributes:
+ * inherited from BaseGEO :attr:`metadata`
+ * :attr:`gsms` -- :class:`dict` with all samples in this GSE as GSM objects
+ * :attr:`columns` -- :class:`dict` with all platforms in this GSE as GSM objects
+
+See API for more information.
 
 GDS (Dataset)
 -------------
 
+A GDS (or a Dataset) is a curated file that hold a summarised combination of a Series file and its samples.
+GDS is assigned to unique and stable GEO accession number that starts at GDS followed by numbers eg. GDS1563.
+
+In GEOparse Dataset is represented by GEOparse.GDS object that contains tree main attributes:
+ * inherited from BaseGEO :attr:`metadata`
+ * :attr:`table` -- :class:`pandas.DataFrame` with the data table from SOFT file
+ * :attr:`columns` -- :class:`pandas.DataFrame` that contains *description* column with the
+   information about columns in the :attr:`table` and additional information according to GDS file
+
+See API for more information.
+
 Examples
 ^^^^^^^^
 
-TODO
+.. toctree::
+    :maxdepth: 2
+    :titlesonly:
+    :glob:
+    :hidden:
+
+    Analyse_hsa-miR-124a-3p_transfection_time-course.rst
