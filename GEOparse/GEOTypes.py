@@ -2,14 +2,25 @@
 Classes that represent different GEO entities
 """
 
-from pandas import DataFrame, concat
-from sys import stderr, stdout
+import os
+import re
 import abc
 import gzip
+import json
+import subprocess
+from Bio import Entrez
+from . import utils
+from contextlib import closing
+from shutil import copyfileobj
+from sys import stderr, stdout
+from pandas import DataFrame, concat
+from urllib2 import urlopen, URLError
 
 
 class DataIncompatibilityException(Exception): pass
 class NoMetadataException(Exception): pass
+class NoSRARelationException(Exception): pass
+class NoSRAToolkitException(Exception): pass
 
 
 class BaseGEO(object):
@@ -30,6 +41,14 @@ class BaseGEO(object):
 
         self.name = name
         self.metadata = metadata
+        self.relations = {}
+        if 'relation' in self.metadata:
+            for relation in self.metadata['relation']:
+                tmp = re.split(r':\s+', relation)
+                relname = tmp[0]
+                relval = tmp[1]
+                assert relname not in self.relations, "Relation %s already exist in the dictionary" % relation
+                self.relations[relname] = relval
 
     def get_metadata_attribute(self, metaname):
         """Get the metadata attribute by the name.
@@ -277,6 +296,99 @@ class GSM(SimpleGEO):
             tmp_data.columns = [self.name]
         return tmp_data
 
+    def download_SRA(self, email, metadata_key='auto', directory='./', filetype='sra'):
+        """Download RAW data as SRA file to the sample directory created ad hoc
+        or the directory specified by the parameter. The sample has to come from
+        sequencing eg. mRNA-seq, CLIP etc.
+
+        An important parameter is a download_type. By default an SRA is accessed by FTP and
+        such file is downloaded. This does not require additional libraries. However in order
+        to produce FASTA of FASTQ files one would need to use SRA-Toolkit. Thus, it is assumed
+        that this library is already installed or it will be installed in the near future. One
+        can immediately specify the download type to fasta or fastq.
+
+        :param directory: The directory to which download the data. By default current directory is used
+        :param filetype: can be sra, fasta, or fastq - for fasta or fastq SRA-Toolkit need to be installed
+
+        """
+        # Setup the query
+        ftpaddres = "ftp://ftp-trace.ncbi.nlm.nih.gov/sra/sra-instant/reads/ByExp/sra/SRX/{range_subdir}/{record_dir}/{file_dir}/{file_dir}.sra"
+        try:
+            query = self.relations['SRA'].split("=")[-1]
+            assert 'SRX' in query, "Sample looks like it is not SRA: %s" % query
+            print "Query: %s" % query
+        except KeyError:
+            raise NoSRARelationException('No relation called SRA for %s' % self.get_accession())
+
+        # check if the e-mail is more or less not a total crap
+        Entrez.email = email
+        if not (Entrez.email is not None and '@' in email and email != '' and '.' in email):
+            raise Exception('You have to provide valid e-mail')
+
+        # retrieve IDs for given SRX
+        searchdata = Entrez.esearch(db='sra', term=query, usehistory='y', retmode='json')
+        answer = json.loads(searchdata.read())
+        ids = answer["esearchresult"]["idlist"]
+        assert len(ids) == 1, "There should be one and only one ID per SRX"
+
+        # using ID fetch the info
+        results = Entrez.efetch(db="sra", id=ids[0], rettype="runinfo", retmode="text").read()
+        df = DataFrame([i.split(',') for i in results.split('\n') if i != ''][1:], columns = [i.split(',') for i in results.split('\n') if i != ''][0])
+
+        # check it first
+        try:
+            df['download_path']
+        except KeyError as e:
+            stderr.write('KeyError: ' + str(e) + '\n')
+            stderr.write(str(results) + '\n')
+
+        # make the directory
+        directory_path = os.path.abspath(os.path.join(directory, "%s_%s_%s" % (query,
+                                                                               self.get_accession(),
+                                                                               re.sub(r'[\s\*\?\(\),\.]', '_', self.metadata['title'][0]) # the directory name cannot contain many of the signs
+                                                                               )))
+        utils.mkdir_p(os.path.abspath(directory_path))
+
+        for path in df['download_path']:
+            sra_run = path.split("/")[-1]
+            print "Analysing %s" % sra_run
+            if filetype == 'sra':
+                url = ftpaddres.format(range_subdir=query[:6],
+                                       record_dir=query,
+                                       file_dir=sra_run)
+                filepath = os.path.abspath(os.path.join(directory_path, "%s.sra" % sra_run))
+                try:
+                    if not os.path.isfile(filepath):
+                        with closing(urlopen(url)) as r:
+                            with open(filepath, mode='wb') as f:
+                                stderr.write("Downloading %s to %s\n" % (url, filepath))
+                                copyfileobj(r, f)
+                    else:
+                        stderr.write("File already exist. Skipping\n")
+                except URLError:
+                    stderr.write("Cannot find file %s" % url)
+            elif filetype == 'fastq':
+                command = "fastq-dump --outdir %s %s" % (directory_path, sra_run)
+                process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+                stderr.write("Downloading %s to %s/%s.fasta\n" % (sra_run, directory_path, sra_run))
+                pout, perr = process.communicate()
+                if "command not found" in perr:
+                    raise NoSRAToolkitException("fastq-dump command not found")
+                else:
+                    print pout
+            elif filetype == 'fasta':
+                command = "fastq-dump --fasta --outdir %s %s" % (directory_path, sra_run)
+                process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+                pout, perr = process.communicate()
+                stderr.write("Downloading %s to %s/%s.fastq\n" % (sra_run, directory_path, sra_run))
+                if "command not found" in perr:
+                    raise NoSRAToolkitException("fastq-dump command not found")
+                else:
+                    print pout
+            else:
+                raise Exception("Unknown type to download: %s. Use sra, fastq or fasta." % download_type)
+
+
 
 class GPL(SimpleGEO):
 
@@ -480,6 +592,25 @@ class GSE(BaseGEO):
                                                   right_on=gpl_on).set_index(gsm_on)
         del ndf[gpl_on]
         return ndf
+
+    def download_SRA(self,  email, directory='series', filetype='sra'):
+        """Download SRA files for each GSM in series
+
+        :param email: e-mail that will be provided to the Entrez
+        :param directory: directory to save the data (defaults to the 'series' which saves the data to the
+                          directory with the name of the series + '_SRA' ending)
+        :param filetype: can be sra, fasta, or fastq - for fasta or fastq SRA-Toolkit need to be installed
+
+        """
+        if directory == 'series':
+            dirpath = os.path.abspath(self.get_accession() + "_SRA")
+            mkdir_p(dirpath)
+        else:
+            dirpath = os.path.abspath(directory)
+            mkdir_p(dirpath)
+        for gsmname, gsm in self.gsms.iteritems():
+            stderr.write("Downloading %s files for %s series\n" % (filetype, gsmname))
+            gsm.download_SRA(email=email, filetype=filetype, directory=dirpath)
 
     def _get_object_as_soft(self):
         """
