@@ -3,6 +3,11 @@
 History
 -------
 
+0.1.5 (2016-02-03)
+---------------------
+
+* Added functions to download supplementary files including raw files from SRA
+
 0.1.4 (2015-09-27)
 ---------------------
 
