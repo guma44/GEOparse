@@ -7,11 +7,14 @@ import re
 import abc
 import gzip
 import json
+import time
 import subprocess
 from Bio import Entrez
 from . import utils
 from sys import stderr, stdout
 from pandas import DataFrame, concat
+from urllib2 import HTTPError
+
 
 
 class DataIncompatibilityException(Exception): pass
@@ -355,7 +358,21 @@ class GSM(SimpleGEO):
         assert len(ids) == 1, "There should be one and only one ID per SRX"
 
         # using ID fetch the info
-        results = Entrez.efetch(db="sra", id=ids[0], rettype="runinfo", retmode="text").read()
+        number_of_trials = 10
+        wait_time = 30
+        for tiral in range(number_of_trials):
+            try:
+                results = Entrez.efetch(db="sra", id=ids[0], rettype="runinfo", retmode="text").read()
+                break
+            except HTTPError as httperr:
+                if "502" in str(httperr):
+                    sys.stderr.write("Error: %s, trial %i out of %i, waiting for %i seconds." % (str(httperr),
+                                                                                                 trial,
+                                                                                                 number_of_trials,
+                                                                                                 wait_time))
+                    time.sleep(wait_time)
+                else:
+                    raise httperr
         df = DataFrame([i.split(',') for i in results.split('\n') if i != ''][1:], columns = [i.split(',') for i in results.split('\n') if i != ''][0])
 
         # check it first
@@ -382,19 +399,19 @@ class GSM(SimpleGEO):
                 filepath = os.path.abspath(os.path.join(directory_path, "%s.sra" % sra_run))
                 utils.download_from_url(url, filepath)
             elif filetype == 'fastq':
-                command = "fastq-dump --outdir %s %s" % (directory_path, sra_run)
+                command = "fastq-dump --gzip --outdir %s %s" % (directory_path, sra_run)
                 process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-                stderr.write("Downloading %s to %s/%s.fastq\n" % (sra_run, directory_path, sra_run))
+                stderr.write("Downloading %s to %s/%s.fastq.gz\n" % (sra_run, directory_path, sra_run))
                 pout, perr = process.communicate()
                 if "command not found" in perr:
                     raise NoSRAToolkitException("fastq-dump command not found")
                 else:
                     print pout
             elif filetype == 'fasta':
-                command = "fastq-dump --fasta --outdir %s %s" % (directory_path, sra_run)
+                command = "fastq-dump --gzip --fasta --outdir %s %s" % (directory_path, sra_run)
                 process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
                 pout, perr = process.communicate()
-                stderr.write("Downloading %s to %s/%s.fasta\n" % (sra_run, directory_path, sra_run))
+                stderr.write("Downloading %s to %s/%s.fa.gz\n" % (sra_run, directory_path, sra_run))
                 if "command not found" in perr:
                     raise NoSRAToolkitException("fastq-dump command not found")
                 else:
@@ -625,13 +642,14 @@ class GSE(BaseGEO):
         for gsmname, gsm in self.gsms.iteritems():
             gsm.download_supplementary_files(email=email, download_sra=download_sra, sra_filetype=sra_filetype, directory=dirpath)
 
-    def download_SRA(self,  email, directory='series', filetype='sra'):
+    def download_SRA(self,  email, directory='series', filetype='sra', filterby=None):
         """Download SRA files for each GSM in series
 
         :param email: e-mail that will be provided to the Entrez
         :param directory: directory to save the data (defaults to the 'series' which saves the data to the
                           directory with the name of the series + '_SRA' ending)
         :param filetype: can be sra, fasta, or fastq - for fasta or fastq SRA-Toolkit need to be installed
+        :param filterby: filter GSM objects, argument is a function that operates on GSM object  and return bool eg. lambda x: "brain" not in x.name
 
         """
         if directory == 'series':
@@ -640,8 +658,13 @@ class GSE(BaseGEO):
         else:
             dirpath = os.path.abspath(directory)
             utils.mkdir_p(dirpath)
-        for gsmname, gsm in self.gsms.iteritems():
-            stderr.write("Downloading %s files for %s series\n" % (filetype, gsmname))
+        if filterby is not None:
+            gsms_to_use = [gsm for gsm in self.gsms.values() if filterby(gsm)]
+        else:
+            gsms_to_use = self.gsms.values()
+
+        for gsm in gsms_to_use:
+            stderr.write("Downloading %s files for %s series\n" % (filetype, gsm.name))
             gsm.download_SRA(email=email, filetype=filetype, directory=dirpath)
 
     def _get_object_as_soft(self):
