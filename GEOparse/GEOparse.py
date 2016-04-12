@@ -241,7 +241,7 @@ def parse_GDS_columns(lines, subsets):
             elif subset.get_type() == "individual":
                 subset_ids["individual"][expid] = subset.metadata["description"][0]
             else:
-                stderr("Unknown subset type: %s for subset %s\n" % (subset.get_type(), subsetname))
+                stderr.write("Unknown subset type: %s for subset %s\n" % (subset.get_type(), subsetname))
 
     return df.join(DataFrame(subset_ids))
 
