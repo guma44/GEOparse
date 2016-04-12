@@ -16,7 +16,7 @@ with open('HISTORY.rst') as history_file:
 
 requirements = [
                 'numpy>=1.7',
-                'pandas>=0.15',
+                'pandas>=0.17',
                 ]
 
 test_requirements = [
@@ -25,7 +25,7 @@ test_requirements = [
 
 setup(
     name='GEOparse',
-    version='0.1.5',
+    version='0.1.6',
     description="Python library to access Gene Expression Omnibus Database (GEO)",
     long_description=readme + '\n\n' + history,
     author="Rafal Gumienny",

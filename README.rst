@@ -18,6 +18,7 @@ Features
 --------
 
 * Download GEO series, datasets etc. as SOFT files
+* Download supplementary files for GEO series to use them locally
 * Load GEO SOFT as easy to use and manipulate objects
 * Prepare your data for GEO upload
 
@@ -36,3 +37,4 @@ The main issues are:
 
 * add checking for compatibility with SOFT files
 * expand GEOTypes objects with useful functions for differential expression analysis
+* share your idea
