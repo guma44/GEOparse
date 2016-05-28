@@ -407,19 +407,19 @@ class GSM(SimpleGEO):
                     filepath = os.path.abspath(os.path.join(directory_path, "%s.sra" % sra_run))
                     utils.download_from_url(url, filepath)
                 elif filetype == 'fastq':
-                    command = "fastq-dump --gzip --outdir %s %s" % (directory_path, sra_run)
+                    command = "fastq-dump --split-files --gzip --outdir %s %s" % (directory_path, sra_run)
                     process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-                    stderr.write("Downloading %s to %s/%s.fastq.gz\n" % (sra_run, directory_path, sra_run))
+                    stderr.write("Downloading %s to %s/%s_*.fastq.gz\n" % (sra_run, directory_path, sra_run))
                     pout, perr = process.communicate()
                     if "command not found" in perr:
                         raise NoSRAToolkitException("fastq-dump command not found")
                     else:
                         print pout
                 elif filetype == 'fasta':
-                    command = "fastq-dump --gzip --fasta --outdir %s %s" % (directory_path, sra_run)
+                    command = "fastq-dump --split-files --gzip --fasta --outdir %s %s" % (directory_path, sra_run)
                     process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
                     pout, perr = process.communicate()
-                    stderr.write("Downloading %s to %s/%s.fa.gz\n" % (sra_run, directory_path, sra_run))
+                    stderr.write("Downloading %s to %s/%s_*.fasta.gz\n" % (sra_run, directory_path, sra_run))
                     if "command not found" in perr:
                         raise NoSRAToolkitException("fastq-dump command not found")
                     else:
