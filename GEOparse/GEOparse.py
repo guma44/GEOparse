@@ -27,7 +27,7 @@ class NoEntriesException(Exception):
     pass
 
 
-def get_GEO(geo=None, filepath=None, destdir="./", how='full', annotate_gpl=False, geotype=None, include_data=False):
+def get_GEO(geo=None, filepath=None, destdir="./", how='full', annotate_gpl=False, geotype=None, include_data=False, silent=False):
     """Get the GEO entry directly from the GEO database or read it from SOFT file.
 
     :param geo: str -- GEO database identifier
@@ -35,6 +35,7 @@ def get_GEO(geo=None, filepath=None, destdir="./", how='full', annotate_gpl=Fals
     :param destdir: str -- directory to download data
     :param how: str -- GSM download mode: full ...
     :param include_data: bool -- full download of GPLs including series and samples
+    :param silent: bool -- don't print info
     :returns: GEOType object -- object according to specified GEO type
 
     """
@@ -55,7 +56,7 @@ def get_GEO(geo=None, filepath=None, destdir="./", how='full', annotate_gpl=Fals
     elif geotype.upper() == "GSE":
         return parse_GSE(filepath)
     elif geotype.upper() == 'GPL':
-        return parse_GPL(filepath)
+        return parse_GPL(filepath, silent=silent)
     elif geotype.upper() == 'GDS':
         return parse_GDS(filepath)
     else:
@@ -320,11 +321,12 @@ def parse_GSM(filepath, entry_name=None):
     return gsm
 
 
-def parse_GPL(filepath, entry_name=None):
+def parse_GPL(filepath, entry_name=None, silent=False):
     """Parse GPL entry from SOFT file
 
     :param filepath: str or iterable -- path to file with 1 GPL entry or list of lines representing
                                     GPL from GSE file
+    :param silent: bool -- don't print info
     :return: GPL object
 
     """
@@ -346,7 +348,8 @@ def parse_GPL(filepath, entry_name=None):
             for is_new_entry, group in groupper:
                 if is_new_entry:
                     entry_type, entry_name = __parse_entry(group.next())
-                    stderr.write(" - %s : %s\n" % (entry_type.upper(), entry_name))
+                    if not silent:
+                        stderr.write(" - %s : %s\n" % (entry_type.upper(), entry_name))
                     if entry_type == "SERIES":
                         is_data, data_group = groupper.next()
                         gse_metadata = parse_metadata(data_group)
