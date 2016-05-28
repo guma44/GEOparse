@@ -4,6 +4,7 @@ from sys import stderr, stdout
 from contextlib import closing
 from shutil import copyfileobj
 from urllib2 import urlopen, URLError
+import subprocess as sp
 
 def mkdir_p(path_to_dir):
     try:
@@ -14,6 +15,27 @@ def mkdir_p(path_to_dir):
         else:
             raise e
 
+def download_aspera(url, dest_path, user="anonftp", ftp="ftp-trace.ncbi.nlm.nih.gov"):
+    aspera_home = os.environ.get("ASPERA_HOME", None)
+    if not aspera_home:
+        raise ValueError("environment variable $ASPERA_HOME not set")
+    if not os.path.exists(aspera_home):
+        raise ValueError("$ASPERA_HOME directory {} does not exist".format(aspera_home))
+    ascp = os.path.join(aspera_home, "connect/bin/ascp")
+    key = os.path.join(aspera_home, "connect/etc/asperaweb_id_dsa.openssh")
+    if not os.path.exists(ascp):
+        raise ValueError("could not find ascp binary")
+    if not os.path.exists(key):
+        raise ValueError("could not find openssh key")
+
+    if url.startswith("ftp://"):
+        url = url.replace("ftp://", "")
+    url = url.replace(ftp, "")
+
+    cmd = "{} -i {} -k1 -T -l400m {}@{}:{} {}".format(
+            ascp, key, user, ftp, url, dest_path)
+    p = sp.Popen(cmd, shell=True, stdout=sp.PIPE, stderr=sp.PIPE)
+    stdout, stderr = p.communicate()
 
 def download_from_url(url, destination_path, force=False):
     """Download file from remote server
