@@ -5,6 +5,7 @@ Classes that represent different GEO entities
 import os
 import re
 import abc
+import sys
 import gzip
 import json
 import time
@@ -47,8 +48,15 @@ class BaseGEO(object):
                 tmp = re.split(r':\s+', relation)
                 relname = tmp[0]
                 relval = tmp[1]
-                assert relname not in self.relations, "Relation %s already exist in the dictionary" % relation
-                self.relations[relname] = relval
+                
+                self.relations.get(relname, []).append(relval)
+                #assert relname not in self.relations, "Relation %s already exist in the dictionary" % relation
+                #if relname in self.relations:
+                #    sys.stderr.write("Relation %s already exists\n" % relname)
+                #    sys.stderr.write("Value in dictionary: %s\n" % self.relations[relname])
+                #    sys.stderr.write("To be replaced with: %s\n" % relval)
+                
+                #self.relations[relname] = relval
 
     def get_metadata_attribute(self, metaname):
         """Get the metadata attribute by the name.
@@ -426,7 +434,39 @@ class GPL(SimpleGEO):
     """Class that represents platform from GEO database"""
 
     geotype = "PLATFORM"
+    
+    def __init__(self, name, metadata, table=None, columns=None, gses=None, gsms=None,  database=None):
+        """Initialize GPL
 
+        :param name: str -- name of the object
+        :param metadata: dict -- metadata information
+        :param gses: list -- list of GSE objects
+        :param gsms: list -- list of GSM objects
+        :param database: GEODatabase -- Database from SOFT file
+        """
+
+        gses = {} if gses is None else gses
+        if not isinstance(gses, dict):
+            raise ValueError("GSEs should be a dictionary not a %s" % str(type(gses)))
+        gsms = {} if gsms is None else gsms
+        if not isinstance(gsms, dict):
+            raise ValueError("GSMs should be a dictionary not a %s" % str(type(gsms)))
+
+        for gsm_name, gsm in gsms.iteritems():
+            assert isinstance(gsm, GSM), "All GSMs should be of type GSM"
+        for gse_name, gse in gses.iteritems():
+            assert isinstance(gse, GSE), "All GSEs should be of type GSE"
+        if database is not None:
+            if not isinstance(database, GEODatabase):
+                raise ValueError("Database should be a GEODatabase not a %s" % str(type(database)))
+        
+        table = DataFrame() if table is None else table
+        columns = DataFrame() if columns is None else columns
+        SimpleGEO.__init__(self, name=name, metadata=metadata, table=table, columns=columns)
+
+        self.gses = gses
+        self.gsms = gsms
+        self.database = database
 
 class GDSSubset(BaseGEO):
 
@@ -513,7 +553,7 @@ class GSE(BaseGEO):
 
     geotype = "SERIES"
 
-    def __init__(self, name, metadata, gpls, gsms, database=None):
+    def __init__(self, name, metadata, gpls=None, gsms=None, database=None):
         """Initialize GSE
 
         :param name: str -- name of the object
@@ -523,8 +563,10 @@ class GSE(BaseGEO):
         :param database: GEODatabase -- Database from SOFT file
         """
 
+        gpls = {} if gpls is None else gpls
         if not isinstance(gpls, dict):
             raise ValueError("GPLs should be a dictionary not a %s" % str(type(gpls)))
+        gsms = {} if gsms is None else gsms
         if not isinstance(gsms, dict):
             raise ValueError("GSMs should be a dictionary not a %s" % str(type(gsms)))
 
@@ -684,7 +726,7 @@ class GSE(BaseGEO):
         return "\n".join(soft)
 
     def __str__(self):
-        return str("<%s: %s - %i SERIES, %i PLATFORM(s)>" % (self.geotype, self.name, len(self.gsms), len(self.gpls)))
+        return str("<%s: %s - %i SAMPLES, %i PLATFORM(s)>" % (self.geotype, self.name, len(self.gsms), len(self.gpls)))
 
     def __repr__(self):
-        return str("<%s: %s - %i SERIES, %i PLATFORM(s)>" % (self.geotype, self.name, len(self.gsms), len(self.gpls)))
+        return str("<%s: %s - %i SAMPLES, %i PLATFORM(s)>" % (self.geotype, self.name, len(self.gsms), len(self.gpls)))
