@@ -49,14 +49,10 @@ class BaseGEO(object):
                 relname = tmp[0]
                 relval = tmp[1]
                 
-                self.relations.get(relname, []).append(relval)
-                #assert relname not in self.relations, "Relation %s already exist in the dictionary" % relation
-                #if relname in self.relations:
-                #    sys.stderr.write("Relation %s already exists\n" % relname)
-                #    sys.stderr.write("Value in dictionary: %s\n" % self.relations[relname])
-                #    sys.stderr.write("To be replaced with: %s\n" % relval)
-                
-                #self.relations[relname] = relval
+                if relname in self.relations:
+                    self.relations[relname].append(relval)
+                else:
+                    self.relations[relname] = [relval]
 
     def get_metadata_attribute(self, metaname):
         """Get the metadata attribute by the name.
@@ -347,10 +343,13 @@ class GSM(SimpleGEO):
         """
         # Setup the query
         ftpaddres = "ftp://ftp-trace.ncbi.nlm.nih.gov/sra/sra-instant/reads/ByExp/sra/SRX/{range_subdir}/{record_dir}/{file_dir}/{file_dir}.sra"
+        queries = []
         try:
-            query = self.relations['SRA'].split("=")[-1]
-            assert 'SRX' in query, "Sample looks like it is not SRA: %s" % query
-            print "Query: %s" % query
+            for sra in self.relations['SRA']: 
+                query = sra.split("=")[-1]
+                assert 'SRX' in query, "Sample looks like it is not SRA: %s" % query
+                print "Query: %s" % query
+                queries.append(query)
         except KeyError:
             raise NoSRARelationException('No relation called SRA for %s' % self.get_accession())
 
@@ -359,74 +358,75 @@ class GSM(SimpleGEO):
         if not (Entrez.email is not None and '@' in email and email != '' and '.' in email):
             raise Exception('You have to provide valid e-mail')
 
-        # retrieve IDs for given SRX
-        searchdata = Entrez.esearch(db='sra', term=query, usehistory='y', retmode='json')
-        answer = json.loads(searchdata.read())
-        ids = answer["esearchresult"]["idlist"]
-        assert len(ids) == 1, "There should be one and only one ID per SRX"
-
-        # using ID fetch the info
-        number_of_trials = 10
-        wait_time = 30
-        for tiral in range(number_of_trials):
+        for query in queries:
+            # retrieve IDs for given SRX
+            searchdata = Entrez.esearch(db='sra', term=query, usehistory='y', retmode='json')
+            answer = json.loads(searchdata.read())
+            ids = answer["esearchresult"]["idlist"]
+            assert len(ids) == 1, "There should be one and only one ID per SRX"
+    
+            # using ID fetch the info
+            number_of_trials = 10
+            wait_time = 30
+            for tiral in range(number_of_trials):
+                try:
+                    results = Entrez.efetch(db="sra", id=ids[0], rettype="runinfo", retmode="text").read()
+                    break
+                except HTTPError as httperr:
+                    if "502" in str(httperr):
+                        sys.stderr.write("Error: %s, trial %i out of %i, waiting for %i seconds." % (str(httperr),
+                                                                                                     trial,
+                                                                                                     number_of_trials,
+                                                                                                     wait_time))
+                        time.sleep(wait_time)
+                    else:
+                        raise httperr
+            df = DataFrame([i.split(',') for i in results.split('\n') if i != ''][1:], columns = [i.split(',') for i in results.split('\n') if i != ''][0])
+    
+            # check it first
             try:
-                results = Entrez.efetch(db="sra", id=ids[0], rettype="runinfo", retmode="text").read()
-                break
-            except HTTPError as httperr:
-                if "502" in str(httperr):
-                    sys.stderr.write("Error: %s, trial %i out of %i, waiting for %i seconds." % (str(httperr),
-                                                                                                 trial,
-                                                                                                 number_of_trials,
-                                                                                                 wait_time))
-                    time.sleep(wait_time)
+                df['download_path']
+            except KeyError as e:
+                stderr.write('KeyError: ' + str(e) + '\n')
+                stderr.write(str(results) + '\n')
+    
+            # make the directory
+            directory_path = os.path.abspath(os.path.join(directory, "%s_%s_%s" % ('Supp',
+                                                                                   self.get_accession(),
+                                                                                   re.sub(r'[\s\*\?\(\),\.]', '_', self.metadata['title'][0]) # the directory name cannot contain many of the signs
+                                                                                   )))
+            utils.mkdir_p(os.path.abspath(directory_path))
+    
+            for path in df['download_path']:
+                sra_run = path.split("/")[-1]
+                print "Analysing %s" % sra_run
+                if filetype == 'sra':
+                    url = ftpaddres.format(range_subdir=query[:6],
+                                           record_dir=query,
+                                           file_dir=sra_run)
+                    filepath = os.path.abspath(os.path.join(directory_path, "%s.sra" % sra_run))
+                    utils.download_from_url(url, filepath)
+                elif filetype == 'fastq':
+                    command = "fastq-dump --gzip --outdir %s %s" % (directory_path, sra_run)
+                    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+                    stderr.write("Downloading %s to %s/%s.fastq.gz\n" % (sra_run, directory_path, sra_run))
+                    pout, perr = process.communicate()
+                    if "command not found" in perr:
+                        raise NoSRAToolkitException("fastq-dump command not found")
+                    else:
+                        print pout
+                elif filetype == 'fasta':
+                    command = "fastq-dump --gzip --fasta --outdir %s %s" % (directory_path, sra_run)
+                    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+                    pout, perr = process.communicate()
+                    stderr.write("Downloading %s to %s/%s.fa.gz\n" % (sra_run, directory_path, sra_run))
+                    if "command not found" in perr:
+                        raise NoSRAToolkitException("fastq-dump command not found")
+                    else:
+                        print pout
                 else:
-                    raise httperr
-        df = DataFrame([i.split(',') for i in results.split('\n') if i != ''][1:], columns = [i.split(',') for i in results.split('\n') if i != ''][0])
-
-        # check it first
-        try:
-            df['download_path']
-        except KeyError as e:
-            stderr.write('KeyError: ' + str(e) + '\n')
-            stderr.write(str(results) + '\n')
-
-        # make the directory
-        directory_path = os.path.abspath(os.path.join(directory, "%s_%s_%s" % ('Supp',
-                                                                               self.get_accession(),
-                                                                               re.sub(r'[\s\*\?\(\),\.]', '_', self.metadata['title'][0]) # the directory name cannot contain many of the signs
-                                                                               )))
-        utils.mkdir_p(os.path.abspath(directory_path))
-
-        for path in df['download_path']:
-            sra_run = path.split("/")[-1]
-            print "Analysing %s" % sra_run
-            if filetype == 'sra':
-                url = ftpaddres.format(range_subdir=query[:6],
-                                       record_dir=query,
-                                       file_dir=sra_run)
-                filepath = os.path.abspath(os.path.join(directory_path, "%s.sra" % sra_run))
-                utils.download_from_url(url, filepath)
-            elif filetype == 'fastq':
-                command = "fastq-dump --gzip --outdir %s %s" % (directory_path, sra_run)
-                process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-                stderr.write("Downloading %s to %s/%s.fastq.gz\n" % (sra_run, directory_path, sra_run))
-                pout, perr = process.communicate()
-                if "command not found" in perr:
-                    raise NoSRAToolkitException("fastq-dump command not found")
-                else:
-                    print pout
-            elif filetype == 'fasta':
-                command = "fastq-dump --gzip --fasta --outdir %s %s" % (directory_path, sra_run)
-                process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-                pout, perr = process.communicate()
-                stderr.write("Downloading %s to %s/%s.fa.gz\n" % (sra_run, directory_path, sra_run))
-                if "command not found" in perr:
-                    raise NoSRAToolkitException("fastq-dump command not found")
-                else:
-                    print pout
-            else:
-                raise Exception("Unknown type to download: %s. Use sra, fastq or fasta." % download_type)
-
+                    raise Exception("Unknown type to download: %s. Use sra, fastq or fasta." % download_type)
+    
 
 
 class GPL(SimpleGEO):
