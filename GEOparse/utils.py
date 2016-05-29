@@ -1,4 +1,5 @@
 import os
+import sys
 from errno import EEXIST
 from sys import stderr, stdout
 from contextlib import closing
@@ -16,6 +17,7 @@ def mkdir_p(path_to_dir):
             raise e
 
 def download_aspera(url, dest_path, user="anonftp", ftp="ftp-trace.ncbi.nlm.nih.gov"):
+    sys.stderr.write("Downloading {} using aspera\n".format(url))
     aspera_home = os.environ.get("ASPERA_HOME", None)
     if not aspera_home:
         raise ValueError("environment variable $ASPERA_HOME not set")
@@ -37,7 +39,7 @@ def download_aspera(url, dest_path, user="anonftp", ftp="ftp-trace.ncbi.nlm.nih.
     p = sp.Popen(cmd, shell=True, stdout=sp.PIPE, stderr=sp.PIPE)
     stdout, stderr = p.communicate()
 
-def download_from_url(url, destination_path, force=False):
+def download_from_url(url, destination_path, force=False, aspera=False):
     """Download file from remote server
 
     :param url: path to the file on remote server (including file name)
@@ -55,9 +57,12 @@ def download_from_url(url, destination_path, force=False):
             else:
                 stderr.write("File already exist. Use force=True if you would like to overwrite it.\n")
         else:
-            with closing(urlopen(url)) as r:
-                with open(destination_path, mode='wb') as f:
-                    stderr.write("Downloading %s to %s\n" % (url, destination_path))
-                    copyfileobj(r, f)
+            if aspera:
+                download_aspera(url, destination_path)
+            else:
+                with closing(urlopen(url)) as r:
+                    with open(destination_path, mode='wb') as f:
+                        stderr.write("Downloading %s to %s\n" % (url, destination_path))
+                        copyfileobj(r, f)
     except URLError:
         stderr.write("Cannot find file %s" % url)

@@ -326,7 +326,7 @@ class GSM(SimpleGEO):
 
 
 
-    def download_SRA(self, email, metadata_key='auto', directory='./', filetype='sra'):
+    def download_SRA(self, email, metadata_key='auto', directory='./', filetype='sra', aspera=False, keep_sra=False):
         """Download RAW data as SRA file to the sample directory created ad hoc
         or the directory specified by the parameter. The sample has to come from
         sequencing eg. mRNA-seq, CLIP etc.
@@ -341,6 +341,11 @@ class GSM(SimpleGEO):
         :param filetype: can be sra, fasta, or fastq - for fasta or fastq SRA-Toolkit need to be installed
 
         """
+        # Check download filetype
+        filetype = filetype.lower()
+        if filetype not in ["sra", "fastq", "fasta"]:
+            raise Exception("Unknown type to downlod: %s. Use sra, fastq or fasta." % filetype)
+        
         # Setup the query
         ftpaddres = "ftp://ftp-trace.ncbi.nlm.nih.gov/sra/sra-instant/reads/ByExp/sra/SRX/{range_subdir}/{record_dir}/{file_dir}/{file_dir}.sra"
         queries = []
@@ -400,34 +405,30 @@ class GSM(SimpleGEO):
             for path in df['download_path']:
                 sra_run = path.split("/")[-1]
                 print "Analysing %s" % sra_run
-                if filetype == 'sra':
-                    url = ftpaddres.format(range_subdir=query[:6],
+                url = ftpaddres.format(range_subdir=query[:6],
                                            record_dir=query,
                                            file_dir=sra_run)
-                    filepath = os.path.abspath(os.path.join(directory_path, "%s.sra" % sra_run))
-                    utils.download_from_url(url, filepath)
-                elif filetype == 'fastq':
-                    command = "fastq-dump --split-files --gzip --outdir %s %s" % (directory_path, sra_run)
-                    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-                    stderr.write("Downloading %s to %s/%s_*.fastq.gz\n" % (sra_run, directory_path, sra_run))
-                    pout, perr = process.communicate()
-                    if "command not found" in perr:
-                        raise NoSRAToolkitException("fastq-dump command not found")
-                    else:
-                        print pout
-                elif filetype == 'fasta':
-                    command = "fastq-dump --split-files --gzip --fasta --outdir %s %s" % (directory_path, sra_run)
-                    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-                    pout, perr = process.communicate()
-                    stderr.write("Downloading %s to %s/%s_*.fasta.gz\n" % (sra_run, directory_path, sra_run))
-                    if "command not found" in perr:
-                        raise NoSRAToolkitException("fastq-dump command not found")
-                    else:
-                        print pout
-                else:
-                    raise Exception("Unknown type to download: %s. Use sra, fastq or fasta." % download_type)
-    
+                filepath = os.path.abspath(os.path.join(directory_path, "%s.sra" % sra_run))
+                utils.download_from_url(url, filepath, aspera=aspera)
+                
+                if filetype in ["fasta", "fastq"]: 
+                    ftype = ""
+                    if filetype == "fasta":
+                        ftype = " --fasta "
+                    cmd = "fastq-dump --split-files --gzip %s --outdir %s %s" 
+                    cmd = cmd % (ftype, directory_path, filepath)
 
+                    process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+                    stderr.write("Converting to %s/%s_*.%s.gz\n" % (
+                        directory_path, sra_run, filetype))
+                    pout, perr = process.communicate()
+                    if "command not found" in perr:
+                        raise NoSRAToolkitException("fastq-dump command not found")
+                    else:
+                        print pout
+                        if not keep_sra:
+                            # Delete sra file
+                            os.unlink(filepath)
 
 class GPL(SimpleGEO):
 
