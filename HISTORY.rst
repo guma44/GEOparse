@@ -7,6 +7,8 @@ History
 ---------------------
 
 Thanks to Simon van Heeringen:
+
+
 * bugfix in datasets with multiple associated relations
 * --split-files to fastq-dump to support paired-end experiments by default
 * parse a GPL that also contains series and sample information
