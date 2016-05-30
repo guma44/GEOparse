@@ -3,6 +3,17 @@
 History
 -------
 
+0.1.7 (2016-05-30)
+---------------------
+
+Thanks to Simon van Heeringen:
+* bugfix in datasets with multiple associated relations
+* --split-files to fastq-dump to support paired-end experiments by default
+* parse a GPL that also contains series and sample information
+* gsm2fastq command to make download easier
+* initial Aspera download support
+
+
 0.1.6 (2016-04-12)
 ---------------------
 

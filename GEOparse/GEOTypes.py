@@ -337,8 +337,11 @@ class GSM(SimpleGEO):
         that this library is already installed or it will be installed in the near future. One
         can immediately specify the download type to fasta or fastq.
 
+        :param email: an email (any) - required by NCBI for access
         :param directory: The directory to which download the data. By default current directory is used
         :param filetype: can be sra, fasta, or fastq - for fasta or fastq SRA-Toolkit need to be installed
+        :param aspera: bool - use Aspera to download samples, defaults to False
+        :param keep_sra: bool - keep SRA files after download, defaults to False
 
         """
         # Check download filetype
@@ -350,7 +353,7 @@ class GSM(SimpleGEO):
         ftpaddres = "ftp://ftp-trace.ncbi.nlm.nih.gov/sra/sra-instant/reads/ByExp/sra/SRX/{range_subdir}/{record_dir}/{file_dir}/{file_dir}.sra"
         queries = []
         try:
-            for sra in self.relations['SRA']: 
+            for sra in self.relations['SRA']:
                 query = sra.split("=")[-1]
                 assert 'SRX' in query, "Sample looks like it is not SRA: %s" % query
                 print "Query: %s" % query
