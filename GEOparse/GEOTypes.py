@@ -5,6 +5,7 @@ Classes that represent different GEO entities
 import os
 import re
 import abc
+import sys
 import gzip
 import json
 import time
@@ -47,8 +48,11 @@ class BaseGEO(object):
                 tmp = re.split(r':\s+', relation)
                 relname = tmp[0]
                 relval = tmp[1]
-                assert relname not in self.relations, "Relation %s already exist in the dictionary" % relation
-                self.relations[relname] = relval
+                
+                if relname in self.relations:
+                    self.relations[relname].append(relval)
+                else:
+                    self.relations[relname] = [relval]
 
     def get_metadata_attribute(self, metaname):
         """Get the metadata attribute by the name.
@@ -322,7 +326,7 @@ class GSM(SimpleGEO):
 
 
 
-    def download_SRA(self, email, metadata_key='auto', directory='./', filetype='sra'):
+    def download_SRA(self, email, metadata_key='auto', directory='./', filetype='sra', aspera=False, keep_sra=False):
         """Download RAW data as SRA file to the sample directory created ad hoc
         or the directory specified by the parameter. The sample has to come from
         sequencing eg. mRNA-seq, CLIP etc.
@@ -337,12 +341,20 @@ class GSM(SimpleGEO):
         :param filetype: can be sra, fasta, or fastq - for fasta or fastq SRA-Toolkit need to be installed
 
         """
+        # Check download filetype
+        filetype = filetype.lower()
+        if filetype not in ["sra", "fastq", "fasta"]:
+            raise Exception("Unknown type to downlod: %s. Use sra, fastq or fasta." % filetype)
+        
         # Setup the query
         ftpaddres = "ftp://ftp-trace.ncbi.nlm.nih.gov/sra/sra-instant/reads/ByExp/sra/SRX/{range_subdir}/{record_dir}/{file_dir}/{file_dir}.sra"
+        queries = []
         try:
-            query = self.relations['SRA'].split("=")[-1]
-            assert 'SRX' in query, "Sample looks like it is not SRA: %s" % query
-            print "Query: %s" % query
+            for sra in self.relations['SRA']: 
+                query = sra.split("=")[-1]
+                assert 'SRX' in query, "Sample looks like it is not SRA: %s" % query
+                print "Query: %s" % query
+                queries.append(query)
         except KeyError:
             raise NoSRARelationException('No relation called SRA for %s' % self.get_accession())
 
@@ -351,82 +363,111 @@ class GSM(SimpleGEO):
         if not (Entrez.email is not None and '@' in email and email != '' and '.' in email):
             raise Exception('You have to provide valid e-mail')
 
-        # retrieve IDs for given SRX
-        searchdata = Entrez.esearch(db='sra', term=query, usehistory='y', retmode='json')
-        answer = json.loads(searchdata.read())
-        ids = answer["esearchresult"]["idlist"]
-        assert len(ids) == 1, "There should be one and only one ID per SRX"
-
-        # using ID fetch the info
-        number_of_trials = 10
-        wait_time = 30
-        for tiral in range(number_of_trials):
+        for query in queries:
+            # retrieve IDs for given SRX
+            searchdata = Entrez.esearch(db='sra', term=query, usehistory='y', retmode='json')
+            answer = json.loads(searchdata.read())
+            ids = answer["esearchresult"]["idlist"]
+            assert len(ids) == 1, "There should be one and only one ID per SRX"
+    
+            # using ID fetch the info
+            number_of_trials = 10
+            wait_time = 30
+            for tiral in range(number_of_trials):
+                try:
+                    results = Entrez.efetch(db="sra", id=ids[0], rettype="runinfo", retmode="text").read()
+                    break
+                except HTTPError as httperr:
+                    if "502" in str(httperr):
+                        sys.stderr.write("Error: %s, trial %i out of %i, waiting for %i seconds." % (str(httperr),
+                                                                                                     trial,
+                                                                                                     number_of_trials,
+                                                                                                     wait_time))
+                        time.sleep(wait_time)
+                    else:
+                        raise httperr
+            df = DataFrame([i.split(',') for i in results.split('\n') if i != ''][1:], columns = [i.split(',') for i in results.split('\n') if i != ''][0])
+    
+            # check it first
             try:
-                results = Entrez.efetch(db="sra", id=ids[0], rettype="runinfo", retmode="text").read()
-                break
-            except HTTPError as httperr:
-                if "502" in str(httperr):
-                    sys.stderr.write("Error: %s, trial %i out of %i, waiting for %i seconds." % (str(httperr),
-                                                                                                 trial,
-                                                                                                 number_of_trials,
-                                                                                                 wait_time))
-                    time.sleep(wait_time)
-                else:
-                    raise httperr
-        df = DataFrame([i.split(',') for i in results.split('\n') if i != ''][1:], columns = [i.split(',') for i in results.split('\n') if i != ''][0])
-
-        # check it first
-        try:
-            df['download_path']
-        except KeyError as e:
-            stderr.write('KeyError: ' + str(e) + '\n')
-            stderr.write(str(results) + '\n')
-
-        # make the directory
-        directory_path = os.path.abspath(os.path.join(directory, "%s_%s_%s" % ('Supp',
-                                                                               self.get_accession(),
-                                                                               re.sub(r'[\s\*\?\(\),\.]', '_', self.metadata['title'][0]) # the directory name cannot contain many of the signs
-                                                                               )))
-        utils.mkdir_p(os.path.abspath(directory_path))
-
-        for path in df['download_path']:
-            sra_run = path.split("/")[-1]
-            print "Analysing %s" % sra_run
-            if filetype == 'sra':
+                df['download_path']
+            except KeyError as e:
+                stderr.write('KeyError: ' + str(e) + '\n')
+                stderr.write(str(results) + '\n')
+    
+            # make the directory
+            directory_path = os.path.abspath(os.path.join(directory, "%s_%s_%s" % ('Supp',
+                                                                                   self.get_accession(),
+                                                                                   re.sub(r'[\s\*\?\(\),\.]', '_', self.metadata['title'][0]) # the directory name cannot contain many of the signs
+                                                                                   )))
+            utils.mkdir_p(os.path.abspath(directory_path))
+    
+            for path in df['download_path']:
+                sra_run = path.split("/")[-1]
+                print "Analysing %s" % sra_run
                 url = ftpaddres.format(range_subdir=query[:6],
-                                       record_dir=query,
-                                       file_dir=sra_run)
+                                           record_dir=query,
+                                           file_dir=sra_run)
                 filepath = os.path.abspath(os.path.join(directory_path, "%s.sra" % sra_run))
-                utils.download_from_url(url, filepath)
-            elif filetype == 'fastq':
-                command = "fastq-dump --gzip --outdir %s %s" % (directory_path, sra_run)
-                process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-                stderr.write("Downloading %s to %s/%s.fastq.gz\n" % (sra_run, directory_path, sra_run))
-                pout, perr = process.communicate()
-                if "command not found" in perr:
-                    raise NoSRAToolkitException("fastq-dump command not found")
-                else:
-                    print pout
-            elif filetype == 'fasta':
-                command = "fastq-dump --gzip --fasta --outdir %s %s" % (directory_path, sra_run)
-                process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-                pout, perr = process.communicate()
-                stderr.write("Downloading %s to %s/%s.fa.gz\n" % (sra_run, directory_path, sra_run))
-                if "command not found" in perr:
-                    raise NoSRAToolkitException("fastq-dump command not found")
-                else:
-                    print pout
-            else:
-                raise Exception("Unknown type to download: %s. Use sra, fastq or fasta." % download_type)
+                utils.download_from_url(url, filepath, aspera=aspera)
+                
+                if filetype in ["fasta", "fastq"]: 
+                    ftype = ""
+                    if filetype == "fasta":
+                        ftype = " --fasta "
+                    cmd = "fastq-dump --split-files --gzip %s --outdir %s %s" 
+                    cmd = cmd % (ftype, directory_path, filepath)
 
-
+                    process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+                    stderr.write("Converting to %s/%s_*.%s.gz\n" % (
+                        directory_path, sra_run, filetype))
+                    pout, perr = process.communicate()
+                    if "command not found" in perr:
+                        raise NoSRAToolkitException("fastq-dump command not found")
+                    else:
+                        print pout
+                        if not keep_sra:
+                            # Delete sra file
+                            os.unlink(filepath)
 
 class GPL(SimpleGEO):
 
     """Class that represents platform from GEO database"""
 
     geotype = "PLATFORM"
+    
+    def __init__(self, name, metadata, table=None, columns=None, gses=None, gsms=None,  database=None):
+        """Initialize GPL
 
+        :param name: str -- name of the object
+        :param metadata: dict -- metadata information
+        :param gses: list -- list of GSE objects
+        :param gsms: list -- list of GSM objects
+        :param database: GEODatabase -- Database from SOFT file
+        """
+
+        gses = {} if gses is None else gses
+        if not isinstance(gses, dict):
+            raise ValueError("GSEs should be a dictionary not a %s" % str(type(gses)))
+        gsms = {} if gsms is None else gsms
+        if not isinstance(gsms, dict):
+            raise ValueError("GSMs should be a dictionary not a %s" % str(type(gsms)))
+
+        for gsm_name, gsm in gsms.iteritems():
+            assert isinstance(gsm, GSM), "All GSMs should be of type GSM"
+        for gse_name, gse in gses.iteritems():
+            assert isinstance(gse, GSE), "All GSEs should be of type GSE"
+        if database is not None:
+            if not isinstance(database, GEODatabase):
+                raise ValueError("Database should be a GEODatabase not a %s" % str(type(database)))
+        
+        table = DataFrame() if table is None else table
+        columns = DataFrame() if columns is None else columns
+        SimpleGEO.__init__(self, name=name, metadata=metadata, table=table, columns=columns)
+
+        self.gses = gses
+        self.gsms = gsms
+        self.database = database
 
 class GDSSubset(BaseGEO):
 
@@ -513,7 +554,7 @@ class GSE(BaseGEO):
 
     geotype = "SERIES"
 
-    def __init__(self, name, metadata, gpls, gsms, database=None):
+    def __init__(self, name, metadata, gpls=None, gsms=None, database=None):
         """Initialize GSE
 
         :param name: str -- name of the object
@@ -523,8 +564,10 @@ class GSE(BaseGEO):
         :param database: GEODatabase -- Database from SOFT file
         """
 
+        gpls = {} if gpls is None else gpls
         if not isinstance(gpls, dict):
             raise ValueError("GPLs should be a dictionary not a %s" % str(type(gpls)))
+        gsms = {} if gsms is None else gsms
         if not isinstance(gsms, dict):
             raise ValueError("GSMs should be a dictionary not a %s" % str(type(gsms)))
 
@@ -684,7 +727,7 @@ class GSE(BaseGEO):
         return "\n".join(soft)
 
     def __str__(self):
-        return str("<%s: %s - %i SERIES, %i PLATFORM(s)>" % (self.geotype, self.name, len(self.gsms), len(self.gpls)))
+        return str("<%s: %s - %i SAMPLES, %i PLATFORM(s)>" % (self.geotype, self.name, len(self.gsms), len(self.gpls)))
 
     def __repr__(self):
-        return str("<%s: %s - %i SERIES, %i PLATFORM(s)>" % (self.geotype, self.name, len(self.gsms), len(self.gpls)))
+        return str("<%s: %s - %i SAMPLES, %i PLATFORM(s)>" % (self.geotype, self.name, len(self.gsms), len(self.gpls)))

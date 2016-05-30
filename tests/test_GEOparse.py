@@ -171,6 +171,28 @@ class TestGPL(unittest.TestCase):
         self.assertEqual(gpl.get_accession(), "GPL96")
         self.assertEqual(len(gpl.table.index), 22283)
         self.assertEqual(len(gpl.columns), 16)
+    
+    def test_get_geo_gpl_sequencing(self):
+        gpl = GEO.get_GEO(geo="GPL20082", destdir=download_geo, include_data=True)
+        self.assertTrue(isinstance(gpl, GPL))
+        self.assertEqual(gpl.get_accession(), "GPL20082")
+        
+        samples = [   
+            "GSM1662787", 
+            "GSM1662788", 
+            "GSM1662789", 
+            "GSM1662790", 
+            "GSM1662791", 
+            "GSM1677167", 
+            "GSM1859499", 
+            "GSM1875285"
+            ]
+
+        for sample in samples:
+            self.assertTrue(sample in gpl.gsms)
+   
+        self.assertEqual(6, len(gpl.gses["GSE68087"].gsms))
+        self.assertEqual(2, len(gpl.gses["GSE67974"].gsms))
 
     def test_get_geo_and_data_with_annotations(self):
         gpl = GEO.get_GEO(geo="GPL96", destdir=download_geo, annotate_gpl=True)
