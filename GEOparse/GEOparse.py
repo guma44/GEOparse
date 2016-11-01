@@ -2,16 +2,21 @@
 from os import path
 from re import sub
 from sys import stderr
-from StringIO import StringIO
+from six import StringIO
 from tempfile import mkdtemp
 from itertools import groupby
 from collections import defaultdict
 from shutil import copyfileobj
-from urllib2 import urlopen, URLError
+try:
+    from urllib.request import urlopen
+    from urllib.error import URLError
+except ImportError:
+    from urllib2 import urlopen, URLError
 from contextlib import closing
 from pandas import DataFrame
 import gzip
-from GEOTypes import GSE, GSM, GPL, GDS, GDSSubset, GEODatabase
+from .GEOTypes import GSE, GSM, GPL, GDS, GDSSubset, GEODatabase
+from six import iteritems
 
 
 class UnknownGEOTypeException(Exception):
@@ -244,7 +249,7 @@ def parse_GDS_columns(lines, subsets):
 
     df = DataFrame(data, index=index, columns=['description'])
     subset_ids = {"disease_state": {}, "individual": {}}
-    for subsetname, subset in subsets.iteritems():
+    for subsetname, subset in iteritems(subsets):
         for expid in subset.metadata["sample_id"][0].split(","):
             if subset.get_type() == "disease state":
                 subset_ids["disease_state"][expid] = subset.metadata["description"][0]
@@ -278,7 +283,7 @@ def parse_GSM(filepath, entry_name=None):
     """
     if isinstance(filepath, str):
         if filepath[-2:] == "gz":
-            mode = "rb"
+            mode = "rt"
             fopen = gzip.open
         else:
             mode = "r"
@@ -338,7 +343,7 @@ def parse_GPL(filepath, entry_name=None, silent=False):
     has_table = False
     if isinstance(filepath, str):
         if filepath[-2:] == "gz":
-            mode = "rb"
+            mode = "rt"
             fopen = gzip.open
         else:
             mode = "r"
@@ -347,23 +352,23 @@ def parse_GPL(filepath, entry_name=None, silent=False):
             groupper = groupby(soft, lambda x: x.startswith("^"))
             for is_new_entry, group in groupper:
                 if is_new_entry:
-                    entry_type, entry_name = __parse_entry(group.next())
+                    entry_type, entry_name = __parse_entry(next(group))
                     if not silent:
                         stderr.write(" - %s : %s\n" % (entry_type.upper(), entry_name))
                     if entry_type == "SERIES":
-                        is_data, data_group = groupper.next()
+                        is_data, data_group = next(groupper)
                         gse_metadata = parse_metadata(data_group)
 
                         gses[entry_name] = GSE(name=entry_name, metadata=gse_metadata)
                     elif entry_type == "SAMPLE":
-                        is_data, data_group = groupper.next()
+                        is_data, data_group = next(groupper)
                         gsms[entry_name] = parse_GSM(data_group, entry_name)
                     elif entry_type == "DATABASE":
-                        is_data, data_group = groupper.next()
+                        is_data, data_group = next(groupper)
                         database_metadata = parse_metadata(data_group)
                         database = GEODatabase(name=entry_name, metadata=database_metadata)
                     else:
-                        is_data, data_group = groupper.next()
+                        is_data, data_group = next(groupper)
                         for line in data_group:
                             if "_table_begin" in line or (line[0] not in ("^", "!", "#")):
                                 has_table = True
@@ -409,7 +414,7 @@ def parse_GSE(filepath):
     :return: GSE object
     """
     if filepath[-2:] == "gz":
-        mode = "rb"
+        mode = "rt"
         fopen = gzip.open
     else:
         mode = "r"
@@ -423,23 +428,23 @@ def parse_GSE(filepath):
         groupper = groupby(soft, lambda x: x.startswith("^"))
         for is_new_entry, group in groupper:
             if is_new_entry:
-                entry_type, entry_name = __parse_entry(group.next())
+                entry_type, entry_name = __parse_entry(next(group))
                 stderr.write(" - %s : %s\n" % (entry_type.upper(), entry_name))
                 if entry_type == "SERIES":
                     series_counter += 1
                     if series_counter > 1:
                         raise Exception("GSE file should contain only one series entry!")
-                    is_data, data_group = groupper.next()
+                    is_data, data_group = next(groupper)
                     assert not is_data, "The key is not False, probably there is an error in the SOFT file"
                     metadata = parse_metadata(data_group)
                 elif entry_type == "SAMPLE":
-                    is_data, data_group = groupper.next()
+                    is_data, data_group = next(groupper)
                     gsms[entry_name] = parse_GSM(data_group, entry_name)
                 elif entry_type == "PLATFORM":
-                    is_data, data_group = groupper.next()
+                    is_data, data_group = next(groupper)
                     gpls[entry_name] = parse_GPL(data_group, entry_name)
                 elif entry_type == "DATABASE":
-                    is_data, data_group = groupper.next()
+                    is_data, data_group = next(groupper)
                     database_metadata = parse_metadata(data_group)
                     database = GEODatabase(name=entry_name, metadata=database_metadata)
                 else:
@@ -461,7 +466,7 @@ def parse_GDS(filepath):
 
     """
     if filepath[-2:] == "gz":
-        mode = "rb"
+        mode = "rt"
         fopen = gzip.open
     else:
         mode = "r"
@@ -473,21 +478,21 @@ def parse_GDS(filepath):
         groupper = groupby(soft, lambda x: x.startswith("^"))
         for is_new_entry, group in groupper:
             if is_new_entry:
-                entry_type, entry_name = __parse_entry(group.next())
+                entry_type, entry_name = __parse_entry(next(group))
                 stderr.write(" - %s : %s\n" % (entry_type.upper(), entry_name))
                 if entry_type == "SUBSET":
-                    is_data, data_group = groupper.next()
+                    is_data, data_group = next(groupper)
                     assert not is_data, "The key is not False, probably there is an error in the SOFT file"
                     subset_metadata = parse_metadata(data_group)
                     subsets[entry_name] = GDSSubset(name=entry_name, metadata=subset_metadata)
                 elif entry_type == "DATABASE":
 
-                    is_data, data_group = groupper.next()
+                    is_data, data_group = next(groupper)
                     assert not is_data, "The key is not False, probably there is an error in the SOFT file"
                     database_metadata = parse_metadata(data_group)
                     database = GEODatabase(name=entry_name, metadata=database_metadata)
                 elif entry_type == "DATASET":
-                    is_data, data_group = groupper.next()
+                    is_data, data_group = next(groupper)
                     dataset_name = entry_name
                     for line in data_group:
                         dataset_lines.append(line.rstrip())
