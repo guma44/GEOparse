@@ -10,7 +10,6 @@ import gzip
 import json
 import time
 import subprocess
-from Bio import Entrez
 from . import utils
 from sys import stderr, stdout
 from pandas import DataFrame, concat
@@ -344,6 +343,7 @@ class GSM(SimpleGEO):
         :param keep_sra: bool - keep SRA files after download, defaults to False
 
         """
+        from Bio import Entrez
         # Check download filetype
         filetype = filetype.lower()
         if filetype not in ["sra", "fastq", "fasta"]:
