@@ -10,11 +10,14 @@ import gzip
 import json
 import time
 import subprocess
-from Bio import Entrez
 from . import utils
 from sys import stderr, stdout
 from pandas import DataFrame, concat
-from urllib2 import HTTPError
+try:
+    from urllib.error import HTTPError
+except ImportError:
+    from urllib2 import HTTPError
+from six import iteritems
 
 
 
@@ -92,7 +95,7 @@ class BaseGEO(object):
         """Returns metadata as SOFT formated string
         """
         metalist = []
-        for metaname, meta in self.metadata.iteritems():
+        for metaname, meta in iteritems(self.metadata):
             assert isinstance(meta, list), "Single value in metadata dictionary should be a list!"
             for data in meta:
                 if data:
@@ -104,7 +107,7 @@ class BaseGEO(object):
         """
          Show metadat in SOFT format
         """
-        print self._get_metadata_as_string()
+        print(self._get_metadata_as_string())
 
     def to_soft(self, path_or_handle, as_gzip=False):
         """Save the object in a SOFT format.
@@ -114,7 +117,7 @@ class BaseGEO(object):
         """
         if isinstance(path_or_handle, str):
             if as_gzip:
-                with gzip.open(path_or_handle, 'wb') as outfile:
+                with gzip.open(path_or_handle, 'wt') as outfile:
                     outfile.write(self._get_object_as_soft())
             else:
                 with open(path_or_handle, 'w') as outfile:
@@ -194,7 +197,7 @@ class SimpleGEO(BaseGEO):
     def show_columns(self):
         """Show columns in SOFT format
         """
-        print self.columns
+        print(self.columns)
 
     def show_table(self, number_of_lines=5):
         """
@@ -202,7 +205,7 @@ class SimpleGEO(BaseGEO):
 
         :param number_of_lines: int -- number of lines to show
         """
-        print self.table.head(number_of_lines)
+        print(self.table.head(number_of_lines))
 
     def _get_object_as_soft(self):
         """
@@ -314,7 +317,7 @@ class GSM(SimpleGEO):
                                                                                re.sub(r'[\s\*\?\(\),\.]', '_', self.metadata['title'][0]) # the directory name cannot contain many of the signs
                                                                                )))
         utils.mkdir_p(os.path.abspath(directory_path))
-        for metakey, metavalue in self.metadata.iteritems():
+        for metakey, metavalue in iteritems(self.metadata):
             if 'supplementary_file' in metakey:
                 assert len(metavalue) == 1 and metavalue != ''
                 # stderr.write("Downloading %s\n" % metavalue)
@@ -344,6 +347,7 @@ class GSM(SimpleGEO):
         :param keep_sra: bool - keep SRA files after download, defaults to False
 
         """
+        from Bio import Entrez
         # Check download filetype
         filetype = filetype.lower()
         if filetype not in ["sra", "fastq", "fasta"]:
@@ -356,7 +360,7 @@ class GSM(SimpleGEO):
             for sra in self.relations['SRA']:
                 query = sra.split("=")[-1]
                 assert 'SRX' in query, "Sample looks like it is not SRA: %s" % query
-                print "Query: %s" % query
+                print("Query: %s" % query)
                 queries.append(query)
         except KeyError:
             raise NoSRARelationException('No relation called SRA for %s' % self.get_accession())
@@ -407,7 +411,7 @@ class GSM(SimpleGEO):
     
             for path in df['download_path']:
                 sra_run = path.split("/")[-1]
-                print "Analysing %s" % sra_run
+                print("Analysing %s" % sra_run)
                 url = ftpaddres.format(range_subdir=query[:6],
                                            record_dir=query,
                                            file_dir=sra_run)
@@ -428,7 +432,7 @@ class GSM(SimpleGEO):
                     if "command not found" in perr:
                         raise NoSRAToolkitException("fastq-dump command not found")
                     else:
-                        print pout
+                        print(pout)
                         if not keep_sra:
                             # Delete sra file
                             os.unlink(filepath)
@@ -456,9 +460,9 @@ class GPL(SimpleGEO):
         if not isinstance(gsms, dict):
             raise ValueError("GSMs should be a dictionary not a %s" % str(type(gsms)))
 
-        for gsm_name, gsm in gsms.iteritems():
+        for gsm_name, gsm in iteritems(gsms):
             assert isinstance(gsm, GSM), "All GSMs should be of type GSM"
-        for gse_name, gse in gses.iteritems():
+        for gse_name, gse in iteritems(gses):
             assert isinstance(gse, GSE), "All GSEs should be of type GSE"
         if database is not None:
             if not isinstance(database, GEODatabase):
@@ -531,7 +535,7 @@ class GDS(SimpleGEO):
         self.subsets = subsets
         self.database = database
 
-        for subset_name, subset in subsets.iteritems():
+        for subset_name, subset in iteritems(subsets):
             assert isinstance(subset, GDSSubset), "All subsets should be of type GDSSubset"
 
     def _get_object_as_soft(self):
@@ -574,9 +578,9 @@ class GSE(BaseGEO):
         if not isinstance(gsms, dict):
             raise ValueError("GSMs should be a dictionary not a %s" % str(type(gsms)))
 
-        for gsm_name, gsm in gsms.iteritems():
+        for gsm_name, gsm in iteritems(gsms):
             assert isinstance(gsm, GSM), "All GSMs should be of type GSM"
-        for gpl_name, gpl in gpls.iteritems():
+        for gpl_name, gpl in iteritems(gpls):
             assert isinstance(gpl, GPL), "All GPLs should be of type GPL"
         if database is not None:
             if not isinstance(database, GEODatabase):
@@ -685,7 +689,7 @@ class GSE(BaseGEO):
         else:
             dirpath = os.path.abspath(directory)
             utils.mkdir_p(dirpath)
-        for gsmname, gsm in self.gsms.iteritems():
+        for gsmname, gsm in iteritems(self.gsms):
             gsm.download_supplementary_files(email=email, download_sra=download_sra, sra_filetype=sra_filetype, directory=dirpath)
 
     def download_SRA(self,  email, directory='series', filetype='sra', filterby=None):

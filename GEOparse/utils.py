@@ -4,7 +4,11 @@ from errno import EEXIST
 from sys import stderr, stdout
 from contextlib import closing
 from shutil import copyfileobj
-from urllib2 import urlopen, URLError
+try:
+    from urllib.request import urlopen
+    from urllib.error import URLError
+except ImportError:
+    from urllib2 import urlopen, URLError
 import subprocess as sp
 
 def mkdir_p(path_to_dir):

@@ -13,6 +13,7 @@ from os.path import abspath, join, dirname
 import unittest
 from pandas import DataFrame, read_table
 from pandas.util.testing import assert_frame_equal
+from six import iteritems
 
 path.append(join(abspath(__file__), ".."))
 from GEOparse.GEOTypes import (GSE, GSM, GPL, GDS,
@@ -123,7 +124,7 @@ class TestGSM(unittest.TestCase):
         gse = GEO.get_GEO(filepath=join(download_geo, "soft_ex_family.txt"), geotype="GSE")
         gsm = gse.gsms["Triple-Fusion Transfected Embryonic Stem Cells Replicate 1"]
         result = read_table(join(download_geo, "test_gsm_annotated.tab"))
-        gpl = gse.gpls[gse.gpls.keys()[0]]
+        gpl = gse.gpls[next(iter(gse.gpls))]
         assert_frame_equal(result, gsm.annotate(gpl, annotation_column="GB_ACC"))
         assert_frame_equal(result, gsm.annotate(gpl.table, annotation_column="GB_ACC"))
         with self.assertRaises(TypeError):
@@ -239,7 +240,7 @@ class TestGDS(unittest.TestCase):
         self.assertEqual(len(gds.table.columns), 19)
         self.assertEqual(len(gds.metadata.keys()), 16) # we omit DATABASE and SUBSET ! entries
         self.assertEqual(len(gds.database.metadata.keys()), 5)
-        for subset_name, subset in gds.subsets.iteritems():
+        for subset_name, subset in iteritems(gds.subsets):
             self.assertEqual(len(subset.metadata.keys()), 4)
             self.assertTrue(isinstance(subset, GDSSubset))
 
@@ -274,18 +275,20 @@ class TestGSE(unittest.TestCase):
         GSE(name='name', metadata=self.metadata, gpls=self.gpls, gsms=self.gsms)
 
     def test_soft_format_gse(self):
-        print download_geo
+        print(download_geo)
         gse = GEO.get_GEO(geo="GSE1563", destdir=download_geo)
         self.assertTrue(isinstance(gse, GSE))
         self.assertEqual(gse.get_accession(), "GSE1563")
         self.assertEqual(len(gse.gsms.keys()), 62)
         self.assertEqual(len(gse.gpls.keys()), 1)
-        self.assertEqual(len(gse.gpls[gse.gpls.keys()[0]].table.index), 12625)
-        self.assertEqual(len(gse.gsms[gse.gsms.keys()[0]].table.index), 12625)
-        for gsm_name, gsm in gse.gsms.iteritems():
+        self.assertEqual(len(gse.gpls[next(iter(gse.gpls))].table.index),
+                         12625)
+        self.assertEqual(len(gse.gsms[next(iter(gse.gsms))].table.index),
+                         12625)
+        for gsm_name, gsm in iteritems(gse.gsms):
             self.assertEqual(len(gsm.table.index), 12625)
             self.assertTrue(isinstance(gsm, GSM))
-        for gpl_name, gpl in gse.gpls.iteritems():
+        for gpl_name, gpl in iteritems(gse.gpls):
             self.assertEqual(len(gpl.table.index), 12625)
             self.assertTrue(isinstance(gpl, GPL))
 
@@ -299,7 +302,8 @@ class TestGSE(unittest.TestCase):
         gse = GEO.get_GEO(filepath=join(download_geo, "soft_ex_family.txt"), geotype="GSE")
         result = read_table(join(download_geo, "test_merged_by_id_and_averaged_by_gb_acc.tab"), index_col=0)
         result = result.ix[sorted(result.index), sorted(result.columns)]  # gse.gsms is a dict so the columns might be in different order
-        merged = gse.merge_and_average(gse.gpls[gse.gpls.keys()[0]], "VALUE", "GB_ACC", gpl_on="ID", gsm_on="ID_REF")
+        merged = gse.merge_and_average(gse.gpls[next(iter(gse.gpls))], "VALUE",
+                                       "GB_ACC", gpl_on="ID", gsm_on="ID_REF")
         merged = merged[sorted(merged.columns)]  # gse.gsms is a dict so the columns might be in different order
         assert_frame_equal(merged, result)
         with self.assertRaises(KeyError):
@@ -309,7 +313,7 @@ class TestGSE(unittest.TestCase):
 
     def test_pivot_and_annotate(self):
         gse = GEO.get_GEO(filepath=join(download_geo, "soft_ex_family.txt"), geotype="GSE")
-        gpl = gse.gpls[gse.gpls.keys()[0]]
+        gpl = gse.gpls[next(iter(gse.gpls))]
         result = read_table(join(download_geo, "test_sample_pivoted_by_value_and_annotated_by_gbacc.tab"), index_col=0)
         result.columns.name = 'name'
         pivoted = gse.pivot_and_annotate(values="VALUE", gpl=gpl, annotation_column="GB_ACC")
