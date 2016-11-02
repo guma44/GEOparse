@@ -3,6 +3,15 @@
 History
 -------
 
+0.1.8 (2016-11-02)
+---------------------
+
+Thanks to Tycho Bismeijer:
+
+* Python 3 Compatibility
+* Bio.Entrez dependency optional
+
+
 0.1.7 (2016-05-30)
 ---------------------
 
