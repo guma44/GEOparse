@@ -1,3 +1,4 @@
 numpy>=1.7
 pandas>=0.17
 pytz>=2013
+wgetter==0.6
