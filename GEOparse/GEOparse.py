@@ -17,6 +17,7 @@ from pandas import DataFrame
 import gzip
 from .GEOTypes import GSE, GSM, GPL, GDS, GDSSubset, GEODatabase
 from six import iteritems
+import wgetter
 
 
 class UnknownGEOTypeException(Exception):
@@ -82,7 +83,6 @@ def get_GEO_file(geo, destdir=None, annotate_gpl=False, how="full",
     geo = geo.upper()
     geotype = geo[:3]
     range_subdir = sub(r"\d{1,3}$", "nnn", geo)
-    mode = 'wb'
     if destdir is None:
         tmpdir = mkdtemp()
         stderr.write("No destination directory specified."
@@ -103,12 +103,11 @@ def get_GEO_file(geo, destdir=None, annotate_gpl=False, how="full",
                             range_subdir=range_subdir,
                             record=geo,
                             record_file="%s_family.soft.gz" % geo)
-        filepath = path.join(tmpdir, "{record}.soft.gz".format(record=geo))
+        filepath = path.join(tmpdir, "{record}_family.soft.gz".format(record=geo))
     elif geotype == "GSM":
         gsmurl = "http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?targ=self&acc={record}&form=text&view={how}"
         url = gsmurl.format(record=geo, how=how)
-        filepath = path.join(tmpdir, "{record}.soft".format(record=geo))
-        mode = 'w'
+        filepath = path.join(tmpdir, "{record}.txt".format(record=geo))
     elif geotype == "GPL":
         if annotate_gpl:
             gplurl = "ftp://ftp.ncbi.nlm.nih.gov/geo/{root}/{range_subdir}/{record}/annot/{record_file}"
@@ -119,10 +118,8 @@ def get_GEO_file(geo, destdir=None, annotate_gpl=False, how="full",
             filepath = path.join(tmpdir, "{record}.annot.gz".format(record=geo))
             if not path.isfile(filepath):
                 try:
-                    with closing(urlopen(url)) as r:
-                        with open(filepath, mode=mode) as f:
-                            stderr.write("Downloading %s to %s\n" % (url, filepath))
-                            copyfileobj(r, f)
+                    stderr.write("Downloading %s to %s\n" % (url, filepath))
+                    fn = wgetter.download(url, outdir=path.dirname(filepath))
                     return filepath, geotype
                 except URLError:
                     stderr.write("Annotations for %s are not available, trying submitter GPL\n" % geo)
@@ -134,17 +131,15 @@ def get_GEO_file(geo, destdir=None, annotate_gpl=False, how="full",
             url = "ftp://ftp.ncbi.nlm.nih.gov/geo/platforms/{0}/{1}/soft/{1}_family.soft.gz".format(
                     range_subdir,
                     geo)
-            filepath = path.join(tmpdir, "{record}.soft.gz".format(record=geo))
+            filepath = path.join(tmpdir, "{record}_family.soft.gz".format(record=geo))
         else:
             gplurl = "http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?targ=self&acc={record}&form=text&view={how}"
             url = gplurl.format(record=geo, how=how)
             filepath = path.join(tmpdir, "{record}.soft".format(record=geo))
-        mode = 'w'
         if not path.isfile(filepath):
-            with closing(urlopen(url)) as r:
-                with open(filepath, mode=mode) as f:
-                    stderr.write("Downloading %s to %s\n" % (url, filepath))
-                    copyfileobj(r, f)
+            stderr.write("Downloading %s to %s\n" % (url, filepath))
+            fn = wgetter.download(url, outdir=path.dirname(filepath))
+            stderr.write("\n")
         else:
             stderr.write("File already exist: using local version.\n")
         return filepath, geotype
@@ -152,10 +147,9 @@ def get_GEO_file(geo, destdir=None, annotate_gpl=False, how="full",
         raise UnknownGEOTypeException("%s type is not known" % geotype)
 
     if not path.isfile(filepath):
-        with closing(urlopen(url)) as r:
-            with open(filepath, mode=mode) as f:
-                stderr.write("Downloading %s to %s\n" % (url, filepath))
-                copyfileobj(r, f)
+        stderr.write("Downloading %s to %s\n" % (url, filepath))
+        fn = wgetter.download(url, outdir=path.dirname(filepath))
+        stderr.write("\n")
     else:
         stderr.write("File already exist: using local version.\n")
 

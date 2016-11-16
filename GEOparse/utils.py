@@ -10,6 +10,7 @@ try:
 except ImportError:
     from urllib2 import urlopen, URLError
 import subprocess as sp
+import wget
 
 def mkdir_p(path_to_dir):
     try:
@@ -54,19 +55,15 @@ def download_from_url(url, destination_path, force=False, aspera=False):
         is_already_downloaded = os.path.isfile(destination_path)
         if is_already_downloaded:
             if force:
-                with closing(urlopen(url)) as r:
-                    with open(destination_path, mode='wb') as f:
-                        stderr.write("Downloading %s to %s\n" % (url, destination_path))
-                        copyfileobj(r, f)
+                stderr.write("Downloading %s to %s\n" % (url, destination_path))
+                fn = wgetter.download(url, outdir=os.path.dirname(destination_path))
             else:
                 stderr.write("File already exist. Use force=True if you would like to overwrite it.\n")
         else:
             if aspera:
                 download_aspera(url, destination_path)
             else:
-                with closing(urlopen(url)) as r:
-                    with open(destination_path, mode='wb') as f:
-                        stderr.write("Downloading %s to %s\n" % (url, destination_path))
-                        copyfileobj(r, f)
+                stderr.write("Downloading %s to %s\n" % (url, destination_path))
+                fn = wgetter.download(url, outdir=os.path.dirname(destination_path))
     except URLError:
         stderr.write("Cannot find file %s" % url)
