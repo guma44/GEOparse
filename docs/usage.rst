@@ -8,8 +8,6 @@ To simplest example of usage::
 
     gse = GEOparse.get_GEO(geo="GSE1563", destdir="./")
 
-    gse = GEOparse.get_GEO(geo="GSE1563", destdir="./")
-
     print()
     print("GSM example:")
     for gsm_name, gsm in gse.gsms.items():
