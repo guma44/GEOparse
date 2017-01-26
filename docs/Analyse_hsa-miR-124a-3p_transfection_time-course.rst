@@ -429,7 +429,7 @@ genes.
 .. code:: python
 
     pivoted_control_samples_average = pivoted_control_samples.median(axis=1)
-    print "Number of probes before filtering: ", len(pivoted_control_samples_average)
+    print("Number of probes before filtering: ", len(pivoted_control_samples_average))
 
 
 .. parsed-literal::
@@ -444,7 +444,7 @@ genes.
 .. code:: python
 
     expressed_probes = pivoted_control_samples_average[pivoted_control_samples_average >= expression_threshold].index.tolist()
-    print "Number of probes above threshold: ", len(expressed_probes)
+    print("Number of probes above threshold: ", len(expressed_probes))
 
 
 .. parsed-literal::
@@ -476,7 +476,7 @@ DataFrame with LFCs:
                  '72 hours',
                  '120 hours']
     for time, group in experiments.groupby("Time"):
-        print time
+        print(time)
         control_name = group[group.Type == "control"].Experiment.iloc[0]
         transfection_name = group[group.Type == "transfection"].Experiment.iloc[0]
         lfc_results[time] = (samples[transfection_name] - samples[control_name]).to_dict()
@@ -761,7 +761,7 @@ We shall extract targets as a simple list of strings:
 .. code:: python
 
     miR124_targets_list = map(str, miR124_targets.GeneID.tolist())
-    print "Number of targets:", len(miR124_targets_list)
+    print("Number of targets:", len(miR124_targets_list))
 
 
 .. parsed-literal::
