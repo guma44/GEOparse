@@ -17,7 +17,7 @@ try:
     from urllib.error import HTTPError
 except ImportError:
     from urllib2 import HTTPError
-from six import iteritems
+from six import iteritems, itervalues
 
 
 
@@ -314,7 +314,7 @@ class GSM(SimpleGEO):
         """
         directory_path = os.path.abspath(os.path.join(directory, "%s_%s_%s" % ('Supp',
                                                                                self.get_accession(),
-                                                                               re.sub(r'[\s\*\?\(\),\.]', '_', self.metadata['title'][0]) # the directory name cannot contain many of the signs
+                                                                               re.sub(r'[\s\*\?\(\),\.;]', '_', self.metadata['title'][0]) # the directory name cannot contain many of the signs
                                                                                )))
         utils.mkdir_p(os.path.abspath(directory_path))
         for metakey, metavalue in iteritems(self.metadata):
@@ -405,7 +405,7 @@ class GSM(SimpleGEO):
             # make the directory
             directory_path = os.path.abspath(os.path.join(directory, "%s_%s_%s" % ('Supp',
                                                                                    self.get_accession(),
-                                                                                   re.sub(r'[\s\*\?\(\),\.]', '_', self.metadata['title'][0]) # the directory name cannot contain many of the signs
+                                                                                   re.sub(r'[\s\*\?\(\),\.;]', '_', self.metadata['title'][0]) # the directory name cannot contain many of the signs
                                                                                    )))
             utils.mkdir_p(os.path.abspath(directory_path))
     
@@ -726,9 +726,9 @@ class GSE(BaseGEO):
             soft.append(self.database._get_object_as_soft())
         soft += ["^%s = %s" % (self.geotype, self.name),
                  self._get_metadata_as_string()]
-        for gsm in self.gsms.itervalues():
+        for gsm in itervalues(self.gsms):
             soft.append(gsm._get_object_as_soft())
-        for gpl in self.gpls.itervalues():
+        for gpl in itervalues(self.gpls):
             soft.append(gpl._get_object_as_soft())
 
         return "\n".join(soft)
@@ -738,3 +738,4 @@ class GSE(BaseGEO):
 
     def __repr__(self):
         return str("<%s: %s - %i SAMPLES, %i PLATFORM(s)>" % (self.geotype, self.name, len(self.gsms), len(self.gpls)))
+    
