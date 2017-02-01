@@ -314,7 +314,7 @@ class GSM(SimpleGEO):
         """
         directory_path = os.path.abspath(os.path.join(directory, "%s_%s_%s" % ('Supp',
                                                                                self.get_accession(),
-                                                                               re.sub(r'[\s\*\?\(\),\.]', '_', self.metadata['title'][0]) # the directory name cannot contain many of the signs
+                                                                               re.sub(r'[\s\*\?\(\),\.;]', '_', self.metadata['title'][0]) # the directory name cannot contain many of the signs
                                                                                )))
         utils.mkdir_p(os.path.abspath(directory_path))
         for metakey, metavalue in iteritems(self.metadata):
@@ -405,7 +405,7 @@ class GSM(SimpleGEO):
             # make the directory
             directory_path = os.path.abspath(os.path.join(directory, "%s_%s_%s" % ('Supp',
                                                                                    self.get_accession(),
-                                                                                   re.sub(r'[\s\*\?\(\),\.]', '_', self.metadata['title'][0]) # the directory name cannot contain many of the signs
+                                                                                   re.sub(r'[\s\*\?\(\),\.;]', '_', self.metadata['title'][0]) # the directory name cannot contain many of the signs
                                                                                    )))
             utils.mkdir_p(os.path.abspath(directory_path))
     
