@@ -10,7 +10,7 @@ try:
 except ImportError:
     from urllib2 import urlopen, URLError
 import subprocess as sp
-import wget
+import wgetter
 
 def mkdir_p(path_to_dir):
     try:
