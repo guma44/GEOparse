@@ -379,7 +379,7 @@ def parse_GPL(filepath, entry_name=None, silent=False):
     except:
         pass
     metadata = parse_metadata(gpl_soft)
-    
+
     if has_table:
         table_data = parse_table_data(gpl_soft)
     else:
@@ -392,7 +392,7 @@ def parse_GPL(filepath, entry_name=None, silent=False):
               metadata=metadata,
               columns=columns,
               )
-    
+
     # link samples to series, if these were present in the GPL soft file
     for gse_id,gse in gpl.gses.items():
         for gsm_id in gse.metadata.get("sample_id", []):

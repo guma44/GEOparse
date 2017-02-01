@@ -51,7 +51,7 @@ class BaseGEO(object):
                 tmp = re.split(r':\s+', relation)
                 relname = tmp[0]
                 relval = tmp[1]
-                
+
                 if relname in self.relations:
                     self.relations[relname].append(relval)
                 else:
@@ -352,7 +352,7 @@ class GSM(SimpleGEO):
         filetype = filetype.lower()
         if filetype not in ["sra", "fastq", "fasta"]:
             raise Exception("Unknown type to downlod: %s. Use sra, fastq or fasta." % filetype)
-        
+
         # Setup the query
         ftpaddres = "ftp://ftp-trace.ncbi.nlm.nih.gov/sra/sra-instant/reads/ByExp/sra/SRX/{range_subdir}/{record_dir}/{file_dir}/{file_dir}.sra"
         queries = []
@@ -376,7 +376,7 @@ class GSM(SimpleGEO):
             answer = json.loads(searchdata.read())
             ids = answer["esearchresult"]["idlist"]
             assert len(ids) == 1, "There should be one and only one ID per SRX"
-    
+
             # using ID fetch the info
             number_of_trials = 10
             wait_time = 30
@@ -394,21 +394,21 @@ class GSM(SimpleGEO):
                     else:
                         raise httperr
             df = DataFrame([i.split(',') for i in results.split('\n') if i != ''][1:], columns = [i.split(',') for i in results.split('\n') if i != ''][0])
-    
+
             # check it first
             try:
                 df['download_path']
             except KeyError as e:
                 stderr.write('KeyError: ' + str(e) + '\n')
                 stderr.write(str(results) + '\n')
-    
+
             # make the directory
             directory_path = os.path.abspath(os.path.join(directory, "%s_%s_%s" % ('Supp',
                                                                                    self.get_accession(),
                                                                                    re.sub(r'[\s\*\?\(\),\.;]', '_', self.metadata['title'][0]) # the directory name cannot contain many of the signs
                                                                                    )))
             utils.mkdir_p(os.path.abspath(directory_path))
-    
+
             for path in df['download_path']:
                 sra_run = path.split("/")[-1]
                 print("Analysing %s" % sra_run)
@@ -417,12 +417,12 @@ class GSM(SimpleGEO):
                                            file_dir=sra_run)
                 filepath = os.path.abspath(os.path.join(directory_path, "%s.sra" % sra_run))
                 utils.download_from_url(url, filepath, aspera=aspera)
-                
-                if filetype in ["fasta", "fastq"]: 
+
+                if filetype in ["fasta", "fastq"]:
                     ftype = ""
                     if filetype == "fasta":
                         ftype = " --fasta "
-                    cmd = "fastq-dump --split-files --gzip %s --outdir %s %s" 
+                    cmd = "fastq-dump --split-files --gzip %s --outdir %s %s"
                     cmd = cmd % (ftype, directory_path, filepath)
 
                     process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
@@ -442,7 +442,7 @@ class GPL(SimpleGEO):
     """Class that represents platform from GEO database"""
 
     geotype = "PLATFORM"
-    
+
     def __init__(self, name, metadata, table=None, columns=None, gses=None, gsms=None,  database=None):
         """Initialize GPL
 
@@ -467,7 +467,7 @@ class GPL(SimpleGEO):
         if database is not None:
             if not isinstance(database, GEODatabase):
                 raise ValueError("Database should be a GEODatabase not a %s" % str(type(database)))
-        
+
         table = DataFrame() if table is None else table
         columns = DataFrame() if columns is None else columns
         SimpleGEO.__init__(self, name=name, metadata=metadata, table=table, columns=columns)
@@ -672,6 +672,7 @@ class GSE(BaseGEO):
                                                   left_on=gsm_on,
                                                   right_on=gpl_on).set_index(gsm_on)
         del ndf[gpl_on]
+        ndf.columns.name = 'name'
         return ndf
 
     def download_supplementary_files(self, directory='series', download_sra=True, sra_filetype='fasta', email=None):
@@ -738,4 +739,4 @@ class GSE(BaseGEO):
 
     def __repr__(self):
         return str("<%s: %s - %i SAMPLES, %i PLATFORM(s)>" % (self.geotype, self.name, len(self.gsms), len(self.gpls)))
-    
+
