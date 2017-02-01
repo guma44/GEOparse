@@ -17,7 +17,7 @@ try:
     from urllib.error import HTTPError
 except ImportError:
     from urllib2 import HTTPError
-from six import iteritems
+from six import iteritems, itervalues
 
 
 
@@ -726,9 +726,9 @@ class GSE(BaseGEO):
             soft.append(self.database._get_object_as_soft())
         soft += ["^%s = %s" % (self.geotype, self.name),
                  self._get_metadata_as_string()]
-        for gsm in self.gsms.itervalues():
+        for gsm in itervalues(self.gsms):
             soft.append(gsm._get_object_as_soft())
-        for gpl in self.gpls.itervalues():
+        for gpl in itervalues(self.gpls):
             soft.append(gpl._get_object_as_soft())
 
         return "\n".join(soft)
@@ -738,3 +738,4 @@ class GSE(BaseGEO):
 
     def __repr__(self):
         return str("<%s: %s - %i SAMPLES, %i PLATFORM(s)>" % (self.geotype, self.name, len(self.gsms), len(self.gpls)))
+    
