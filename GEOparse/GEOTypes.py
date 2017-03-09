@@ -10,6 +10,7 @@ import gzip
 import json
 import time
 import subprocess
+import numpy as np
 from . import utils
 from sys import stderr, stdout
 from pandas import DataFrame, concat
@@ -595,6 +596,27 @@ class GSE(BaseGEO):
         self.gpls = gpls
         self.gsms = gsms
         self.database = database
+        self._phenotype_data = None
+
+    @property
+    def phenotype_data(self):
+        if self._phenotype_data is None:
+            pheno_data = {}
+            for gsm_name, gsm in self.gsms.iteritems():
+                tmp = {}
+                for key, value in gsm.metadata.iteritems():
+                    if len(value) == 0:
+                        tmp[key] = np.nan
+                    elif key.startswith("characteristics_"):
+                        for i, char in enumerate(value):
+                            char = re.split(":\s+", char)
+                            char_type, char_value = [char[0], ": ".join(char[1:])]
+                            tmp[key + "." + str(i) + "." + char_type] = char_value
+                    else:
+                        tmp[key] = ",".join(value)
+                pheno_data[gsm_name] = tmp
+            self._phenotype_data = DataFrame(pheno_data).T
+        return self._phenotype_data
 
     def merge_and_average(self, platform, expression_column, group_by_column,
                           force=False, merge_on_column=None, gsm_on=None, gpl_on=None):
