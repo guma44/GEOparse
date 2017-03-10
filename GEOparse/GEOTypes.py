@@ -600,11 +600,12 @@ class GSE(BaseGEO):
 
     @property
     def phenotype_data(self):
+        """Get the phenotype data for each of the sample."""
         if self._phenotype_data is None:
             pheno_data = {}
-            for gsm_name, gsm in self.gsms.iteritems():
+            for gsm_name, gsm in iteritems(self.gsms):
                 tmp = {}
-                for key, value in gsm.metadata.iteritems():
+                for key, value in iteritems(gsm.metadata):
                     if len(value) == 0:
                         tmp[key] = np.nan
                     elif key.startswith("characteristics_"):
