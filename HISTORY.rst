@@ -3,6 +3,15 @@
 History
 -------
 
+0.1.9 (2017-03-10)
+---------------------
+
+* Added property phenotype_data to access phenotype data of GSE
+* Fixed windows issue with file names
+* replaced default download function with wgetter
+* Update documentation
+* Various bugfixes
+
 0.1.8 (2016-11-02)
 ---------------------
 
