@@ -20,6 +20,14 @@ GEOparse.GEOparse module
     :undoc-members:
     :show-inheritance:
 
+GEOparse.utils module
+---------------------
+
+.. automodule:: GEOparse.utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 
 Module contents
 ---------------

@@ -32,130 +32,19 @@ We start with the imports:
     sns.set_style('ticks')
     c1, c2, c3, c4 = sns.color_palette("Set1", 4)
 
-We also prepared a simple tabulated file with the description of each
-GSM. It will be usefull to calculate LFC.
+
+Now we select the GSMs that are controls. See below on how to generate names
+of control samples directly from the phenotype data of GSE.
 
 .. code:: python
 
-    experiments = pd.read_table("GSE6207_experiments.tab")
-
-We can look in to this file:
-
-.. code:: python
-
-    experiments
-
-
-
-
-.. raw:: html
-
-    <div style="max-height:1000px;max-width:1500px;overflow:auto;">
-    <table border="1" class="dataframe">
-      <thead>
-        <tr style="text-align: right;">
-          <th></th>
-          <th>Experiment</th>
-          <th>Type</th>
-          <th>Time</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <th>0 </th>
-          <td> GSM143385</td>
-          <td> transfection</td>
-          <td>   4 hours</td>
-        </tr>
-        <tr>
-          <th>1 </th>
-          <td> GSM143386</td>
-          <td>      control</td>
-          <td>   4 hours</td>
-        </tr>
-        <tr>
-          <th>2 </th>
-          <td> GSM143387</td>
-          <td> transfection</td>
-          <td>   8 hours</td>
-        </tr>
-        <tr>
-          <th>3 </th>
-          <td> GSM143388</td>
-          <td>      control</td>
-          <td>   8 hours</td>
-        </tr>
-        <tr>
-          <th>4 </th>
-          <td> GSM143389</td>
-          <td> transfection</td>
-          <td>  16 hours</td>
-        </tr>
-        <tr>
-          <th>5 </th>
-          <td> GSM143390</td>
-          <td>      control</td>
-          <td>  16 hours</td>
-        </tr>
-        <tr>
-          <th>6 </th>
-          <td> GSM143391</td>
-          <td> transfection</td>
-          <td>  24 hours</td>
-        </tr>
-        <tr>
-          <th>7 </th>
-          <td> GSM143392</td>
-          <td>      control</td>
-          <td>  24 hours</td>
-        </tr>
-        <tr>
-          <th>8 </th>
-          <td> GSM143393</td>
-          <td> transfection</td>
-          <td>  32 hours</td>
-        </tr>
-        <tr>
-          <th>9 </th>
-          <td> GSM143394</td>
-          <td>      control</td>
-          <td>  32 hours</td>
-        </tr>
-        <tr>
-          <th>10</th>
-          <td> GSM143395</td>
-          <td> transfection</td>
-          <td>  72 hours</td>
-        </tr>
-        <tr>
-          <th>11</th>
-          <td> GSM143396</td>
-          <td>      control</td>
-          <td>  72 hours</td>
-        </tr>
-        <tr>
-          <th>12</th>
-          <td> GSM143397</td>
-          <td> transfection</td>
-          <td> 120 hours</td>
-        </tr>
-        <tr>
-          <th>13</th>
-          <td> GSM143398</td>
-          <td>      control</td>
-          <td> 120 hours</td>
-        </tr>
-      </tbody>
-    </table>
-    </div>
-
-|
-
-Now we select the GSMs that are controls.
-
-.. code:: python
-
-    controls = experiments[experiments.Type == 'control'].Experiment.tolist()
+    controls = ['GSM143386',
+                'GSM143388',
+                'GSM143390',
+                'GSM143392',
+                'GSM143394',
+                'GSM143396',
+                'GSM143398']
 
 Using GEOparse we can download experiments and look into the data:
 
@@ -192,8 +81,6 @@ The GPL we are interested:
 .. code:: python
 
     gse.gpls['GPL570'].columns
-
-
 
 
 .. raw:: html
@@ -462,8 +349,68 @@ samples and filter out probes that are not expressed:
 The most important thing is to calculate log fold changes. What we have
 to do is for each time-point identify control and transfected sample and
 subtract the VALUES (they are provided as log2 transformed already, we
-subtract transfection from the control). In the end we create new
-DataFrame with LFCs:
+subtract transfection from the control).
+
+In order to identify control and transfection samples we will take a look into
+phenotype data and based on it we decide how to split samples:
+
+.. code-block:: python
+
+    print gse.phenotype_data[["title", "source_name_ch1"]]
+
+.. parsed-literal::
+
+                                                     title  source_name_ch1
+    GSM143385             miR-124 transfection for 4 hours  HepG2 cell line
+    GSM143386    negative control transfection for 4 hours  HepG2 cell line
+    GSM143387             miR-124 transfection for 8 hours  HepG2 cell line
+    GSM143388    negative control transfection for 8 hours  HepG2 cell line
+    GSM143389            miR-124 transfection for 16 hours  HepG2 cell line
+    GSM143390   negative control transfection for 16 hours  HepG2 cell line
+    GSM143391            miR-124 transfection for 24 hours  HepG2 cell line
+    GSM143392   negative control transfection for 24 hours  HepG2 cell line
+    GSM143393            miR-124 transfection for 32 hours  HepG2 cell line
+    GSM143394   negative control transfection for 32 hours  HepG2 cell line
+    GSM143395            miR-124 transfection for 72 hours  HepG2 cell line
+    GSM143396   negative control transfection for 72 hours  HepG2 cell line
+    GSM143397           miR-124 transfection for 120 hours  HepG2 cell line
+    GSM143398  negative control transfection for 120 hours  HepG2 cell line
+
+We can see that based on the title of the experiment we can get all the
+information that we need:
+
+.. code-block:: python
+
+    experiments = {}
+    for i, (idx, row) in enumerate(gse.phenotype_data.iterrows()):
+        tmp = {}
+        tmp["Experiment"] = idx
+        tmp["Type"] = "control" if "control" in row["title"] else "transfection"
+        tmp["Time"] = re.search(r"for (\d+ hours)", row["title"]).group(1)
+        experiments[i] = tmp
+    experiments = pd.DataFrame(experiments).T
+    print experiments
+
+.. parsed-literal::
+
+        Experiment       Time          Type
+     0   GSM143385    4 hours  transfection
+     1   GSM143386    4 hours       control
+     2   GSM143387    8 hours  transfection
+     3   GSM143388    8 hours       control
+     4   GSM143389   16 hours  transfection
+     5   GSM143390   16 hours       control
+     6   GSM143391   24 hours  transfection
+     7   GSM143392   24 hours       control
+     8   GSM143393   32 hours  transfection
+     9   GSM143394   32 hours       control
+     10  GSM143395   72 hours  transfection
+     11  GSM143396   72 hours       control
+     12  GSM143397  120 hours  transfection
+     13  GSM143398  120 hours       control
+
+
+In the end we create new DataFrame with LFCs:
 
 .. code:: python
 
