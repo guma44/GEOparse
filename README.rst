@@ -32,9 +32,12 @@ At the command line::
 TODO
 ----
 
-There is still work to do so any contribution is welcome.
+There is still work to do so any contribution is welcome. Any bug/error that you report
+will improve the library.
+
 The main issues are:
 
 * add checking for compatibility with SOFT files
 * expand GEOTypes objects with useful functions for differential expression analysis
 * share your idea
+* add more tests - that's always good idea :)
