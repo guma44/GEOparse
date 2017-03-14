@@ -272,52 +272,8 @@ def parse_table_data(lines):
 
     """
     # filter lines that do not start with symbols
-    data = [i.rstrip() for i in lines if i[0] not in ("^", "!", "#")]
-    if data[0].split('\t') == ['ID',
-                               'COL',
-                               'ROW',
-                               'NAME',
-                               'SPOT_ID',
-                               'CONTROL_TYPE',
-                               'REFSEQ',
-                               'GB_ACC',
-                               'GENE',
-                               'GENE_SYMBOL',
-                               'GENE_NAME',
-                               'UNIGENE_ID',
-                               'ENSEMBL_ID',
-                               'TIGR_ID',
-                               'ACCESSION_STRING',
-                               'CHROMOSOMAL_LOCATION',
-                               'CYTOBAND',
-                               'DESCRIPTION',
-                               'GO_ID',
-                               'SEQUENCE',
-                               'SPOT_ID',
-                               'ORDER']:
-        data[0] = '\t'.join(['ID',
-                             'COL',
-                             'ROW',
-                             'NAME',
-                             'SPOT_ID',
-                             'CONTROL_TYPE',
-                             'REFSEQ',
-                             'GB_ACC',
-                             'GENE',
-                             'GENE_SYMBOL',
-                             'GENE_NAME',
-                             'UNIGENE_ID',
-                             'ENSEMBL_ID',
-                             'TIGR_ID',
-                             'ACCESSION_STRING',
-                             'CHROMOSOMAL_LOCATION',
-                             'CYTOBAND',
-                             'DESCRIPTION',
-                             'GO_ID',
-                             'SEQUENCE',
-                             'SPOT_ID (error)',
-                             'ORDER'])
-    data = '\n'.join(data)
+    data = '\n'.join([i.rstrip()
+                      for i in lines if i[0] not in ("^", "!", "#")])
     return DataFrame.from_csv(StringIO(data), index_col=None, sep="\t")
 
 
@@ -478,8 +434,17 @@ def parse_GPL(filepath, entry_name=None, silent=False):
                          'DESCRIPTION',
                          'GO_ID',
                          'SEQUENCE',
-                         'SPOT_ID (error)',
+                         'SPOT_ID.1',
                          'ORDER']
+    elif list(columns.index) == ['ID', 'ROW', 'COL', 'SPOT_ID', 'CONTROL_TYPE', 'SEQUENCE',
+                                 'GENE_SYMBOL', 'GENE_NAME', 'ACCESSION_STRING', 'CHROMOSOMAL_LOCATION',
+                                 'CYTOBAND', 'DESCRIPTION', 'RANGE_GB', 'RANGE_START', 'RANGE_END',
+                                 'SPOT_ID']:
+        columns.index = ['ID', 'ROW', 'COL', 'SPOT_ID', 'CONTROL_TYPE', 'SEQUENCE',
+                         'GENE_SYMBOL', 'GENE_NAME', 'ACCESSION_STRING', 'CHROMOSOMAL_LOCATION',
+                         'CYTOBAND', 'DESCRIPTION', 'RANGE_GB', 'RANGE_START', 'RANGE_END',
+                         'SPOT_ID.1']
+
     metadata = parse_metadata(gpl_soft)
 
     if has_table:
