@@ -1,9 +1,11 @@
 import os
 import sys
+import gzip
 from errno import EEXIST
 from sys import stderr, stdout
 from contextlib import closing
 from shutil import copyfileobj
+from contextlib import contextmanager
 try:
     from urllib.request import urlopen
     from urllib.error import URLError
@@ -67,3 +69,30 @@ def download_from_url(url, destination_path, force=False, aspera=False):
                 fn = wgetter.download(url, outdir=os.path.dirname(destination_path))
     except URLError:
         stderr.write("Cannot find file %s" % url)
+
+
+@contextmanager
+def smart_open(filepath):
+    """Open file intelligently depending on the source and python version.
+
+    :param filepath: path to the file
+    :yield: context manager for file handle
+
+    """
+    if filepath[-2:] == "gz":
+        mode = "rt"
+        fopen = gzip.open
+    else:
+        mode = "r"
+        fopen = open
+    if sys.version_info[0] < 3:
+        fh = fopen(filepath, mode)
+    else:
+        fh = fopen(filepath, mode, errors="ignore")
+    try:
+        yield fh
+    except IOError as e:
+        fh.close()
+    finally:
+        fh.close()
+
