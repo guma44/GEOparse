@@ -172,8 +172,13 @@ class SimpleGEO(BaseGEO):
                 columns_in_table = ", ".join(self.table.columns.tolist())
                 raise DataIncompatibilityException("\nData columns do not match columns description index in %s\n" % (self.name) +
                                                    "Columns in table are: %s\n" % columns_in_table +
-                                                   "Index in columns are: %s\n" % rows_in_columns
+                                                   "Index in columns are: %s\n" % rows_in_columns +
+                                                   "If FIELD.1 (such as SPOT_ID.1) is in column names and " +
+                                                   "FIELD exits already, '.1' was added automatically." +
+                                                   "This could mean that FIELD_<NEXT_FIELD> was aplit by error in the GPL specification." +
+                                                   "For example, SPOT_ID.1 & ORDER fields from GPL4133 were meant to be SPOT_ID_ORDERS."
                                                    )
+
         if self.columns.columns[0] != 'description':
             raise ValueError("Columns table must contain a column named 'description'. Here columns are: %s" % ", ".join(map(str, self.columns.columns)))
 
@@ -616,7 +621,7 @@ class GSE(BaseGEO):
                     else:
                         tmp[key] = ",".join(value)
                 pheno_data[gsm_name] = tmp
-            self._phenotype_data = DataFrame(pheno_data).T
+            self._phenotype_data = DataFrame(pheno_data)
         return self._phenotype_data
 
     def merge_and_average(self, platform, expression_column, group_by_column,
@@ -766,4 +771,3 @@ class GSE(BaseGEO):
 
     def __repr__(self):
         return str("<%s: %s - %i SAMPLES, %i PLATFORM(s)>" % (self.geotype, self.name, len(self.gsms), len(self.gpls)))
-
