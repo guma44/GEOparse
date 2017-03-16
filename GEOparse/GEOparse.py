@@ -18,6 +18,7 @@ import gzip
 from .GEOTypes import GSE, GSM, GPL, GDS, GDSSubset, GEODatabase
 from six import iteritems
 import wgetter
+from . import utils
 
 
 class UnknownGEOTypeException(Exception):
@@ -143,7 +144,7 @@ def get_GEO_file(geo, destdir=None, annotate_gpl=False, how="full",
         else:
             gplurl = "http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?targ=self&acc={record}&form=text&view={how}"
             url = gplurl.format(record=geo, how=how)
-            filepath = path.join(tmpdir, "{record}.soft".format(record=geo))
+            filepath = path.join(tmpdir, "{record}.txt".format(record=geo))
         if not path.isfile(filepath):
             stderr.write("Downloading %s to %s\n" % (url, filepath))
             fn = wgetter.download(url, outdir=path.dirname(filepath))
@@ -286,13 +287,7 @@ def parse_GSM(filepath, entry_name=None):
 
     """
     if isinstance(filepath, str):
-        if filepath[-2:] == "gz":
-            mode = "rt"
-            fopen = gzip.open
-        else:
-            mode = "r"
-            fopen = open
-        with fopen(filepath, mode) as f:
+        with utils.smart_open(filepath) as f:
             soft = []
             has_table = False
             for line in f:
@@ -347,13 +342,7 @@ def parse_GPL(filepath, entry_name=None, silent=False):
     gpl_soft = []
     has_table = False
     if isinstance(filepath, str):
-        if filepath[-2:] == "gz":
-            mode = "rt"
-            fopen = gzip.open
-        else:
-            mode = "r"
-            fopen = open
-        with fopen(filepath, mode) as soft:
+        with utils.smart_open(filepath) as soft:
             groupper = groupby(soft, lambda x: x.startswith("^"))
             for is_new_entry, group in groupper:
                 if is_new_entry:
@@ -475,18 +464,12 @@ def parse_GSE(filepath):
     :param filepath: str -- path to GSE SOFT file
     :return: GSE object
     """
-    if filepath[-2:] == "gz":
-        mode = "rt"
-        fopen = gzip.open
-    else:
-        mode = "r"
-        fopen = open
     gpls = {}
     gsms = {}
     series_counter = 0
     database = None
     metadata = {}
-    with fopen(filepath, mode) as soft:
+    with utils.smart_open(filepath) as soft:
         groupper = groupby(soft, lambda x: x.startswith("^"))
         for is_new_entry, group in groupper:
             if is_new_entry:
@@ -529,16 +512,10 @@ def parse_GDS(filepath):
     :returns: @todo
 
     """
-    if filepath[-2:] == "gz":
-        mode = "rt"
-        fopen = gzip.open
-    else:
-        mode = "r"
-        fopen = open
     dataset_lines = []
     subsets = {}
     database = None
-    with fopen(filepath, mode) as soft:
+    with utils.smart_open(filepath) as soft:
         groupper = groupby(soft, lambda x: x.startswith("^"))
         for is_new_entry, group in groupper:
             if is_new_entry:
