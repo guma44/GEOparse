@@ -163,17 +163,42 @@ class SimpleGEO(BaseGEO):
 
         self.table = table
         self.columns = columns
+        columns_are_correct = False
         if self.columns.index.tolist() != self.table.columns.tolist():
-            if sorted(self.columns.index.tolist()) == sorted(self.table.columns.tolist()):
-                stderr.write("Data columns in %s %s are not in order. Reordering.\n" % (self.geotype, self.name))
-                self.columns = self.columns.ix[self.table.columns]
-            else:
-                rows_in_columns = ", ".join(self.columns.index.tolist())
-                columns_in_table = ", ".join(self.table.columns.tolist())
-                raise DataIncompatibilityException("\nData columns do not match columns description index in %s\n" % (self.name) +
-                                                   "Columns in table are: %s\n" % columns_in_table +
-                                                   "Index in columns are: %s\n" % rows_in_columns
-                                                   )
+            if not self.columns.index.is_unique:
+                # try to correct duplicate index in the same way pandas is doing the columns
+                stderr.write("Detected duplicated columns in %s %s. Correcting.\n" % (self.geotype,
+                                                                                      self.name))
+                indices = {}
+                new_index = []
+                for idx in self.columns.index:
+                    if idx not in indices:
+                        indices[idx] = 0
+                        new_index.append(idx)
+                    else:
+                        indices[idx] += 1
+                        new_index.append("%s.%i" % (idx, indices[idx]))
+                self.columns.index = new_index
+                if self.columns.index.tolist() == self.table.columns.tolist():
+                    columns_are_correct = True
+            if not columns_are_correct:
+                # if the columns are still not correct check the order.
+                if sorted(self.columns.index.tolist()) == sorted(self.table.columns.tolist()):
+                    stderr.write("Data columns in %s %s are not in order. Reordering.\n" % (
+                        self.geotype,
+                        self.name))
+                    self.columns = self.columns.ix[self.table.columns]
+                    if self.columns.index.tolist() == self.table.columns.tolist():
+                        columns_are_correct = True
+        else:
+            columns_are_correct = True
+
+        if not columns_are_correct:
+            rows_in_columns = ", ".join(self.columns.index.tolist())
+            columns_in_table = ", ".join(self.table.columns.tolist())
+            raise DataIncompatibilityException("\nData columns do not match columns description index in %s\n" % (self.name) +
+                                               "Columns in table are: %s\n" % columns_in_table +
+                                               "Index in columns are: %s\n" % rows_in_columns)
         if self.columns.columns[0] != 'description':
             raise ValueError("Columns table must contain a column named 'description'. Here columns are: %s" % ", ".join(map(str, self.columns.columns)))
 
