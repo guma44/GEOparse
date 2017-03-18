@@ -1,0 +1,85 @@
+^PLATFORM = GPL4133
+!Platform_title = Agilent-014850 Whole Human Genome Microarray 4x44K G4112F (Feature Number version)
+!Platform_geo_accession = GPL4133
+!Platform_status = Public on Aug 17 2006
+!Platform_submission_date = Aug 17 2006
+!Platform_last_update_date = Oct 05 2016
+!Platform_technology = in situ oligonucleotide
+!Platform_distribution = custom-commercial
+!Platform_organism = Homo sapiens
+!Platform_taxid = 9606
+!Platform_manufacturer = Agilent Technologies
+!Platform_manufacture_protocol = see manufacturer's web site at http://www.agilent.com/
+!Platform_catalog_number = G4112F
+!Platform_description = 
+!Platform_description = This multi-pack (4X44K) formatted microarray represents a compiled view of the human genome as it is understood today. The sequence information used to design this product was derived from a broad survey of well known sources such as RefSeq, Goldenpath, Ensembl, Unigene and others. The resulting view of the human genome covers 41K unique genes and transcripts which have been verified and optimized by alignment to the human genome assembly and by Agilent's Empirical Validation process.
+!Platform_description = 
+!Platform_description = Arrays of this design have barcodes that begin with 16014850 or 2514850.
+!Platform_description = 
+!Platform_description = Orientation:
+!Platform_description = Features are numbered numbered Left-to-Right, Top-to-Bottom as scanned by an Agilent scanner (barcode on the left, DNA on the back surface, scanned through the glass), matching the FeatureNum output from Agilent's Feature Extraction software.
+!Platform_description = 
+!Platform_description = The ID column represents the Agilent Feature Extraction feature number.
+!Platform_description = 
+!Platform_description = Rows and columns are numbered as scanned by an Axon Scanner (barcode on the bottom, DNA on the front surface).
+!Platform_description = 
+!Platform_description = To match data scanned on an Axon scanner, use the RefNumber column contained in the Agilent-provided GAL file as the ID_REF column in sample submissions.
+!Platform_description = 
+!Platform_description = *** A different version of this platform with the Agilent Probe names in the ID column is assigned accession number GPL6480.
+!Platform_contact_name =  ,,Agilent Technologies
+!Platform_contact_email = cag_sales-na@agilent.com
+!Platform_contact_phone = 877-424-4536
+!Platform_contact_department =  
+!Platform_contact_institute = Agilent Technologies
+!Platform_contact_address =  
+!Platform_contact_city = Palo Alto
+!Platform_contact_state = CA
+!Platform_contact_zip/postal_code = 94304
+!Platform_contact_country = USA
+!Platform_contact_web_link = www.agilent.com
+!Platform_supplementary_file = ftp://ftp.ncbi.nlm.nih.gov/geo/platforms/GPL4nnn/GPL4133/suppl/GPL4133_old_annotations.txt.gz
+!Platform_relation = Alternative to: GPL6480
+!Platform_relation = Alternative to: GPL15285
+!Platform_relation = Alternative to: GPL16022
+!Platform_sample_id = GSM187285
+!Platform_sample_id = GSM187286
+!Platform_sample_id = GSM187287
+!Platform_data_row_count = 45220
+#ID = Agilent feature number
+#COL = Column
+#ROW = Row
+#NAME = NAME
+#SPOT_ID = Spot identifier
+#CONTROL_TYPE = Control type
+#REFSEQ = RefSeqAccession
+#GB_ACC = GenBankAccession LINK_PRE:"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=Search&db=Nucleotide&term="
+#GENE = Entrez Gene ID LINK_PRE:"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=gene&cmd=Retrieve&dopt=Graphics&list_uids="
+#GENE_SYMBOL = Gene Symbol
+#GENE_NAME = Gene Name
+#UNIGENE_ID = UnigeneID
+#ENSEMBL_ID = EnsemblID
+#TIGR_ID = TIGRID
+#ACCESSION_STRING = Accession String
+#CHROMOSOMAL_LOCATION = Chromosomal Location
+#CYTOBAND = Cytoband
+#DESCRIPTION = Description
+#GO_ID = GoIDs
+#SEQUENCE = Sequence
+#SPOT_ID = 
+#ORDER = 
+!platform_table_begin
+ID	COL	ROW	NAME	SPOT_ID	CONTROL_TYPE	REFSEQ	GB_ACC	GENE	GENE_SYMBOL	GENE_NAME	UNIGENE_ID	ENSEMBL_ID	TIGR_ID	ACCESSION_STRING	CHROMOSOMAL_LOCATION	CYTOBAND	DESCRIPTION	GO_ID	SEQUENCE	SPOT_ID	ORDER
+1	266	170	GE_BrightCorner	GE_BrightCorner	pos																1
+2	266	168	DarkCorner	DarkCorner	pos																2
+3	266	166	DarkCorner	DarkCorner	pos																3
+4	266	164	DarkCorner	DarkCorner	pos																4
+5	266	162	DarkCorner	DarkCorner	pos																5
+6	266	160	DarkCorner	DarkCorner	pos																6
+7	266	158	DarkCorner	DarkCorner	pos																7
+8	266	156	DarkCorner	DarkCorner	pos																8
+9	266	154	DarkCorner	DarkCorner	pos																9
+10	266	152	DarkCorner	DarkCorner	pos																10
+11	266	150	DarkCorner	DarkCorner	pos																11
+12	266	148	A_24_P66027	A_24_P66027	FALSE	NM_004900	NM_004900	9582	APOBEC3B	apolipoprotein B mRNA editing enzyme, catalytic polypeptide-like 3B	Hs.226307	ENST00000407298	NP075413	ref|NM_004900|ref|NM_145699|ens|ENST00000407298|ens|ENST00000333467	chr22:37717484-37717543	hs|22q13.1	Homo sapiens apolipoprotein B mRNA editing enzyme, catalytic polypeptide-like 3B (APOBEC3B), mRNA [NM_004900]	GO:0003723(RNA binding)|GO:0005575(cellular_component)|GO:0008150(biological_process)|GO:0008270(zinc ion binding)|GO:0016787(hydrolase activity)|GO:0016814(hydrolase activity, acting on carbon-nitrogen (but not peptide) bonds, in cyclic amidines)|GO:0046872(metal ion binding)	GCTGCCCGCATCTATGATTACGACCCCCTATATAAGGAGGCGCTGCAAATGCTGCGGGAT		12
+13	266	146	A_32_P77178	A_32_P77178	FALSE		AA085955				Hs.12341			gb|AA085955|gb|AL567297|gb|BF871687|gb|BM671900	chr1:152822085-152822144	hs|1q21.3	AA085955 zl83f11.s1 Stratagene colon (#937204) Homo sapiens cDNA clone IMAGE:511245 3', mRNA sequence [AA085955]		GGTCAATTTTTGGTCAAAAGTACAGAGAGCATAGAATAAAAGCAAAGATGTGAATGTCTC		13
+!platform_table_end

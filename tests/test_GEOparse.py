@@ -202,6 +202,38 @@ class TestGPL(unittest.TestCase):
         self.assertEqual(gpl.get_metadata_attribute('platform'), "GPL96")
         self.assertEqual(len(gpl.table.index), 22283)
         self.assertEqual(len(gpl.columns), 21)
+    
+    def test_duplicate_column(self):
+        columns = ['ID',
+                   'COL',
+                   'ROW',
+                   'NAME',
+                   'SPOT_ID',
+                   'CONTROL_TYPE',
+                   'REFSEQ',
+                   'GB_ACC',
+                   'GENE',
+                   'GENE_SYMBOL',
+                   'GENE_NAME',
+                   'UNIGENE_ID',
+                   'ENSEMBL_ID',
+                   'TIGR_ID',
+                   'ACCESSION_STRING',
+                   'CHROMOSOMAL_LOCATION',
+                   'CYTOBAND',
+                   'DESCRIPTION',
+                   'GO_ID',
+                   'SEQUENCE',
+                   'SPOT_ID.1',
+                   'ORDER']
+        columns2 = ['ID', 'COL', 'ROW', 'NAME', 'SPOT_ID', 'CONTROL_TYPE', 'ENSEMBL_ID', 'GB_ACC',
+                   'GENE', 'GENE_SYMBOL', 'ENSEMBL_ID.1', 'UNIGENE_ID', 'ENSEMBL_ID.2', 'TIGR_ID',
+                   'ACCESSION_STRING', 'CHROMOSOMAL_LOCATION', 'CYTOBAND', 'DESCRIPTION', 'GO_ID',
+                   'SEQUENCE', 'SPOT_ID.1', 'ORDER']
+        gpl = GEO.get_GEO(filepath=join(download_geo, "GPL4133.txt"))
+        self.assertEqual(list(gpl.columns.index), columns)
+        gpl2 = GEO.get_GEO(filepath=join(download_geo, "GPL4134.txt"))
+        self.assertEqual(list(gpl2.columns.index), columns2)
 
 class TestGDS(unittest.TestCase):
 
