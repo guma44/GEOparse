@@ -9,6 +9,7 @@ import sys
 import gzip
 import json
 import time
+import platform
 import subprocess
 import numpy as np
 from . import utils
