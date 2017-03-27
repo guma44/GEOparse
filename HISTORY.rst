@@ -3,6 +3,14 @@
 History
 -------
 
+0.1.10 (2017-03-27)
+---------------------
+
+* Important fix for SRA download
+* Fix duplicated columns issue
+* Python 2 and 3 open compatibility
+
+
 0.1.9 (2017-03-10)
 ---------------------
 
