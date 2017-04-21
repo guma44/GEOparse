@@ -407,7 +407,7 @@ class GSM(SimpleGEO):
             # using ID fetch the info
             number_of_trials = 10
             wait_time = 30
-            for tiral in range(number_of_trials):
+            for trial in range(number_of_trials):
                 try:
                     results = Entrez.efetch(db="sra", id=ids[0], rettype="runinfo", retmode="text").read()
                     break
