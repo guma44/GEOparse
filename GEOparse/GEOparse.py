@@ -105,7 +105,7 @@ def get_GEO_file(geo, destdir=None, annotate_gpl=False, how="full",
                             record=geo,
                             record_file="%s_family.soft.gz" % geo)
         filepath = path.join(tmpdir, "{record}_family.soft.gz".format(record=geo))
-    elif geotype == 'GSE & (how == 'brief' | how == 'quick'):
+    elif geotype == 'GSE' & (how == 'brief' | how == 'quick'):
         gseurl = "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?targ=self&acc={record}&form=text&view={how}"
         url = gseurl.format(record = geo, how = how)
         filepath = path.join(tmpdir, "{record}.txt".format(record=geo))
