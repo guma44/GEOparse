@@ -106,11 +106,11 @@ def get_GEO_file(geo, destdir=None, annotate_gpl=False, how="full",
                             record_file="%s_family.soft.gz" % geo)
         filepath = path.join(tmpdir, "{record}_family.soft.gz".format(record=geo))
     elif geotype == 'GSE & (how == 'brief' | how == 'quick'):
-        gseurl = "http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?targ=self&acc={record}&form=text&view={how}"
+        gseurl = "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?targ=self&acc={record}&form=text&view={how}"
         url = gseurl.format(record = geo, how = how)
         filepath = path.join(tmpdir, "{record}.txt".format(record=geo))
     elif geotype == "GSM":
-        gsmurl = "http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?targ=self&acc={record}&form=text&view={how}"
+        gsmurl = "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?targ=self&acc={record}&form=text&view={how}"
         url = gsmurl.format(record=geo, how=how)
         filepath = path.join(tmpdir, "{record}.txt".format(record=geo))
     elif geotype == "GPL":
@@ -138,7 +138,7 @@ def get_GEO_file(geo, destdir=None, annotate_gpl=False, how="full",
                     geo)
             filepath = path.join(tmpdir, "{record}_family.soft.gz".format(record=geo))
         else:
-            gplurl = "http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?targ=self&acc={record}&form=text&view={how}"
+            gplurl = "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?targ=self&acc={record}&form=text&view={how}"
             url = gplurl.format(record=geo, how=how)
             filepath = path.join(tmpdir, "{record}.txt".format(record=geo))
         if not path.isfile(filepath):
