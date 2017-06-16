@@ -190,7 +190,7 @@ GSE is assigned to unique and stable GEO accession number that starts at GSE fol
 In GEOparse Series is represented by GEOparse.GSE object that contains tree main attributes:
  * inherited from BaseGEO :attr:`metadata`
  * :attr:`gsms` -- :class:`dict` with all samples in this GSE as GSM objects
- * :attr:`columns` -- :class:`dict` with all platforms in this GSE as GSM objects
+ * :attr:`gpls` -- :class:`dict` with all platforms in this GSE as GSM objects
 
 See API for more information.
 
