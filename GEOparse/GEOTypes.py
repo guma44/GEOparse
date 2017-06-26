@@ -349,7 +349,7 @@ class GSM(SimpleGEO):
                 assert len(metavalue) == 1 and metavalue != ''
                 # stderr.write("Downloading %s\n" % metavalue)
                 if 'sra' in metavalue[0] and download_sra:
-                    self.download_SRA(email, filetype=sra_filetype, directory=directory)
+                    self.download_SRA(email, filetype=sra_filetype, directory=directory, keep_sra=False)
                 else:
                     download_path = os.path.abspath(os.path.join(directory, os.path.join(directory_path, metavalue[0].split("/")[-1])))
                     utils.download_from_url(metavalue[0], download_path)
@@ -450,6 +450,8 @@ class GSM(SimpleGEO):
                 utils.download_from_url(url, filepath, aspera=aspera)
 
                 if filetype in ["fasta", "fastq"]:
+                    if utils.which('fastq-dump') is None:
+                        raise NoSRAToolkitException("fastq-dump command not found")
                     ftype = ""
                     if filetype == "fasta":
                         ftype = " --fasta "
@@ -460,13 +462,9 @@ class GSM(SimpleGEO):
                     stderr.write("Converting to %s/%s_*.%s.gz\n" % (
                         directory_path, sra_run, filetype))
                     pout, perr = process.communicate()
-                    if "command not found" in perr:
-                        raise NoSRAToolkitException("fastq-dump command not found")
-                    else:
-                        print(pout)
-                        if not keep_sra:
-                            # Delete sra file
-                            os.unlink(filepath)
+                    if not keep_sra:
+                        # Delete sra file
+                        os.unlink(filepath)
 
 class GPL(SimpleGEO):
 
