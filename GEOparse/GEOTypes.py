@@ -330,7 +330,7 @@ class GSM(SimpleGEO):
             tmp_data.columns = [self.name]
         return tmp_data
 
-    def download_supplementary_files(self, directory="./", download_sra=True, sra_filetype='fasta', email=None):
+    def download_supplementary_files(self, directory="./", download_sra=True, email=None, sra_kwargs=None):
         """Download all supplementary data available for the sample
 
         :param directory: directory to download the data (in this directory function will create
@@ -338,25 +338,29 @@ class GSM(SimpleGEO):
         :param download_sra: bool - indicates whether to download SRA raw data too, defaults to True
         :param sra_filetype: indicates what file type to download if we specified SRA, can be sra, fasta or fastq
         :param email: e-mail that will be provided to the Entrez, defaults to None
+        :param sra_kwargs: dict - kwargs passed to the download_SRA method
+
         """
         directory_path = os.path.abspath(os.path.join(directory, "%s_%s_%s" % ('Supp',
                                                                                self.get_accession(),
                                                                                re.sub(r'[\s\*\?\(\),\.;]', '_', self.metadata['title'][0]) # the directory name cannot contain many of the signs
                                                                                )))
         utils.mkdir_p(os.path.abspath(directory_path))
+        if sra_kwargs is None:
+            sra_kwargs = {}
         for metakey, metavalue in iteritems(self.metadata):
             if 'supplementary_file' in metakey:
                 assert len(metavalue) == 1 and metavalue != ''
                 # stderr.write("Downloading %s\n" % metavalue)
                 if 'sra' in metavalue[0] and download_sra:
-                    self.download_SRA(email, filetype=sra_filetype, directory=directory, keep_sra=False)
+                    self.download_SRA(email, directory=directory, **sra_kwargs)
                 else:
                     download_path = os.path.abspath(os.path.join(directory, os.path.join(directory_path, metavalue[0].split("/")[-1])))
                     utils.download_from_url(metavalue[0], download_path)
 
 
 
-    def download_SRA(self, email, metadata_key='auto', directory='./', filetype='sra', aspera=False, keep_sra=False):
+    def download_SRA(self, email, metadata_key='auto', directory='./', **kwargs):
         """Download RAW data as SRA file to the sample directory created ad hoc
         or the directory specified by the parameter. The sample has to come from
         sequencing eg. mRNA-seq, CLIP etc.
@@ -372,9 +376,31 @@ class GSM(SimpleGEO):
         :param filetype: can be sra, fasta, or fastq - for fasta or fastq SRA-Toolkit need to be installed
         :param aspera: bool - use Aspera to download samples, defaults to False
         :param keep_sra: bool - keep SRA files after download, defaults to False
+        :param fastq_dump_options: dict - pass options to fastq-dump (if used, the options
+            has to be in long form eg. --split-files), defaults to
+            {'split-files': None,
+            'readids': None,
+            'read-filter': 'pass',
+            'dumpbase': None,
+            'gzip': None}
 
         """
         from Bio import Entrez
+
+        # Unpack arguments
+        filetype = kwargs.get('filetype', 'fasta')
+        aspera = kwargs.get('aspera', False)
+        keep_sra = kwargs.get('keep_sra', False)
+
+        fq_options = {
+            'split-files': None,
+            'readids': None,
+            'read-filter': 'pass',
+            'dumpbase': None,
+            'gzip': None
+        }
+        fastq_dump_options = kwargs.get('fastq_dump_options', fq_options)
+
         # Check download filetype
         filetype = filetype.lower()
         if filetype not in ["sra", "fastq", "fasta"]:
@@ -446,6 +472,7 @@ class GSM(SimpleGEO):
                 url = ftpaddres.format(range_subdir=query[:6],
                                            record_dir=query,
                                            file_dir=sra_run)
+                print("URL: ", url)
                 filepath = os.path.abspath(os.path.join(directory_path, "%s.sra" % sra_run))
                 utils.download_from_url(url, filepath, aspera=aspera)
 
@@ -455,9 +482,15 @@ class GSM(SimpleGEO):
                     ftype = ""
                     if filetype == "fasta":
                         ftype = " --fasta "
-                    cmd = "fastq-dump --split-files --gzip %s --outdir %s %s"
+                    cmd = "fastq-dump"
+                    for fqoption, fqvalue in iteritems(fastq_dump_options):
+                        if fqvalue:
+                            cmd += (" --%s %s" % (fqoption, fqvalue))
+                        else:
+                            cmd += (" --%s" % fqoption)
+                    cmd += " %s --outdir %s %s"
                     cmd = cmd % (ftype, directory_path, filepath)
-
+                    print(cmd)
                     process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
                     stderr.write("Converting to %s/%s_*.%s.gz\n" % (
                         directory_path, sra_run, filetype))
