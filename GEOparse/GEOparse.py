@@ -19,6 +19,7 @@ from .GEOTypes import GSE, GSM, GPL, GDS, GDSSubset, GEODatabase
 from six import iteritems
 import wgetter
 from . import utils
+from .logger import logger
 
 
 class UnknownGEOTypeException(Exception):
@@ -57,13 +58,17 @@ def get_GEO(geo=None, filepath=None, destdir="./", how='full', annotate_gpl=Fals
         if geotype is None:
             geotype = filepath.split("/")[-1][:3]
 
-    stderr.write("Parsing %s:\n" % filepath)
+    if silent:
+        logger.setLevel(100)  # More than critical
+
+
+    logger.info("Parsing %s: " % filepath)
     if geotype.upper() == "GSM":
         return parse_GSM(filepath)
     elif geotype.upper() == "GSE":
         return parse_GSE(filepath)
     elif geotype.upper() == 'GPL':
-        return parse_GPL(filepath, silent=silent)
+        return parse_GPL(filepath)
     elif geotype.upper() == 'GDS':
         return parse_GDS(filepath)
     else:
@@ -86,8 +91,8 @@ def get_GEO_file(geo, destdir=None, annotate_gpl=False, how="full",
     range_subdir = sub(r"\d{1,3}$", "nnn", geo)
     if destdir is None:
         tmpdir = mkdtemp()
-        stderr.write("No destination directory specified."
-                     " Temporary files will be downloaded at %s\n" % tmpdir)
+        logger.info("No destination directory specified."
+                     " Temporary files will be downloaded at %s" % tmpdir)
     else:
         tmpdir = destdir
 
@@ -119,13 +124,13 @@ def get_GEO_file(geo, destdir=None, annotate_gpl=False, how="full",
             filepath = path.join(tmpdir, "{record}.annot.gz".format(record=geo))
             if not path.isfile(filepath):
                 try:
-                    stderr.write("Downloading %s to %s\n" % (url, filepath))
+                    logger.info("Downloading %s to %s" % (url, filepath))
                     fn = wgetter.download(url, outdir=path.dirname(filepath))
                     return filepath, geotype
                 except URLError:
-                    stderr.write("Annotations for %s are not available, trying submitter GPL\n" % geo)
+                    logger.info("Annotations for %s are not available, trying submitter GPL" % geo)
             else:
-                stderr.write("File already exist: using local version.\n")
+                logger.info("File already exist: using local version.")
                 return filepath, geotype
 
         if include_data:
@@ -138,21 +143,19 @@ def get_GEO_file(geo, destdir=None, annotate_gpl=False, how="full",
             url = gplurl.format(record=geo, how=how)
             filepath = path.join(tmpdir, "{record}.txt".format(record=geo))
         if not path.isfile(filepath):
-            stderr.write("Downloading %s to %s\n" % (url, filepath))
+            logger.info("Downloading %s to %s" % (url, filepath))
             fn = wgetter.download(url, outdir=path.dirname(filepath))
-            stderr.write("\n")
         else:
-            stderr.write("File already exist: using local version.\n")
+            logger.info("File already exist: using local version.")
         return filepath, geotype
     else:
         raise UnknownGEOTypeException("%s type is not known" % geotype)
 
     if not path.isfile(filepath):
-        stderr.write("Downloading %s to %s\n" % (url, filepath))
+        logger.info("Downloading %s to %s" % (url, filepath))
         fn = wgetter.download(url, outdir=path.dirname(filepath))
-        stderr.write("\n")
     else:
-        stderr.write("File already exist: using local version.\n")
+        logger.info("File already exist: using local version.")
 
     return filepath, geotype
 
@@ -251,7 +254,7 @@ def parse_GDS_columns(lines, subsets):
             elif subset.get_type() == "individual":
                 subset_ids["individual"][expid] = subset.metadata["description"][0]
             else:
-                stderr.write("Unknown subset type: %s for subset %s\n" % (subset.get_type(), subsetname))
+                logger.error("Unknown subset type: %s for subset %s" % (subset.get_type(), subsetname))
 
     return df.join(DataFrame(subset_ids))
 
@@ -315,7 +318,7 @@ def parse_GSM(filepath, entry_name=None):
     return gsm
 
 
-def parse_GPL(filepath, entry_name=None, silent=False):
+def parse_GPL(filepath, entry_name=None):
     """Parse GPL entry from SOFT file
 
     :param filepath: str or iterable -- path to file with 1 GPL entry or list of lines representing
@@ -336,8 +339,7 @@ def parse_GPL(filepath, entry_name=None, silent=False):
             for is_new_entry, group in groupper:
                 if is_new_entry:
                     entry_type, entry_name = __parse_entry(next(group))
-                    if not silent:
-                        stderr.write(" - %s : %s\n" % (entry_type.upper(), entry_name))
+                    logger.debug("%s: %s" % (entry_type.upper(), entry_name))
                     if entry_type == "SERIES":
                         is_data, data_group = next(groupper)
                         gse_metadata = parse_metadata(data_group)
@@ -406,7 +408,7 @@ def parse_GSE(filepath):
         for is_new_entry, group in groupper:
             if is_new_entry:
                 entry_type, entry_name = __parse_entry(next(group))
-                stderr.write(" - %s : %s\n" % (entry_type.upper(), entry_name))
+                logger.debug("%s: %s" % (entry_type.upper(), entry_name))
                 if entry_type == "SERIES":
                     series_counter += 1
                     if series_counter > 1:
@@ -425,7 +427,7 @@ def parse_GSE(filepath):
                     database_metadata = parse_metadata(data_group)
                     database = GEODatabase(name=entry_name, metadata=database_metadata)
                 else:
-                    stderr.write("Cannot recognize type %s\n" % entry_type)
+                    logger.error("Cannot recognize type %s" % entry_type)
     gse = GSE(name=entry_name,
               metadata=metadata,
               gpls=gpls,
@@ -450,7 +452,7 @@ def parse_GDS(filepath):
         for is_new_entry, group in groupper:
             if is_new_entry:
                 entry_type, entry_name = __parse_entry(next(group))
-                stderr.write(" - %s : %s\n" % (entry_type.upper(), entry_name))
+                logger.debug("%s: %s" % (entry_type.upper(), entry_name))
                 if entry_type == "SUBSET":
                     is_data, data_group = next(groupper)
                     assert not is_data, "The key is not False, probably there is an error in the SOFT file"
@@ -468,7 +470,7 @@ def parse_GDS(filepath):
                     for line in data_group:
                         dataset_lines.append(line.rstrip())
                 else:
-                    stderr.write("Cannot recognize type %s\n" % entry_type)
+                    logger.error("Cannot recognize type %s" % entry_type)
 
     metadata = parse_metadata(dataset_lines)
     columns = parse_GDS_columns(dataset_lines, subsets)

@@ -5,7 +5,6 @@ Classes that represent different GEO entities
 import os
 import re
 import abc
-import sys
 import gzip
 import json
 import time
@@ -13,13 +12,14 @@ import platform
 import subprocess
 import numpy as np
 from . import utils
-from sys import stderr, stdout
 from pandas import DataFrame, concat
 try:
     from urllib.error import HTTPError
 except ImportError:
     from urllib2 import HTTPError
 from six import iteritems, itervalues
+
+from .logger import logger
 
 
 
@@ -168,7 +168,7 @@ class SimpleGEO(BaseGEO):
         if self.columns.index.tolist() != self.table.columns.tolist():
             if not self.columns.index.is_unique:
                 # try to correct duplicate index in the same way pandas is doing the columns
-                stderr.write("Detected duplicated columns in %s %s. Correcting.\n" % (self.geotype,
+                logger.warning("Detected duplicated columns in %s %s. Correcting.\n" % (self.geotype,
                                                                                       self.name))
                 indices = {}
                 new_index = []
@@ -185,7 +185,7 @@ class SimpleGEO(BaseGEO):
             if not columns_are_correct:
                 # if the columns are still not correct check the order.
                 if sorted(self.columns.index.tolist()) == sorted(self.table.columns.tolist()):
-                    stderr.write("Data columns in %s %s are not in order. Reordering.\n" % (
+                    logger.warning("Data columns in %s %s are not in order. Reordering.\n" % (
                         self.geotype,
                         self.name))
                     self.columns = self.columns.ix[self.table.columns]
@@ -318,7 +318,7 @@ class GSM(SimpleGEO):
         if merge_on_column is None and gpl_on is None and gsm_on is None:
             raise Exception("You have to provide one of the two: merge_on_column or gpl_on and gsm_on parameters")
         if merge_on_column:
-            stderr.write("merge_on_column is not None. Using this option.\n")
+            logger.info("merge_on_column is not None. Using this option.")
             tmp_data = self.table.merge(gpl.table, on=merge_on_column, how='outer')
             tmp_data = tmp_data.groupby(group_by_column).mean()[[expression_column]]
         else:
@@ -351,7 +351,7 @@ class GSM(SimpleGEO):
         for metakey, metavalue in iteritems(self.metadata):
             if 'supplementary_file' in metakey:
                 assert len(metavalue) == 1 and metavalue != ''
-                # stderr.write("Downloading %s\n" % metavalue)
+                # logger.info("Downloading %s\n" % metavalue)
                 if 'sra' in metavalue[0] and download_sra:
                     self.download_SRA(email, directory=directory, **sra_kwargs)
                 else:
@@ -439,7 +439,7 @@ class GSM(SimpleGEO):
                     break
                 except HTTPError as httperr:
                     if "502" in str(httperr):
-                        sys.stderr.write("Error: %s, trial %i out of %i, waiting for %i seconds." % (str(httperr),
+                        logger.error("Error: %s, trial %i out of %i, waiting for %i seconds." % (str(httperr),
                                                                                                      trial,
                                                                                                      number_of_trials,
                                                                                                      wait_time))
@@ -452,8 +452,8 @@ class GSM(SimpleGEO):
             try:
                 df['download_path']
             except KeyError as e:
-                stderr.write('KeyError: ' + str(e) + '\n')
-                stderr.write(str(results) + '\n')
+                logger.error('KeyError: ' + str(e) + '\n')
+                logger.error(str(results) + '\n')
 
             # make the directory
             if platform.system() == "Windows":
@@ -492,7 +492,7 @@ class GSM(SimpleGEO):
                     cmd = cmd % (ftype, directory_path, filepath)
                     print(cmd)
                     process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-                    stderr.write("Converting to %s/%s_*.%s.gz\n" % (
+                    logger.info("Converting to %s/%s_*.%s.gz\n" % (
                         directory_path, sra_run, filetype))
                     pout, perr = process.communicate()
                     if not keep_sra:
@@ -710,7 +710,7 @@ class GSE(BaseGEO):
                                                      gpl_on=gpl_on,
                                                      gsm_on=gsm_on))
         if len(data) == 0:
-            stderr.write("No samples for the platform were found\n")
+            logger.warning("No samples for the platform were found\n")
             return None
         elif len(data) == 1:
             return data[0]
@@ -799,7 +799,7 @@ class GSE(BaseGEO):
             gsms_to_use = self.gsms.values()
 
         for gsm in gsms_to_use:
-            stderr.write("Downloading %s files for %s series\n" % (filetype, gsm.name))
+            logger.info("Downloading %s files for %s series\n" % (filetype, gsm.name))
             gsm.download_SRA(email=email, filetype=filetype, directory=dirpath)
 
     def _get_object_as_soft(self):
