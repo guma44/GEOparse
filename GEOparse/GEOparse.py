@@ -35,7 +35,9 @@ class NoEntriesException(Exception):
     pass
 
 
-def get_GEO(geo=None, filepath=None, destdir="./", how='full', annotate_gpl=False, geotype=None, include_data=False, silent=False):
+def get_GEO(geo=None, filepath=None, destdir="./", how='full',
+            annotate_gpl=False, geotype=None, include_data=False, silent=False,
+            aspera=False):
     """Get the GEO entry directly from the GEO database or read it from SOFT file.
 
     :param geo: str -- GEO database identifier
@@ -52,14 +54,16 @@ def get_GEO(geo=None, filepath=None, destdir="./", how='full', annotate_gpl=Fals
     if (geo is not None and filepath is not None):
         raise Exception("You can specify filename or GEO accession - not both!")
 
+    if silent:
+        logger.setLevel(100)  # More than critical
+
     if filepath is None:
-        filepath, geotype = get_GEO_file(geo, destdir=destdir, how=how, annotate_gpl=annotate_gpl, include_data=include_data)
+        filepath, geotype = get_GEO_file(geo, destdir=destdir, how=how,
+            annotate_gpl=annotate_gpl, include_data=include_data, silent=silent,
+            aspera=aspera)
     else:
         if geotype is None:
             geotype = filepath.split("/")[-1][:3]
-
-    if silent:
-        logger.setLevel(100)  # More than critical
 
 
     logger.info("Parsing %s: " % filepath)
@@ -76,7 +80,7 @@ def get_GEO(geo=None, filepath=None, destdir="./", how='full', annotate_gpl=Fals
 
 
 def get_GEO_file(geo, destdir=None, annotate_gpl=False, how="full",
-        include_data=False):
+        include_data=False, silent=False, aspera=False):
     """Given GEO accession download corresponding SOFT file
 
     :param geo: str -- GEO database identifier
@@ -125,7 +129,8 @@ def get_GEO_file(geo, destdir=None, annotate_gpl=False, how="full",
             if not path.isfile(filepath):
                 try:
                     logger.info("Downloading %s to %s" % (url, filepath))
-                    fn = wgetter.download(url, outdir=path.dirname(filepath))
+                    utils.download_from_url(url, filepath, silent=silent,
+                        aspera=aspera)
                     return filepath, geotype
                 except URLError:
                     logger.info("Annotations for %s are not available, trying submitter GPL" % geo)
@@ -144,7 +149,7 @@ def get_GEO_file(geo, destdir=None, annotate_gpl=False, how="full",
             filepath = path.join(tmpdir, "{record}.txt".format(record=geo))
         if not path.isfile(filepath):
             logger.info("Downloading %s to %s" % (url, filepath))
-            fn = wgetter.download(url, outdir=path.dirname(filepath))
+            utils.download_from_url(url, filepath, silent=silent, aspera=aspera)
         else:
             logger.info("File already exist: using local version.")
         return filepath, geotype
@@ -153,7 +158,7 @@ def get_GEO_file(geo, destdir=None, annotate_gpl=False, how="full",
 
     if not path.isfile(filepath):
         logger.info("Downloading %s to %s" % (url, filepath))
-        fn = wgetter.download(url, outdir=path.dirname(filepath))
+        utils.download_from_url(url, filepath, silent=silent, aspera=aspera)
     else:
         logger.info("File already exist: using local version.")
 

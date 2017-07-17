@@ -15,6 +15,7 @@ from .GEOTypes import (DataIncompatibilityException,
                        GSE)
 
 import logging
+from logging.handlers import RotatingFileHandler
 from .logger import logger
 
 
@@ -24,12 +25,10 @@ def setVerbosity(level):
 
 
 def addLogFile(path):
-    logfile_handler = logging.handlers.RotatingFileHandler(
+    logfile_handler = RotatingFileHandler(
         path, maxBytes=50000, backupCount=2)
     formatter = logging.Formatter(
-        fmt=('%(levelname)s %(asctime)s %(module)s '
-             '%(process)d %(thread)d %(message)s'),
+        fmt='%(asctime)s %(levelname)s %(module)s - %(message)s',
         datefmt="%d-%b-%Y %H:%M:%S")
     logfile_handler.setFormatter(formatter)
     logger.addHandler(logfile_handler)
-
