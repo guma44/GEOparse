@@ -133,6 +133,13 @@ class TestGSM(unittest.TestCase):
         gsm.annotate(gpl.table, annotation_column="GB_ACC", in_place=True)
         assert_frame_equal(result, gsm.table)
 
+    def test_head(self):
+        gsm = GSM(name='name', table=self.table1, metadata=self.metadata,
+                  columns=self.columns1)
+        try:
+            gsm.head()
+        except:
+            self.fail("GSM.head() raised error!")
 
 
 class TestGPL(unittest.TestCase):

@@ -11,7 +11,7 @@ import time
 import platform
 import subprocess
 import numpy as np
-from . import utils
+from sys import stdout
 from pandas import DataFrame, concat
 
 try:
@@ -20,6 +20,7 @@ except ImportError:
     from urllib2 import HTTPError
 from six import iteritems, itervalues
 
+from . import utils
 from .logger import logger
 
 
