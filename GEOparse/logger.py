@@ -39,4 +39,4 @@ def add_log_file(path):
     logger.addHandler(logfile_handler)
 
 
-__all__ = ('logger', 'setVerbosity', 'addLogFile')
+__all__ = ('logger', 'set_verbosity', 'add_log_file')
