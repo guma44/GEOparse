@@ -45,7 +45,7 @@ class TestGSM(unittest.TestCase):
     def test_creation_of_object(self):
         with self.assertRaises(ValueError):
             GSM(name='name', table=['a'], metadata=self.metadata, columns=self.columns1)
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             GSM(name='name', table=self.table1, metadata=[], columns=self.columns1)
         with self.assertRaises(ValueError):
             GSM(name='name', table=self.table1, metadata=self.metadata, columns=[])
@@ -154,7 +154,7 @@ class TestGPL(unittest.TestCase):
     def test_creation_of_object(self):
         with self.assertRaises(ValueError):
             GPL(name='name', table=['a'], metadata=self.metadata, columns=self.columns1)
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             GPL(name='name', table=self.table1, metadata=[], columns=self.columns1)
         with self.assertRaises(ValueError):
             GPL(name='name', table=self.table1, metadata=self.metadata, columns=[])
@@ -255,7 +255,7 @@ class TestGDS(unittest.TestCase):
     def test_creation_of_object(self):
         with self.assertRaises(ValueError):
             GDS(name='name', table=['a'], metadata=self.metadata, columns=self.columns1, subsets=self.subsets)
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             GDS(name='name', table=self.table1, metadata=[], columns=self.columns1, subsets=self.subsets)
         with self.assertRaises(ValueError):
             GDS(name='name', table=self.table1, metadata=self.metadata, columns=[], subsets=self.subsets)
@@ -303,7 +303,7 @@ class TestGSE(unittest.TestCase):
             GSE(name='name1', metadata=self.metadata, gpls=[], gsms=self.gsms)
         with self.assertRaises(ValueError):
             GSE(name='name2', metadata=self.metadata, gpls=self.gpls, gsms=[])
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             GSE(name='name3', metadata=[], gpls=self.gpls, gsms=self.gsms)
         GSE(name='name4', metadata=self.metadata, gpls=self.gpls, gsms=self.gsms)
 
