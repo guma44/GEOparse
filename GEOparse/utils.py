@@ -17,6 +17,13 @@ from .logger import logger
 
 
 def mkdir_p(path_to_dir):
+    """Make directory(ies).
+
+    This function behaves like mkdir -p.
+
+    Args:
+        path_to_dir (:obj:`str`): Path to the directory to make.
+    """
     try:
         os.makedirs(path_to_dir)
     except OSError as e: # Python >2.5
@@ -26,6 +33,17 @@ def mkdir_p(path_to_dir):
             raise e
 
 def download_aspera(url, dest_path, user="anonftp", ftp="ftp-trace.ncbi.nlm.nih.gov"):
+    """Download file with Aspera Connect.
+
+    For details see the documentation ov Aspera Connect
+
+    Args:
+        url (:obj:`str`): URL to the file
+        dest_path (:obj:`str`): Destination path.
+        user (:obj:`str`, optional): User. Defaults to anonftp.
+        ftp (:obj:`str`, optional): FTP path. Defaults to
+            "ftp-trace.ncbi.nlm.nih.gov".
+    """
     logger.info("Downloading {} using aspera\n".format(url))
     aspera_home = os.environ.get("ASPERA_HOME", None)
     if not aspera_home:
@@ -53,9 +71,15 @@ def download_aspera(url, dest_path, user="anonftp", ftp="ftp-trace.ncbi.nlm.nih.
 def download_from_url(url, destination_path, force=False, aspera=False, silent=False):
     """Download file from remote server
 
-    :param url: path to the file on remote server (including file name)
-    :param destination_path: path to the file on local machine (including file name)
-    :param force: bool - if file exist force to overwrite it , defaults to False
+    Args:
+        url (:obj:`str`): Path to the file on remote server (including file
+            name)
+        destination_path (:obj:`str`): Path to the file on local machine
+            (including file name)
+        force (:obj:`bool`): If file exist force to overwrite it. Defaults to
+            False.
+        aspera (:obj:`bool`): Download with Aspera Connect. Defaults to False.
+        silent (:obj:`bool`): Do not print any message. Defaults to False.
     """
     try:
         is_already_downloaded = os.path.isfile(destination_path)
@@ -88,8 +112,11 @@ def download_from_url(url, destination_path, force=False, aspera=False, silent=F
 def smart_open(filepath):
     """Open file intelligently depending on the source and python version.
 
-    :param filepath: path to the file
-    :yield: context manager for file handle
+    Args:
+        filepath (:obj:`str`): Path to the file.
+
+    Yields:
+        Context manager for file handle.
 
     """
     if filepath[-2:] == "gz":
@@ -113,8 +140,16 @@ def smart_open(filepath):
 def which(program):
     """Check if executable exists.
 
-    The code is taken from: https://stackoverflow.com/questions/377017/test-if-executable-exists-in-python
+    The code is taken from:
+    https://stackoverflow.com/questions/377017/test-if-executable-exists-in-python
+    Args:
+        program (:obj:`str`): Path to the executable.
+
+    Returns:
+        :obj:`str` or :obj:`None`: Path to the program or None.
+
     """
+
     def is_exe(fpath):
         return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
 
