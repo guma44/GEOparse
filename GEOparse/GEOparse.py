@@ -23,30 +23,42 @@ from .logger import logger
 
 
 class UnknownGEOTypeException(Exception):
-    """
-    Exception representing the GEO type that do not correspond to any known.
-    """
+    """Raised when the GEO type that do not correspond to any known."""
     pass
 
 class NoEntriesException(Exception):
-    """
-    Exception raised when no entries could be found in the SOFT file.
-    """
+    """Raised when no entries could be found in the SOFT file."""
     pass
 
 
 def get_GEO(geo=None, filepath=None, destdir="./", how='full',
             annotate_gpl=False, geotype=None, include_data=False, silent=False,
             aspera=False):
-    """Get the GEO entry directly from the GEO database or read it from SOFT file.
+    """Get the GEO entry.
 
-    :param geo: str -- GEO database identifier
-    :param filepath: str -- path to local SOFT file
-    :param destdir: str -- directory to download data
-    :param how: str -- GSM download mode: full ...
-    :param include_data: bool -- full download of GPLs including series and samples
-    :param silent: bool -- don't print info
-    :returns: GEOType object -- object according to specified GEO type
+    The GEO entry is taken directly from the GEO database or read it from SOFT
+    file.
+
+    Args:
+        geo (:obj:`str`): GEO database identifier.
+        filepath (:obj:`str`): Path to local SOFT file. Defaults to None.
+        destdir (:obj:`str`, optional): Directory to download data. Defaults to
+            None.
+        how (:obj:`str`, optional): GSM download mode. Defaults to "full".
+        annotate_gpl (:obj:`bool`, optional): Annotate GPL object. Defaults to
+            False.
+        geotype (:obj:`str`, optional): Type of GEO entry. By default it is
+            inferred from the ID or the file name.
+        include_data (:obj:`bool`, optional): Full download of GPLs including
+            series and samples. Defaults to False.
+        silent (:obj:`bool`, optional): Do not print anything. Defaults to
+            False.
+        aspera (:obj:`bool`, optional): EXPERIMENTAL Download using Aspera
+            Connect. Follow Aspera instructions for further details. Defaults
+            to False.
+
+    Returns:
+        :obj:`GEOparse.BaseGEO`: A GEO object of given type.
 
     """
     if (geo is None and filepath is None):
@@ -81,13 +93,26 @@ def get_GEO(geo=None, filepath=None, destdir="./", how='full',
 
 def get_GEO_file(geo, destdir=None, annotate_gpl=False, how="full",
         include_data=False, silent=False, aspera=False):
-    """Given GEO accession download corresponding SOFT file
+    """Download corresponding SOFT file given GEO accession.
 
-    :param geo: str -- GEO database identifier
-    :param destdir: str -- directory to download data
-    :param how: str -- GSM download mode: full ...
-    :param include_data: bool -- full download of GPLs including series and samples
-    :returns: tuple -- path to downladed file, type of GEO object
+    Args:
+        geo (:obj:`str`): GEO database identifier.
+        destdir (:obj:`str`, optional): Directory to download data. Defaults to
+            None.
+        annotate_gpl (:obj:`bool`, optional): Annotate GPL object. Defaults to
+            False.
+        how (:obj:`str`, optional): GSM download mode. Defaults to "full".
+        include_data (:obj:`bool`, optional): Full download of GPLs including
+            series and samples. Defaults to False.
+        silent (:obj:`bool`, optional): Do not print anything. Defaults to
+            False.
+        aspera (:obj:`bool`, optional): EXPERIMENTAL Download using Aspera
+            Connect. Follow Aspera instructions for further details. Defaults
+            to False.
+
+    Returns:
+        :obj:`2-tuple` of :obj:`str` and :obj:`str`: Path to downloaded file and
+        and the type of GEO object.
 
     """
     geo = geo.upper()
@@ -168,8 +193,11 @@ def get_GEO_file(geo, destdir=None, annotate_gpl=False, how="full",
 def __parse_entry(entry_line):
     """Parse the SOFT file entry name line that starts with '^', '!' or '#'.
 
-    :param entry_line: str -- line from SOFT file
-    :returns: tuple -- type, value
+    Args:
+        entry_line (:obj:`str`): Line from SOFT  to be parsed.
+
+    Returns:
+        :obj:`2-tuple`: Type of entry, value of entry.
 
     """
     if entry_line.startswith("!"):
@@ -185,10 +213,13 @@ def __parse_entry(entry_line):
 
 
 def parse_entry_name(nameline):
-    """Parse line that starts with ^ and assign the name to it
+    """Parse line that starts with ^ and assign the name to it.
 
-    :param nameline: str -- line to process
-    :returns: str -- entry name
+    Args:
+        nameline (:obj:`str`): A line to process.
+
+    Returns:
+        :obj:`str`: Entry name.
 
     """
     entry_type, entry_name = __parse_entry(nameline)
@@ -196,10 +227,13 @@ def parse_entry_name(nameline):
 
 
 def parse_metadata(lines):
-    """Parse list of lines with metadata information from SOFT file
+    """Parse list of lines with metadata information from SOFT file.
 
-    :param lines: iterable -- iterator over lines
-    :returns: dict -- metadata from SOFT file
+    Args:
+        lines (:obj:`Iterable`): Iterator over the lines.
+
+    Returns:
+        :obj:`dict`: Metadata from SOFT file.
 
     """
     meta = defaultdict(list)
@@ -215,10 +249,13 @@ def parse_metadata(lines):
 
 
 def parse_columns(lines):
-    """Parse list of line with columns description from SOFT file
+    """Parse list of lines with columns description from SOFT file.
 
-    :param lines: iterable -- iterator over lines
-    :returns: pandas.DataFrame -- columns description
+    Args:
+        lines (:obj:`Iterable`): Iterator over the lines.
+
+    Returns:
+        :obj:`pandas.DataFrame`: Columns description.
 
     """
     data = []
@@ -234,11 +271,14 @@ def parse_columns(lines):
 
 
 def parse_GDS_columns(lines, subsets):
-    """Parse list of line with columns description from SOFT file
-    of GDS (GEO Dataset)
+    """Parse list of line with columns description from SOFT file of GDS.
 
-    :param lines: iterable -- iterator over lines
-    :returns: pandas.DataFrame -- columns description
+    Args:
+        lines (:obj:`Iterable`): Iterator over the lines.
+        subsets (:obj:`dict` of :obj:`GEOparse.GDSSubset`): Subsets to use.
+
+    Returns:
+        :obj:`pandas.DataFrame`: Columns description.
 
     """
     data = []
@@ -265,10 +305,13 @@ def parse_GDS_columns(lines, subsets):
 
 
 def parse_table_data(lines):
-    """Parse list of lines from SOFT file into DataFrame
+    """"Parse list of lines from SOFT file into DataFrame.
 
-    :param lines: iterable -- iterator over lines
-    :returns: pandas.DataFrame -- table data
+    Args:
+        lines (:obj:`Iterable`): Iterator over the lines.
+
+    Returns:
+        :obj:`pandas.DataFrame`: Table data.
 
     """
     # filter lines that do not start with symbols
@@ -277,11 +320,16 @@ def parse_table_data(lines):
 
 
 def parse_GSM(filepath, entry_name=None):
-    """Parse GSM entry from SOFT file
+    """Parse GSM entry from SOFT file.
 
-    :param filepath: str or iterable -- path to file with 1 GSM entry or list of lines representing
-                                    GSM from GSE file
-    :return: GSM object
+    Args:
+        filepath (:obj:`str` or :obj:`Iterable`): Path to file with 1 GSM entry
+            or list of lines representing GSM from GSE file.
+        entry_name (:obj:`str`, optional): Name of the entry. By default it is
+            inferred from the data.
+
+    Returns:
+        :obj:`GEOparse.GSM`: A GSM object.
 
     """
     if isinstance(filepath, str):
@@ -324,12 +372,16 @@ def parse_GSM(filepath, entry_name=None):
 
 
 def parse_GPL(filepath, entry_name=None):
-    """Parse GPL entry from SOFT file
+    """Parse GPL entry from SOFT file.
 
-    :param filepath: str or iterable -- path to file with 1 GPL entry or list of lines representing
-                                    GPL from GSE file
-    :param silent: bool -- don't print info
-    :return: GPL object
+    Args:
+        filepath (:obj:`str` or :obj:`Iterable`): Path to file with 1 GPL entry
+            or list of lines representing GPL from GSE file.
+        entry_name (:obj:`str`, optional): Name of the entry. By default it is
+            inferred from the data.
+
+    Returns:
+        :obj:`GEOparse.GPL`: A GPL object.
 
     """
     gpls = {}
@@ -398,10 +450,14 @@ def parse_GPL(filepath, entry_name=None):
     return gpl
 
 def parse_GSE(filepath):
-    """Parse GSE from SOFT file
+    """Parse GSE SOFT file.
 
-    :param filepath: str -- path to GSE SOFT file
-    :return: GSE object
+    Args:
+        filepath (:obj:`str`): Path to GSE SOFT file.
+
+    Returns:
+        :obj:`GEOparse.GSE`: A GSE object.
+
     """
     gpls = {}
     gsms = {}
@@ -442,11 +498,13 @@ def parse_GSE(filepath):
 
 
 def parse_GDS(filepath):
-    """
-    Parse GDS from SOFT file
+    """Parse GDS SOFT file.
 
-    :param gds: @todo
-    :returns: @todo
+    Args:
+        filepath (:obj:`str`): Path to GDS SOFT file.
+
+    Returns:
+        :obj:`GEOparse.GDS`: A GDS object.
 
     """
     dataset_lines = []
