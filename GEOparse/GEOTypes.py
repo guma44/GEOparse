@@ -39,11 +39,11 @@ class BaseGEO(object):
         """Initialize base GEO object.
 
         Args:
-            name (str): name of the object
-            metadata (dict): metadata information
+            name (:obj:`str`): Name of the object.
+            metadata (:obj:`dict`): Metadata information.
 
         Raises:
-            TypeError: Metadata should be a dict
+            TypeError: Metadata should be a dict.
         """
 
         if not isinstance(metadata, dict):
@@ -67,11 +67,11 @@ class BaseGEO(object):
         """Get the metadata attribute by the name.
 
         Args:
-            metaname (str): name of the attribute
+            metaname (:obj:`str`): Name of the attribute
 
         Returns:
-            Value(s) of the requested metadata atribute
-            list or str
+            :obj:`list` or :obj:`str`: Value(s) of the requested metadata
+                attribute
 
         Raises:
             NoMetadataException: Attribute error
@@ -92,17 +92,15 @@ class BaseGEO(object):
         """Return accession ID of the sample.
 
         Returns:
-            GEO accession ID
-            str
+            :obj:`str`: GEO accession ID
         """
         return self.get_metadata_attribute("geo_accession")
 
     def get_type(self):
         """Get the type of the GEO.
-        
+
         Returns:
-            Type attribute of the GEO
-            str
+            :obj:`str`: Type attribute of the GEO
         """
         try:
             return self.get_metadata_attribute("type")
@@ -110,7 +108,7 @@ class BaseGEO(object):
             return None
 
     def _get_metadata_as_string(self):
-        """Get the metadata as SOFT formated string."""
+        """Get the metadata as SOFT formatted string."""
         metalist = []
         for metaname, meta in iteritems(self.metadata):
             assert isinstance(meta, list), "Single value in metadata dictionary should be a list!"
@@ -127,8 +125,10 @@ class BaseGEO(object):
     def to_soft(self, path_or_handle, as_gzip=False):
         """Save the object in a SOFT format.
 
-        :param path_or_handle: path or handle to output file
-        :param gzip: bool -- save as gzip
+        Args:
+            path_or_handle (:obj:`str` or :obj:`file`): Path or handle to
+                output file
+            as_gzip (:obj:`bool`): Save as gzip
         """
         if isinstance(path_or_handle, str):
             if as_gzip:
@@ -160,18 +160,18 @@ class SimpleGEO(BaseGEO):
         """Initialize simple GEO object.
 
         Args:
-            name (str): name of the object
-            metadata (dict): metadata information
-            table (pandas.DataFrame): table with the data from SOFT file
-            columns (pandas.DataFrame): description of the columns,
+            name (:obj:`str`): Name of the object
+            metadata (:obj:`dict`): Metadata information
+            table (:obj:`pandas.DataFrame`): Table with the data from SOFT file
+            columns (:obj:`pandas.DataFrame`): Description of the columns,
                 number of columns, order and names represented as index
                 in this DataFrame has to be the same as table.columns.
 
         Raises:
-            ValueError: Table should be a DataFrame
-            ValueError: Columns' description should be a DataFrame
-            DataIncompatibilityException: Columns are wrong
-            ValueError: Description has to be present in columns
+            :obj:`ValueError`: Table should be a DataFrame
+            :obj:`ValueError`: Columns' description should be a DataFrame
+            :obj:`DataIncompatibilityException`: Columns are wrong
+            :obj:`ValueError`: Description has to be present in columns
         """
         if not isinstance(table, DataFrame):
             raise ValueError("Table data should be an instance of pandas.DataFrame not %s" % str(type(table)))
@@ -246,7 +246,7 @@ class SimpleGEO(BaseGEO):
         """Show few lines of the table the table as pandas.DataFrame.
 
         Args:
-            number_of_lines (int): number of lines to show. Defaults to 5.
+            number_of_lines (:obj:`int`): Number of lines to show. Defaults to 5.
         """
         print(self.table.head(number_of_lines))
 
@@ -285,17 +285,17 @@ class GSM(SimpleGEO):
         """Annotate GSM with provided GPL
 
         Args:
-            gpl (pandas.DataFrame): a Platform or DataFrame to annotate with
-            annotation_column (str): column in a table for annotation
-            gpl_on (str): use this column in GSM to merge. Defaults to "ID".
-            gsm_on (str): use this column in GPL to merge.
+            gpl (:obj:`pandas.DataFrame`): A Platform or DataFrame to annotate with
+            annotation_column (str`): Column in a table for annotation
+            gpl_on (:obj:`str`): Use this column in GSM to merge. Defaults to "ID".
+            gsm_on (:obj:`str`): Use this column in GPL to merge.
                 Defaults to "ID_REF".
-            in_place (bool): substitute table in GSM by new annotated
+            in_place (:obj:`bool`): Substitute table in GSM by new annotated
                 table. Defaults to False.
 
         Returns:
-            Annotated table or None
-            pandas.DataFrame or None
+            :obj:`pandas.DataFrame` or :obj:`None`: Annotated table or None
+
 
         Raises:
             TypeError: GPL should be GPL or pandas.DataFrame
@@ -321,25 +321,24 @@ class GSM(SimpleGEO):
         """Annotate GSM table with provided GPL.
 
         Args:
-            gpl (GEOTypes.GPL): platform for annotations
-            expression_column (str): column name which "expressions"
+            gpl (:obj:`GEOTypes.GPL`): Platform for annotations
+            expression_column (:obj:`str`): Column name which "expressions"
                 are represented
-            group_by_column (str): the data will be grouped and averaged
+            group_by_column (:obj:`str`): The data will be grouped and averaged
                 over this column and only this column will be kept
-            rename (bool): rename output column to the
+            rename (:obj:`bool`): Rename output column to the
                 self.name. Defaults to True.
-            force (bool): if the name of the GPL does not match the platform
+            force (:obj:`bool`): If the name of the GPL does not match the platform
                 name in GSM proceed anyway. Defaults to False.
-            merge_on_column (str): column to merge the data
+            merge_on_column (:obj:`str`): Column to merge the data
                 on. Defaults to None.
-            gsm_on (str): in the case columns to merge are different in GSM
+            gsm_on (:obj:`str`): In the case columns to merge are different in GSM
                 and GPL use this column in GSM. Defaults to None.
-            gpl_on (str): in the case columns to merge are different in GSM
+            gpl_on (:obj:`str`): In the case columns to merge are different in GSM
                 and GPL use this column in GPL. Defaults to None.
 
         Returns:
-            Annotated data
-            pandas.DataFrame
+            :obj:`pandas.DataFrame`: Annotated data
         """
         if gpl.name != self.metadata['platform_id'][0] and not force:
             raise KeyError("Platforms from GSM (%s) and from GPL (%s)" % (gpl.name, self.metadata['platform_id']) +
@@ -363,14 +362,14 @@ class GSM(SimpleGEO):
         """Download all supplementary data available for the sample.
 
         Args:
-            directory (str): directory to download the data (in this directory
+            directory (:obj:`str`): Directory to download the data (in this directory
                 function will create new directory with the files).
                 Defaults to "./".
-            download_sra (bool): indicates whether to download SRA raw
+            download_sra (:obj:`bool`): Indicates whether to download SRA raw
                 data too. Defaults to True.
-            email (str): e-mail that will be provided to the Entrez.
+            email (:obj:`str`): E-mail that will be provided to the Entrez.
                 Defaults to None.
-            sra_kwargs (dict): kwargs passed to the download_SRA method.
+            sra_kwargs (:obj:`dict`): Kwargs passed to the download_SRA method.
                 Defaults to None.
         """
         directory_path = os.path.abspath(os.path.join(directory, "%s_%s_%s" % ('Supp',
@@ -392,47 +391,51 @@ class GSM(SimpleGEO):
 
 
 
-    def download_SRA(self, email, metadata_key='auto', directory='./', **kwargs):
+    def download_SRA(self, email, directory='./', **kwargs):
         """Download RAW data as SRA file.
 
         The files will be downloaded to the sample directory created ad hoc
-        or the directory specified by the parameter. The sample has to come from
-        sequencing eg. mRNA-seq, CLIP etc.
+        or the directory specified by the parameter. The sample has to come
+        from sequencing eg. mRNA-seq, CLIP etc.
 
         An important parameter is a download_type. By default an SRA
-        is accessed by FTP and
-        such file is downloaded. This does not require additional libraries. However in order
-        to produce FASTA of FASTQ files one would need to use SRA-Toolkit. Thus, it is assumed
-        that this library is already installed or it will be installed in the near future. One
-        can immediately specify the download type to fasta or fastq.
+        is accessed by FTP and such file is downloaded. This does not
+        require additional libraries. However in order
+        to produce FASTA of FASTQ files one would need to use SRA-Toolkit.
+        Thus, it is assumed that this library is already installed or it
+        will be installed in the near future. One can immediately specify
+        the download type to fasta or fastq.
 
         Following  ``**kwargs`` can be passed:
-            * filetype: can be sra, fasta, or fastq - for fasta or fastq SRA-Toolkit need to be installed
-            * aspera: bool - use Aspera to download samples, defaults to False
-            * keep_sra: bool - keep SRA files after download, defaults to False
-            * fastq_dump_options: dict - pass options to fastq-dump (if used, the options
-                has to be in long form eg. --split-files), defaults to
-                ```
-                    {'split-files': None,
-                    'readids': None,
-                    'read-filter': 'pass',
-                    'dumpbase': None,
-                    'gzip': None}
-                ```
+            * filetype - str
+                can be sra, fasta, or fastq - for fasta or fastq SRA-Toolkit
+                need to be installed
+            * aspera - bool
+                use Aspera to download samples, defaults to False
+            * keep_sra - bool
+                keep SRA files after download, defaults to False
+            * fastq_dump_options - dict
+                pass options to fastq-dump (if used, the options has to be in
+                long form eg. --split-files), defaults to::
+                    {
+                        'split-files': None,
+                        'readids': None,
+                        'read-filter': 'pass',
+                        'dumpbase': None,
+                        'gzip': None
+                    }
 
         Args:
-            email: an email (any) - required by NCBI for access
-            metadata_key: [description] (default: {'auto'})
-            directory: The directory to which download the
-                data. (default: {'./'})
-            **kwargs: Arbitrary keyword arguments
-        
+            email (:obj:`str`): an email (any) - Required by NCBI for access
+            directory (:obj:`str`, optional): The directory to which download
+                the data. Defaults to "./".
+            **kwargs: Arbitrary keyword arguments, see description
+
         Raises:
-            Exception: [description]
-            NoSRARelationException: [description]
-            Exception: [description]
-            httperr: [description]
-            NoSRAToolkitException: [description]
+            :obj:`TypeError`: Type to download unknown
+            :obj:`NoSRARelationException`: No SRAToolkit
+            :obj:`Exception`: Wrong e-mail
+            :obj:`HTTPError`: Cannot access or connect to DB
         """
         from Bio import Entrez
 
@@ -453,7 +456,7 @@ class GSM(SimpleGEO):
         # Check download filetype
         filetype = filetype.lower()
         if filetype not in ["sra", "fastq", "fasta"]:
-            raise Exception("Unknown type to downlod: %s. Use sra, fastq or fasta." % filetype)
+            raise TypeError("Unknown type to downlod: %s. Use sra, fastq or fasta." % filetype)
 
         # Setup the query
         ftpaddres = "ftp://ftp-trace.ncbi.nlm.nih.gov/sra/sra-instant/reads/ByExp/sra/SRX/{range_subdir}/{record_dir}/{file_dir}/{file_dir}.sra"
@@ -549,21 +552,26 @@ class GSM(SimpleGEO):
                         os.unlink(filepath)
 
 class GPL(SimpleGEO):
-
     """Class that represents platform from GEO database"""
 
     geotype = "PLATFORM"
 
     def __init__(self, name, metadata, table=None, columns=None, gses=None, gsms=None,  database=None):
-        """Initialize GPL
+        """Initialize GPL.
 
-        :param name: str -- name of the object
-        :param metadata: dict -- metadata information
-        :param gses: list -- list of GSE objects
-        :param gsms: list -- list of GSM objects
-        :param database: GEODatabase -- Database from SOFT file
+        Args:
+            name (:obj:`str`): Name of the object
+            metadata (:obj:`dict`): Metadata information
+            table (:obj:`pandas.DataFrame`, optional): Table with actual GPL data
+            columns (:obj:`pandas.DataFrame`, optional): Table with description
+                of the columns. Defaults to None.
+            gses (:obj:`dict` of :obj:`GEOparse.GSE`, optional): A dictionary of
+                GSE objects. Defaults to None.
+            gsms (:obj:`dict` of :obj:`GEOparse.GSM`, optional): A dictionary of
+                GSM objects. Defaults to None.
+            database (:obj:`GEOparse.GEODatabase`, optional): A database object
+                from SOFT file associated with GPL. Defaults to None.
         """
-
         gses = {} if gses is None else gses
         if not isinstance(gses, dict):
             raise ValueError("GSEs should be a dictionary not a %s" % str(type(gses)))
@@ -588,37 +596,30 @@ class GPL(SimpleGEO):
         self.database = database
 
 class GDSSubset(BaseGEO):
-
-    """Class that represents a subset from GEO GDS object"""
+    """Class that represents a subset from GEO GDS object."""
 
     geotype = "SUBSET"
 
     def _get_object_as_soft(self):
-        """
-         Return object as SOFT formated string.
-        """
+        """Get the object as SOFT formatted string."""
         soft = ["^%s = %s" % (self.geotype, self.name),
                 self._get_metadata_as_string()]
         return "\n".join(soft)
 
 
 class GEODatabase(BaseGEO):
-
-    """Class that represents a subset from GEO GDS object"""
+    """Class that represents a subset from GEO GDS object."""
 
     geotype = "DATABASE"
 
     def _get_object_as_soft(self):
-        """
-         Return object as SOFT formated string.
-        """
+        """Return object as SOFT formatted string."""
         soft = ["^%s = %s" % (self.geotype, self.name),
                 self._get_metadata_as_string()]
         return "\n".join(soft)
 
 
 class GDS(SimpleGEO):
-
     """Class that represents a dataset from GEO database"""
 
     geotype = "DATASET"
@@ -626,13 +627,17 @@ class GDS(SimpleGEO):
     def __init__(self, name, metadata, table, columns, subsets, database=None):
         """Initialize GDS
 
-        :param name: str -- name of the object
-        :param table: pandas.DataFrame -- table with the data from SOFT file
-        :param metadata: dict -- metadata information
-        :param columns: pandas.DataFrame -- description of the columns, number of columns, order, and names
-        represented as index in this DataFrame has to be the same as table.columns.
-        :param subsets: dict -- dictionary of GDSSubset from GDS soft file
-        :param database: GEODatabase -- Database from SOFT file
+        Args:
+            name (:obj:`str`): Name of the object.
+            metadata (:obj:`dict`): Metadata information.
+            table (:obj:`pandas.DataFrame`): Table with the data from SOFT file.
+            columns (:obj:`pandas.DataFrame`): description of the columns,
+                number of columns, order, and names represented as index in
+                this DataFrame has to be the same as table.columns.
+            subsets (:obj:`dict` of :obj:`GEOparse.GDSSubset`): GDSSubset from
+                GDS soft file.
+            database (:obj:`GEOparse.Database`, optional): Database from SOFT
+                file. Defaults to None.
         """
         if not isinstance(subsets, dict):
             raise ValueError("Subsets should be a dictionary not a %s" % str(type(subsets)))
@@ -650,9 +655,7 @@ class GDS(SimpleGEO):
             assert isinstance(subset, GDSSubset), "All subsets should be of type GDSSubset"
 
     def _get_object_as_soft(self):
-        """
-         Return object as SOFT formated string.
-        """
+        """Return object as SOFT formatted string."""
         soft = []
         if self.database is not None:
             soft.append(self.database._get_object_as_soft())
@@ -667,21 +670,23 @@ class GDS(SimpleGEO):
 
 
 class GSE(BaseGEO):
-
     """Class representing GEO series"""
 
     geotype = "SERIES"
 
     def __init__(self, name, metadata, gpls=None, gsms=None, database=None):
-        """Initialize GSE
+        """Initialize GSE.
 
-        :param name: str -- name of the object
-        :param metadata: dict -- metadata information
-        :param gpls: list -- list of GPL objects
-        :param gsms: list -- list of GSM objects
-        :param database: GEODatabase -- Database from SOFT file
+        Args:
+            name (:obj:`str`): Name of the object.
+            metadata (:obj:`dict`): Metadata information.
+            gpls (:obj:`dict` of :obj:`GEOparse.GPL`, optional): A dictionary of
+                GSE objects. Defaults to None.
+            gsms (:obj:`dict` of :obj:`GEOparse.GSM`, optional): A dictionary of
+                GSM objects. Defaults to None.
+            database (:obj:`GEOparse.Database`, optional): Database from SOFT
+                file. Defaults to None.
         """
-
         gpls = {} if gpls is None else gpls
         if not isinstance(gpls, dict):
             raise ValueError("GPLs should be a dictionary not a %s" % str(type(gpls)))
@@ -727,20 +732,31 @@ class GSE(BaseGEO):
 
     def merge_and_average(self, platform, expression_column, group_by_column,
                           force=False, merge_on_column=None, gsm_on=None, gpl_on=None):
-        """For given platform prepare the DataFrame with all the samples present in the GSE
-        annotated with given column from platform and averaged over this column.
+        """Merge and average GSE samples.
 
-        :param platform: str or GPL -- GPL platform to use
-        :param expression_column: str -- column name in which "expressions" are represented
-        :param group_by_column: str -- the data will be grouped and averaged over this column and only this column will be kept
-        :param force: bool -- if the name of the GPL does not match the platform name in GSM proceed anyway
-        :param merge_on_column: str -- column to merge the data on - should be present in both GSM and GPL
-        :param gsm_on: str -- in the case columns to merge are different in GSM and GPL use this column in GSM
-        :param gpl_on: str -- in the case columns to merge are different in GSM and GPL use this column in GPL
-        :returns: pandas.DataFrame
+        For given platform prepare the DataFrame with all the samples present in
+        the GSE annotated with given column from platform and averaged over
+        the column.
+
+        Args:
+            platform (:obj:`str` or :obj:`GEOparse.GPL`): GPL platform to use.
+            expression_column (:obj:`str`): Column name in which "expressions"
+                are represented
+            group_by_column (:obj:`str`): The data will be grouped and averaged
+                over this column and only this column will be kept
+            force (:obj:`bool`): If the name of the GPL does not match the
+                platform name in GSM proceed anyway
+            merge_on_column (:obj:`str`): Column to merge the data on - should
+                be present in both GSM and GPL
+            gsm_on (:obj:`str`): In the case columns to merge are different in
+                GSM and GPL use this column in GSM
+            gpl_on (:obj:`str`): In the case columns to merge are different in
+                GSM and GPL use this column in GPL
+
+        Returns:
+            :obj:`pandas.DataFrame`: Merged and averaged table of results.
 
         """
-
         if isinstance(platform, str):
             gpl = self.gpls[platform]
         elif isinstance(platform, GPL):
@@ -767,13 +783,19 @@ class GSE(BaseGEO):
             return data[0].join(data[1:])
 
     def pivot_samples(self, values, index="ID_REF"):
-        """Construct a table in which columns (names) are the samples, index
+        """Pivot samples by specified column.
+
+        Construct a table in which columns (names) are the samples, index
         is a specified column eg. ID_REF and values in the columns are of one
         specified type.
 
-        :param values: str -- column name present in the GSMs (all)
-        :param index: str -- column name that will become an index in pivoted table
-        :returns: pandas.DataFrame
+        Args:
+            values (:obj:`str`): Column name present in all GSMs.
+            index (:obj:`str`, optional): Column name that will become an index in
+                pivoted table. Defaults to "ID_REF".
+
+        Returns:
+            :obj:`pandas.DataFrame`: Pivoted data
 
         """
         data = []
@@ -785,13 +807,20 @@ class GSE(BaseGEO):
         return ndf
 
     def pivot_and_annotate(self, values, gpl, annotation_column, gpl_on="ID", gsm_on="ID_REF"):
-        """Annotate GSM with provided GPL
+        """Annotate GSM with provided GPL.
 
-        :param gpl: pandas.DataFrame or GPL -- a Platform or DataFrame to annotate with
-        :param annotation_column: str -- column in table for annotation
-        :param gsm_on: str -- use this column in GSM to merge, defaults to ID_REF
-        :param gpl_on: str -- use this column in GPL to merge, defaults to ID
-        :returns: pandas.DataFrame
+        Args:
+            values (:obj:`str`): Column to use as values eg. "VALUES"
+            gpl (:obj:`pandas.DataFrame` or :obj:`GEOparse.GPL`): A Platform or
+                DataFrame to annotate with.
+            annotation_column (:obj:`str`): Column in table for annotation.
+            gpl_on (:obj:`str`, optional): Use this column in GPL to merge.
+                Defaults to "ID".
+            gsm_on (:obj:`str`, optional): Use this column in GSM to merge.
+                Defaults to "ID_REF".
+
+        Returns:
+            pandas.DataFrame: Pivoted and annotated table of results
 
         """
         if isinstance(gpl, GPL):
@@ -809,13 +838,20 @@ class GSE(BaseGEO):
         return ndf
 
     def download_supplementary_files(self, directory='series', download_sra=True, sra_filetype='fasta', email=None):
-        """@todo: Docstring for download_supplementary_files.
+        """Download supplementary data.
 
-        :param directory: directory to download the data (in this directory function will create
-                          new directory with the files), by default this will be named with the series name + _Supp
-        :param download_sra: bool - indicates whether to download SRA raw data too, defaults to True
-        :param sra_filetype: indicates what file type to download if we specified SRA, can be sra, fasta or fastq
-        :param email: e-mail that will be provided to the Entrez, defaults to None
+        Args:
+            directory (:obj:`str`, optional): Directory to download the data
+                (in this directory function will create new directory with the
+                files), by default this will be named with the series
+                name + _Supp.
+            download_sra (:obj:`bool`, optional): Indicates whether to download
+                SRA raw data too. Defaults to True.
+            sra_filetype (:obj:`str`, optional): Indicates what file type to
+                download if we specified SRA, can be sra, fasta or fastq.
+                Defaults to "fasta".
+            email (:obj:`str`, optional): E-mail that will be provided to the
+                Entrez. Defaults to None.
         """
         if directory == 'series':
             dirpath = os.path.abspath(self.get_accession() + "_Supp")
@@ -827,14 +863,20 @@ class GSE(BaseGEO):
             gsm.download_supplementary_files(email=email, download_sra=download_sra, sra_filetype=sra_filetype, directory=dirpath)
 
     def download_SRA(self,  email, directory='series', filetype='sra', filterby=None):
-        """Download SRA files for each GSM in series
+        """Download SRA files for each GSM in series.
 
-        :param email: e-mail that will be provided to the Entrez
-        :param directory: directory to save the data (defaults to the 'series' which saves the data to the
-                          directory with the name of the series + '_SRA' ending)
-        :param filetype: can be sra, fasta, or fastq - for fasta or fastq SRA-Toolkit need to be installed
-        :param filterby: filter GSM objects, argument is a function that operates on GSM object  and return bool eg. lambda x: "brain" not in x.name
-
+        Args:
+            email (:obj:`str`): E-mail that will be provided to the Entrez.
+            directory (:obj:`str`, optional): Directory to save the data
+                (defaults to the 'series' which saves the data to the directory
+                with the name of the series + '_SRA' ending).
+                Defaults to "series".
+            filetype (:obj:`str`, optional): File type to download. Can be sra,
+                fasta, or fastq - for fasta or fastq SRA-Toolkit need to be
+                installed. Defaults to "sra".
+            filterby (:obj:`str`, optional): Filter GSM objects, argument is a
+                function that operates on GSM object  and return bool
+                eg. lambda x: "brain" not in x.name. Defaults to None.
         """
         if directory == 'series':
             dirpath = os.path.abspath(self.get_accession() + "_SRA")
@@ -852,9 +894,7 @@ class GSE(BaseGEO):
             gsm.download_SRA(email=email, filetype=filetype, directory=dirpath)
 
     def _get_object_as_soft(self):
-        """
-         Return object as SOFT formated string.
-        """
+        """Get object as SOFT formatted string."""
         soft = []
         if self.database is not None:
             soft.append(self.database._get_object_as_soft())
