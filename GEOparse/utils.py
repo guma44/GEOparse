@@ -5,6 +5,7 @@ from errno import EEXIST
 from contextlib import closing
 from shutil import copyfileobj
 from contextlib import contextmanager
+
 try:
     from urllib.request import urlopen
     from urllib.error import URLError
@@ -26,13 +27,16 @@ def mkdir_p(path_to_dir):
     """
     try:
         os.makedirs(path_to_dir)
-    except OSError as e: # Python >2.5
+    except OSError as e:  # Python >2.5
         if e.errno == EEXIST and os.path.isdir(path_to_dir):
-            logger.debug("Directory %s already exists. Skipping.\n" % path_to_dir)
+            logger.debug(
+                "Directory %s already exists. Skipping.\n" % path_to_dir)
         else:
             raise e
 
-def download_aspera(url, dest_path, user="anonftp", ftp="ftp-trace.ncbi.nlm.nih.gov"):
+
+def download_aspera(url, dest_path, user="anonftp",
+                    ftp="ftp-trace.ncbi.nlm.nih.gov"):
     """Download file with Aspera Connect.
 
     For details see the documentation ov Aspera Connect
@@ -49,7 +53,8 @@ def download_aspera(url, dest_path, user="anonftp", ftp="ftp-trace.ncbi.nlm.nih.
     if not aspera_home:
         raise ValueError("environment variable $ASPERA_HOME not set")
     if not os.path.exists(aspera_home):
-        raise ValueError("$ASPERA_HOME directory {} does not exist".format(aspera_home))
+        raise ValueError(
+            "$ASPERA_HOME directory {} does not exist".format(aspera_home))
     ascp = os.path.join(aspera_home, "connect/bin/ascp")
     key = os.path.join(aspera_home, "connect/etc/asperaweb_id_dsa.openssh")
     if not os.path.exists(ascp):
@@ -62,13 +67,14 @@ def download_aspera(url, dest_path, user="anonftp", ftp="ftp-trace.ncbi.nlm.nih.
     url = url.replace(ftp, "")
 
     cmd = "{} -i {} -k1 -T -l400m {}@{}:{} {}".format(
-            ascp, key, user, ftp, url, dest_path)
+        ascp, key, user, ftp, url, dest_path)
     logger.debug(cmd)
     p = sp.Popen(cmd, shell=True, stdout=sp.PIPE, stderr=sp.PIPE)
     stdout, stderr = p.communicate()
 
 
-def download_from_url(url, destination_path, force=False, aspera=False, silent=False):
+def download_from_url(url, destination_path, force=False, aspera=False,
+                      silent=False):
     """Download file from remote server
 
     Args:
@@ -86,27 +92,33 @@ def download_from_url(url, destination_path, force=False, aspera=False, silent=F
         if is_already_downloaded:
             if force:
                 if not silent:
-                    logger.info("Downloading %s to %s" % (url, destination_path))
-                    fn = wgetter.download(url, outdir=os.path.dirname(destination_path))
+                    logger.info(
+                        "Downloading %s to %s" % (url, destination_path))
+                    fn = wgetter.download(url, outdir=os.path.dirname(
+                        destination_path))
                 else:
                     with closing(urlopen(url)) as r:
                         with open(destination_path, mode='wb') as f:
                             copyfileobj(r, f)
             else:
-                logger.info("File already exist. Use force=True if you would like to overwrite it.")
+                logger.info("File already exist. Use force=True if you would "
+                            "like to overwrite it.")
         else:
             if aspera:
                 download_aspera(url, destination_path)
             else:
                 if not silent:
-                    logger.info("Downloading %s to %s\n" % (url, destination_path))
-                    fn = wgetter.download(url, outdir=os.path.dirname(destination_path))
+                    logger.info(
+                        "Downloading %s to %s\n" % (url, destination_path))
+                    fn = wgetter.download(url, outdir=os.path.dirname(
+                        destination_path))
                 else:
                     with closing(urlopen(url)) as r:
                         with open(destination_path, mode='wb') as f:
                             copyfileobj(r, f)
     except URLError:
-        log.error("Cannot find file %s" % url)
+        logger.error("Cannot find file %s" % url)
+
 
 @contextmanager
 def smart_open(filepath):
@@ -131,7 +143,7 @@ def smart_open(filepath):
         fh = fopen(filepath, mode, errors="ignore")
     try:
         yield fh
-    except IOError as e:
+    except IOError:
         fh.close()
     finally:
         fh.close()
@@ -151,6 +163,7 @@ def which(program):
     """
 
     def is_exe(fpath):
+        """Check if fpath is executable."""
         return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
 
     fpath, fname = os.path.split(program)
