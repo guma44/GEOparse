@@ -202,7 +202,7 @@ class TestGPL(unittest.TestCase):
         self.assertEqual(gpl.get_metadata_attribute('platform'), "GPL96")
         self.assertEqual(len(gpl.table.index), 22283)
         self.assertEqual(len(gpl.columns), 21)
-    
+
     def test_duplicate_column(self):
         columns = ['ID',
                    'COL',
@@ -300,12 +300,12 @@ class TestGSE(unittest.TestCase):
 
     def test_creation_of_object(self):
         with self.assertRaises(ValueError):
-            GSE(name='name', metadata=self.metadata, gpls=[], gsms=self.gsms)
+            GSE(name='name1', metadata=self.metadata, gpls=[], gsms=self.gsms)
         with self.assertRaises(ValueError):
-            GSE(name='name', metadata=self.metadata, gpls=self.gpls, gsms=[])
+            GSE(name='name2', metadata=self.metadata, gpls=self.gpls, gsms=[])
         with self.assertRaises(ValueError):
-            GSE(name='name', metadata=[], gpls=self.gpls, gsms=self.gsms)
-        GSE(name='name', metadata=self.metadata, gpls=self.gpls, gsms=self.gsms)
+            GSE(name='name3', metadata=[], gpls=self.gpls, gsms=self.gsms)
+        GSE(name='name4', metadata=self.metadata, gpls=self.gpls, gsms=self.gsms)
 
     def test_soft_format_gse(self):
         print(download_geo)
