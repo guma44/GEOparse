@@ -11,7 +11,6 @@ import time
 import platform
 import subprocess
 import numpy as np
-from sys import stdout
 from pandas import DataFrame, concat
 
 try:
@@ -246,21 +245,23 @@ class SimpleGEO(BaseGEO):
 
     def head(self):
         """Print short description of the object."""
-        stdout.write("%s %s" % (self.geotype, self.name) + "\n")
-        stdout.write(" - Metadata:" + "\n")
-        stdout.write(
+        summary = list()
+        summary.append("%s %s" % (self.geotype, self.name) + "\n")
+        summary.append(" - Metadata:" + "\n")
+        summary.append(
             "\n".join(self._get_metadata_as_string().split("\n")[:5]) + "\n")
-        stdout.write("\n")
-        stdout.write(" - Columns:" + "\n")
-        stdout.write(self.columns.to_string() + "\n")
-        stdout.write("\n")
-        stdout.write(" - Table:" + "\n")
-        stdout.write("\t".join(["Index"] + self.table.columns.tolist()) + "\n")
-        stdout.write(self.table.head().to_string(header=None) + "\n")
-        stdout.write(" " * 40 + "..." + " " * 40 + "\n")
-        stdout.write(" " * 40 + "..." + " " * 40 + "\n")
-        stdout.write(" " * 40 + "..." + " " * 40 + "\n")
-        stdout.write(self.table.tail().to_string(header=None) + "\n")
+        summary.append("\n")
+        summary.append(" - Columns:" + "\n")
+        summary.append(self.columns.to_string() + "\n")
+        summary.append("\n")
+        summary.append(" - Table:" + "\n")
+        summary.append("\t".join(["Index"] + self.table.columns.tolist()) + "\n")
+        summary.append(self.table.head().to_string(header=None) + "\n")
+        summary.append(" " * 40 + "..." + " " * 40 + "\n")
+        summary.append(" " * 40 + "..." + " " * 40 + "\n")
+        summary.append(" " * 40 + "..." + " " * 40 + "\n")
+        summary.append(self.table.tail().to_string(header=None) + "\n")
+        return "\n".join(summary)
 
     def show_columns(self):
         """Print columns in SOFT format."""
@@ -780,8 +781,6 @@ class GSE(BaseGEO):
                 raise ValueError(
                     "Database should be a GEODatabase not a %s" % str(
                         type(database)))
-        if len(metadata) == 0:
-            logger.critical("METADATA:GSE", name)
         BaseGEO.__init__(self, name=name, metadata=metadata)
 
         self.gpls = gpls
