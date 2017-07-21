@@ -406,9 +406,9 @@ class GSM(SimpleGEO):
             download_sra (:obj:`bool`): Indicates whether to download SRA raw
                 data too. Defaults to True.
             email (:obj:`str`): E-mail that will be provided to the Entrez.
-                Defaults to None.
-            sra_kwargs (:obj:`dict`): Kwargs passed to the download_SRA method.
-                Defaults to None.
+                It is mandatory if download_sra=True. Defaults to None.
+            sra_kwargs (:obj:`dict`, optional): Kwargs passed to the
+                download_SRA method. Defaults to None.
         """
         directory_path = os.path.abspath(
             os.path.join(directory, "%s_%s_%s" % (
