@@ -537,6 +537,7 @@ class GSM(SimpleGEO):
                         email != '' and '.' in email):
             raise Exception('You have to provide valid e-mail')
 
+        downloaded_paths = list()
         for query in queries:
             # retrieve IDs for given SRX
             searchdata = Entrez.esearch(db='sra', term=query, usehistory='y',
@@ -556,19 +557,25 @@ class GSM(SimpleGEO):
                     break
                 except HTTPError as httperr:
                     if "502" in str(httperr):
-                        logger.error(
-                            "Error: %s, trial %i out of %i, waiting for %i seconds." % (
-                                str(httperr),
-                                trial,
-                                number_of_trials,
-                                wait_time))
+                        logger.error(("Error: %s, trial %i out of %i, waiting "
+                                      "for %i seconds.") % (
+                                         str(httperr),
+                                         trial,
+                                         number_of_trials,
+                                         wait_time))
                         time.sleep(wait_time)
                     else:
                         raise httperr
-            df = DataFrame(
-                [i.split(',') for i in results.split('\n') if i != ''][1:],
-                columns=[i.split(',') for i in results.split('\n') if i != ''][
-                    0])
+            try:
+                df = DataFrame(
+                    [i.split(',') for i in results.split('\n') if i != ''][1:],
+                    columns=
+                    [i.split(',') for i in results.split('\n') if i != ''][0])
+            except IndexError:
+                logger.error(("SRA is empty (ID: %s, query: %s). "
+                              "Check if it is publicly available.") %
+                             (ids[0], query))
+                continue
 
             # check it first
             try:
@@ -590,7 +597,6 @@ class GSM(SimpleGEO):
                     re.sub(name_regex, '_', self.metadata['title'][0]))))
 
             utils.mkdir_p(os.path.abspath(directory_path))
-            downloaded_paths = list()
             for path in df['download_path']:
                 sra_run = path.split("/")[-1]
                 logger.info("Analysing %s" % sra_run)
@@ -634,7 +640,7 @@ class GSM(SimpleGEO):
                     else:
                         downloaded_paths.append(filepath)
 
-            return downloaded_paths
+        return downloaded_paths
 
 
 class GPL(SimpleGEO):
