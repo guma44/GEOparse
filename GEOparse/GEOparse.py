@@ -12,7 +12,6 @@ try:
 except ImportError:
     from urllib2 import urlopen, URLError
 from pandas import DataFrame
-import gzip
 from .GEOTypes import GSE, GSM, GPL, GDS, GDSSubset, GEODatabase
 from six import iteritems
 from . import utils
@@ -300,17 +299,15 @@ def parse_GDS_columns(lines, subsets):
             index.append(tmp[0])
 
     df = DataFrame(data, index=index, columns=['description'])
-    subset_ids = {"disease_state": {}, "individual": {}}
+    subset_ids = defaultdict(dict)
     for subsetname, subset in iteritems(subsets):
         for expid in subset.metadata["sample_id"][0].split(","):
-            if subset.get_type() == "disease state":
-                subset_ids["disease_state"][expid] = \
-                    subset.metadata["description"][0]
-            elif subset.get_type() == "individual":
-                subset_ids["individual"][expid] = \
-                    subset.metadata["description"][0]
-            else:
-                logger.error("Unknown subset type: %s for subset %s" % (
+            try:
+                subset_type = subset.get_type()
+                subset_ids[subset_type][expid] = \
+                    subset.metadata['description'][0]
+            except Exception as err:
+                logger.error("Error processing subsets: %s for subset %s" % (
                     subset.get_type(), subsetname))
 
     return df.join(DataFrame(subset_ids))
