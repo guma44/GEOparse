@@ -6,6 +6,7 @@ import os
 import re
 import abc
 import gzip
+import glob
 import json
 import time
 import platform
@@ -409,16 +410,20 @@ class GSM(SimpleGEO):
                 It is mandatory if download_sra=True. Defaults to None.
             sra_kwargs (:obj:`dict`, optional): Kwargs passed to the
                 download_SRA method. Defaults to None.
+
+        Returns:
+            :obj:`dict`: A key-value pair of name and paths downloaded
         """
         directory_path = os.path.abspath(
             os.path.join(directory, "%s_%s_%s" % (
                 'Supp',
                 self.get_accession(),
                 # the directory name cannot contain many of the signs
-                re.sub(r'[\s\*\?\(\),\.;]', '_', elf.metadata['title'][0]))))
+                re.sub(r'[\s\*\?\(\),\.;]', '_', self.metadata['title'][0]))))
 
 
         utils.mkdir_p(os.path.abspath(directory_path))
+        downloaded_paths = dict()
         if sra_kwargs is None:
             sra_kwargs = {}
         for metakey, metavalue in iteritems(self.metadata):
@@ -426,13 +431,18 @@ class GSM(SimpleGEO):
                 assert len(metavalue) == 1 and metavalue != ''
                 # logger.info("Downloading %s\n" % metavalue)
                 if 'sra' in metavalue[0] and download_sra:
-                    self.download_SRA(email, directory=directory, **sra_kwargs)
+                    downloaded_files = self.download_SRA(email,
+                                                         directory=directory,
+                                                         **sra_kwargs)
+                    downloaded_paths[metavalue[0]] = downloaded_files
                 else:
                     download_path = os.path.abspath(os.path.join(
                         directory,
                         os.path.join(directory_path,
                                      metavalue[0].split("/")[-1])))
                     utils.download_from_url(metavalue[0], download_path)
+                    downloaded_paths[metavalue[0]] = download_path
+        return downloaded_paths
 
     def download_SRA(self, email, directory='./', **kwargs):
         """Download RAW data as SRA file.
@@ -474,6 +484,9 @@ class GSM(SimpleGEO):
                 the data. Defaults to "./".
             **kwargs: Arbitrary keyword arguments, see description
 
+        Returns:
+            :obj:`list` of :obj:`str`: List of downloaded files.
+
         Raises:
             :obj:`TypeError`: Type to download unknown
             :obj:`NoSRARelationException`: No SRAToolkit
@@ -511,7 +524,7 @@ class GSM(SimpleGEO):
             for sra in self.relations['SRA']:
                 query = sra.split("=")[-1]
                 assert 'SRX' in query, "Sample looks like it is not SRA: %s" % query
-                print("Query: %s" % query)
+                logger.info("Query: %s" % query)
                 queries.append(query)
         except KeyError:
             raise NoSRARelationException(
@@ -576,14 +589,14 @@ class GSM(SimpleGEO):
                     re.sub(name_regex, '_', self.metadata['title'][0]))))
 
             utils.mkdir_p(os.path.abspath(directory_path))
-
+            downloaded_paths = list()
             for path in df['download_path']:
                 sra_run = path.split("/")[-1]
-                print("Analysing %s" % sra_run)
+                logger.info("Analysing %s" % sra_run)
                 url = ftpaddres.format(range_subdir=query[:6],
                                        record_dir=query,
                                        file_dir=sra_run)
-                print("URL: ", url)
+                logger.debug("URL: %s", url)
                 filepath = os.path.abspath(
                     os.path.join(directory_path, "%s.sra" % sra_run))
                 utils.download_from_url(url, filepath, aspera=aspera)
@@ -603,16 +616,24 @@ class GSM(SimpleGEO):
                             cmd += (" --%s" % fqoption)
                     cmd += " %s --outdir %s %s"
                     cmd = cmd % (ftype, directory_path, filepath)
-                    print(cmd)
+                    logger.debug(cmd)
                     process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                                                stderr=subprocess.PIPE,
                                                shell=True)
-                    logger.info("Converting to %s/%s_*.%s.gz\n" % (
+                    logger.info("Converting to %s/%s*.%s.gz\n" % (
                         directory_path, sra_run, filetype))
                     pout, perr = process.communicate()
+                    downloaded_paths += glob.glob(os.path.join(
+                        directory_path,
+                        "%s*.%s.gz" % (sra_run, filetype)
+                    ))
                     if not keep_sra:
                         # Delete sra file
                         os.unlink(filepath)
+                    else:
+                        downloaded_paths.append(filepath)
+
+            return downloaded_paths
 
 
 class GPL(SimpleGEO):
