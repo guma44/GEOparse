@@ -466,7 +466,8 @@ class GSM(SimpleGEO):
             * aspera - bool
                 use Aspera to download samples, defaults to False
             * keep_sra - bool
-                keep SRA files after download, defaults to False
+                keep SRA files after download. Removes SRA file only if the
+                selected file type is different than "sra", defaults to False
             * fastq_dump_options - dict
                 pass options to fastq-dump (if used, the options has to be in
                 long form eg. --split-files), defaults to::
@@ -627,7 +628,7 @@ class GSM(SimpleGEO):
                         directory_path,
                         "%s*.%s.gz" % (sra_run, filetype)
                     ))
-                    if not keep_sra:
+                    if not keep_sra and filetype != 'sra':
                         # Delete sra file
                         os.unlink(filepath)
                     else:
@@ -983,8 +984,7 @@ class GSE(BaseGEO):
 
         return downloaded_paths
 
-    def download_SRA(self, email, directory='series', filetype='sra',
-                     filterby=None):
+    def download_SRA(self, email, directory='series', filterby=None, **kwargs):
         """Download SRA files for each GSM in series.
 
         Args:
@@ -993,12 +993,11 @@ class GSE(BaseGEO):
                 (defaults to the 'series' which saves the data to the directory
                 with the name of the series + '_SRA' ending).
                 Defaults to "series".
-            filetype (:obj:`str`, optional): File type to download. Can be sra,
-                fasta, or fastq - for fasta or fastq SRA-Toolkit need to be
-                installed. Defaults to "sra".
             filterby (:obj:`str`, optional): Filter GSM objects, argument is a
                 function that operates on GSM object  and return bool
                 eg. lambda x: "brain" not in x.name. Defaults to None.
+            **kwargs: Any arbitrary argument passed to GSM.download_SRA
+                method. See the documentation for more details.
         """
         if directory == 'series':
             dirpath = os.path.abspath(self.get_accession() + "_SRA")
@@ -1011,10 +1010,14 @@ class GSE(BaseGEO):
         else:
             gsms_to_use = self.gsms.values()
 
+        downloaded_paths = dict()
         for gsm in gsms_to_use:
             logger.info(
-                "Downloading %s files for %s series\n" % (filetype, gsm.name))
-            gsm.download_SRA(email=email, filetype=filetype, directory=dirpath)
+                "Downloading SRA files for %s series\n" % (gsm.name))
+            paths = gsm.download_SRA(email=email, directory=dirpath, **kwargs)
+            downloaded_paths[gsm.name] = paths
+
+        return downloaded_paths
 
     def _get_object_as_soft(self):
         """Get object as SOFT formatted string."""
