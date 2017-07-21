@@ -2,9 +2,25 @@
 
 History
 -------
+1.0.0 (2017-07-21)
+------------------
+
+* Many small bug fixes:
+  * unknown subset types added to columns
+  * silent=True is really silent
+  * correct treatment of duplicated columns
+  * illegal file names and no filtering of user input from GEO to create the file names
+  * platform was not imported but used
+  * fixed issues of python 2 and 3 compatibility
+* Logging replaced stdout and stderr + ability to set verbosity and log file
+* Return downloaded paths from download functions
+* Updated documentation according to Google docstring style guide
+* Tests update
+* Code refactored to be more PEP-8 friendly
+
 
 0.1.10 (2017-03-27)
----------------------
+-------------------
 
 * Important fix for SRA download
 * Fix duplicated columns issue
@@ -12,7 +28,7 @@ History
 
 
 0.1.9 (2017-03-10)
----------------------
+------------------
 
 * Added property phenotype_data to access phenotype data of GSE
 * Fixed windows issue with file names
@@ -21,7 +37,7 @@ History
 * Various bugfixes
 
 0.1.8 (2016-11-02)
----------------------
+------------------
 
 Thanks to Tycho Bismeijer:
 
@@ -30,7 +46,7 @@ Thanks to Tycho Bismeijer:
 
 
 0.1.7 (2016-05-30)
----------------------
+------------------
 
 Thanks to Simon van Heeringen:
 
@@ -43,19 +59,19 @@ Thanks to Simon van Heeringen:
 
 
 0.1.6 (2016-04-12)
----------------------
+------------------
 
 * Bugfixes
 * SRA function of GSE can now filter GSMs
 
 
 0.1.5 (2016-02-03)
----------------------
+------------------
 
 * Added functions to download supplementary files including raw files from SRA
 
 0.1.4 (2015-09-27)
----------------------
+------------------
 
 * Updated documentation including example
 * Updated tests: they now cover 80% of library with all important functions
@@ -63,7 +79,7 @@ Thanks to Simon van Heeringen:
 * Bugfixes
 
 0.1.3 (2015-08-30)
----------------------
+------------------
 
 * Updated documentation
 * Added pivot_samples to GSE object
@@ -79,11 +95,11 @@ Thanks to Simon van Heeringen:
 * Added DATABASE entry support to GSE and GDS
 
 0.1.1 (2015-08-16)
----------------------
+------------------
 
 * Brown-Bag release
 
 0.1.0 (2015-08-16)
----------------------
+------------------
 
 * First release on PyPI.

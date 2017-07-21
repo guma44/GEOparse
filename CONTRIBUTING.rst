@@ -61,6 +61,9 @@ Ready to contribute? Here's how to set up `GEOparse` for local development.
 2. Clone your fork locally::
 
     $ git clone git@github.com:your_name_here/GEOparse.git
+    $ git checkout -b develop origin/develop
+
+  Develop branch should be the start of every feature.
 
 3. Install your local copy into a virtualenv. Assuming you have virtualenvwrapper installed, this is how you set up your fork for local development::
 

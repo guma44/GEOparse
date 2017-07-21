@@ -26,7 +26,7 @@ test_requirements = [
 
 setup(
     name='GEOparse',
-    version='0.1.10',
+    version='1.0.0',
     description="Python library to access Gene Expression Omnibus Database (GEO)",
     long_description=readme + '\n\n' + history,
     author="Rafal Gumienny",
@@ -46,12 +46,13 @@ setup(
     zip_safe=False,
     keywords=['GEOparse', 'GEO', 'Gene Expression Omnibus', 'Bioinformatics', 'Microarray'],
     classifiers=[
-        'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
         'Natural Language :: English',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
     ],
     test_suite='tests',
     tests_require=test_requirements
