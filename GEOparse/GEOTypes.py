@@ -203,8 +203,8 @@ class SimpleGEO(BaseGEO):
                 # doing the columns
                 logger.warning(
                     "Detected duplicated columns in %s %s. Correcting.\n" % (
-                    self.geotype,
-                    self.name))
+                        self.geotype,
+                        self.name))
                 indices = {}
                 new_index = []
                 for idx in self.columns.index:
@@ -236,13 +236,13 @@ class SimpleGEO(BaseGEO):
             columns_in_table = ", ".join(self.table.columns.tolist())
             raise DataIncompatibilityException(
                 "\nData columns do not match columns description index in %s\n" % (
-                self.name) +
+                    self.name) +
                 "Columns in table are: %s\n" % columns_in_table +
                 "Index in columns are: %s\n" % rows_in_columns)
         if self.columns.columns[0] != 'description':
             raise ValueError(("Columns table must contain a column named"
                               "'description'. Here columns are: %s") % (
-                ", ".join(map(str, self.columns.columns))))
+                                 ", ".join(map(str, self.columns.columns))))
 
     def head(self):
         """Print short description of the object."""
@@ -256,7 +256,8 @@ class SimpleGEO(BaseGEO):
         summary.append(self.columns.to_string() + "\n")
         summary.append("\n")
         summary.append(" - Table:" + "\n")
-        summary.append("\t".join(["Index"] + self.table.columns.tolist()) + "\n")
+        summary.append(
+            "\t".join(["Index"] + self.table.columns.tolist()) + "\n")
         summary.append(self.table.head().to_string(header=None) + "\n")
         summary.append(" " * 40 + "..." + " " * 40 + "\n")
         summary.append(" " * 40 + "..." + " " * 40 + "\n")
@@ -373,7 +374,7 @@ class GSM(SimpleGEO):
         """
         if gpl.name != self.metadata['platform_id'][0] and not force:
             raise KeyError("Platforms from GSM (%s) and from GPL (%s)" % (
-            gpl.name, self.metadata['platform_id']) +
+                gpl.name, self.metadata['platform_id']) +
                            " are incompatible. Use force=True to use this GPL.")
         if merge_on_column is None and gpl_on is None and gsm_on is None:
             raise Exception("You have to provide one of the two: "
@@ -420,7 +421,6 @@ class GSM(SimpleGEO):
                 self.get_accession(),
                 # the directory name cannot contain many of the signs
                 re.sub(r'[\s\*\?\(\),\.;]', '_', self.metadata['title'][0]))))
-
 
         utils.mkdir_p(os.path.abspath(directory_path))
         downloaded_paths = dict()
@@ -533,7 +533,7 @@ class GSM(SimpleGEO):
         # check if the e-mail is more or less not a total crap
         Entrez.email = email
         if not (Entrez.email is not None and '@' in email and
-                email != '' and '.' in email):
+                        email != '' and '.' in email):
             raise Exception('You have to provide valid e-mail')
 
         for query in queries:
@@ -557,10 +557,10 @@ class GSM(SimpleGEO):
                     if "502" in str(httperr):
                         logger.error(
                             "Error: %s, trial %i out of %i, waiting for %i seconds." % (
-                            str(httperr),
-                            trial,
-                            number_of_trials,
-                            wait_time))
+                                str(httperr),
+                                trial,
+                                number_of_trials,
+                                wait_time))
                         time.sleep(wait_time)
                     else:
                         raise httperr
@@ -946,7 +946,7 @@ class GSE(BaseGEO):
 
     def download_supplementary_files(self, directory='series',
                                      download_sra=True, sra_filetype='fasta',
-                                     email=None):
+                                     email=None, sra_kwargs=None):
         """Download supplementary data.
 
         Args:
@@ -961,6 +961,11 @@ class GSE(BaseGEO):
                 Defaults to "fasta".
             email (:obj:`str`, optional): E-mail that will be provided to the
                 Entrez. Defaults to None.
+            sra_kwargs (:obj:`dict`, optional): Kwargs passed to the
+                GSM.download_SRA method. Defaults to None.
+
+        Returns:
+            :obj:`dict`: Downloaded paths for each of the GSM
         """
         if directory == 'series':
             dirpath = os.path.abspath(self.get_accession() + "_Supp")
@@ -968,11 +973,15 @@ class GSE(BaseGEO):
         else:
             dirpath = os.path.abspath(directory)
             utils.mkdir_p(dirpath)
+        downloaded_paths = dict()
         for gsmname, gsm in iteritems(self.gsms):
-            gsm.download_supplementary_files(email=email,
-                                             download_sra=download_sra,
-                                             sra_filetype=sra_filetype,
-                                             directory=dirpath)
+            paths = gsm.download_supplementary_files(email=email,
+                                                     download_sra=download_sra,
+                                                     directory=dirpath,
+                                                     sra_kwargs=sra_kwargs)
+            downloaded_paths[gsmname] = paths
+
+        return downloaded_paths
 
     def download_SRA(self, email, directory='series', filetype='sra',
                      filterby=None):
@@ -1023,8 +1032,8 @@ class GSE(BaseGEO):
 
     def __str__(self):
         return str("<%s: %s - %i SAMPLES, %i PLATFORM(s)>" % (
-        self.geotype, self.name, len(self.gsms), len(self.gpls)))
+            self.geotype, self.name, len(self.gsms), len(self.gpls)))
 
     def __repr__(self):
         return str("<%s: %s - %i SAMPLES, %i PLATFORM(s)>" % (
-        self.geotype, self.name, len(self.gsms), len(self.gpls)))
+            self.geotype, self.name, len(self.gsms), len(self.gpls)))
