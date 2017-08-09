@@ -2,6 +2,12 @@
 
 History
 -------
+
+1.0.1 (2017-08-10)
+------------------
+
+ * Hotfix: wrong path split in Windows
+
 1.0.0 (2017-07-21)
 ------------------
 
@@ -88,7 +94,7 @@ Thanks to Simon van Heeringen:
 * Various bugfixes
 
 0.1.2 (2015-08-23)
----------------------
+------------------
 
 * Added GDS support
 * Added to_soft methods to GSE, GSM and GPL
