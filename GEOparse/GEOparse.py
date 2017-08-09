@@ -74,7 +74,7 @@ def get_GEO(geo=None, filepath=None, destdir="./", how='full',
                                          aspera=aspera)
     else:
         if geotype is None:
-            geotype = filepath.split("/")[-1][:3]
+            geotype = path.basename(filepath)[:3]
 
     logger.info("Parsing %s: " % filepath)
     if geotype.upper() == "GSM":
