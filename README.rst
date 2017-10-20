@@ -5,6 +5,9 @@ GEOparse
 .. image:: https://img.shields.io/pypi/v/GEOparse.svg
         :target: https://pypi.python.org/pypi/GEOparse
 
+.. image:: https://img.shields.io/travis/guma44/GEOparse.svg
+        :target: https://travis-ci.org/guma44/GEOparse
+
 
 Python library to access Gene Expression Omnibus Database (GEO).
 
