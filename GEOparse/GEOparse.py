@@ -477,7 +477,7 @@ def parse_GSE(filepath):
     series_counter = 0
     database = None
     metadata = {}
-    entry_name = None
+    gse_name = None
     with utils.smart_open(filepath) as soft:
         groupper = groupby(soft, lambda x: x.startswith("^"))
         for is_new_entry, group in groupper:
@@ -485,6 +485,7 @@ def parse_GSE(filepath):
                 entry_type, entry_name = __parse_entry(next(group))
                 logger.debug("%s: %s" % (entry_type.upper(), entry_name))
                 if entry_type == "SERIES":
+                    gse_name = entry_name
                     series_counter += 1
                     if series_counter > 1:
                         raise Exception(
@@ -507,7 +508,7 @@ def parse_GSE(filepath):
                                            metadata=database_metadata)
                 else:
                     logger.error("Cannot recognize type %s" % entry_type)
-    gse = GSE(name=entry_name,
+    gse = GSE(name=gse_name,
               metadata=metadata,
               gpls=gpls,
               gsms=gsms,
