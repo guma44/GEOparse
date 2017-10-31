@@ -53,3 +53,4 @@ docs/_build
 *.soft
 *.soft.gz
 *.gz
+!GSE105845_family.soft

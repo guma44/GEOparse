@@ -429,6 +429,11 @@ class TestGSE(unittest.TestCase):
             gse.pivot_and_annotate(values="VALUE", gpl="gpl",
                                    annotation_column="GB_ACC")
 
+    def test_name(self):
+        gse = GEO.get_GEO(filepath=join(download_geo, "GSE105845_family.soft"),
+                          geotype="GSE")
+        self.assertEqual(gse.name, "GSE105845")
+
 
 if __name__ == '__main__':
     unittest.main()
