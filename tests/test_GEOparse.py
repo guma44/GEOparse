@@ -276,6 +276,11 @@ class TestGPL(unittest.TestCase):
         gpl2 = GEO.get_GEO(filepath=join(download_geo, "GPL4134.txt"))
         self.assertEqual(list(gpl2.columns.index), columns2)
 
+    def test_name(self):
+        gpl = GEO.get_GEO(filepath=join(download_geo, "GPL20814_family.soft"),
+                          geotype="GPL")
+        self.assertEqual(gpl.name, "GPL20814")
+
 
 class TestGDS(unittest.TestCase):
     """Test GDS class"""

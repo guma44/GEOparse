@@ -1,0 +1,67 @@
+^DATABASE = GeoMiame
+!Database_name = Gene Expression Omnibus (GEO)
+!Database_institute = NCBI NLM NIH
+!Database_web_link = http://www.ncbi.nlm.nih.gov/geo
+!Database_email = geo@ncbi.nlm.nih.gov
+^PLATFORM = GPL20814
+!Platform_title = Human miRNA Array miRbase release 19
+!Platform_geo_accession = GPL20814
+!Platform_status = Public on Jun 12 2017
+!Platform_submission_date = Aug 18 2015
+!Platform_last_update_date = Jun 12 2017
+!Platform_technology = in situ oligonucleotide
+!Platform_distribution = custom-commercial
+!Platform_organism = Homo sapiens
+!Platform_taxid = 9606
+!Platform_manufacturer = LC Science
+!Platform_manufacture_protocol = Gao, X., Gulari, E., and Zhou, X. (2004) In situ synthesis of oligonucleotide microarrays. Biopolymers 73, 579-596; (b) Zhu, Q., Hong, A., Sheng, N., Zhang, X., Jun, K.-Y., Srivannavit, O., Gulari, E., Gao, X., and Zhou, X. (2007) Microfluidic biochip for nucleic acid and protein analysis. in Methods Mol. Biol. Ed. Rampal, J. B. 382:287-312.;Bolstad, B. M., Irizarry, R. A., Astrandand, M., Speed, T. P. (2003) A comparison of normalization methods for high density oligonucleotide array data based on variance and bias. Bioinfo. 19, 185-193.
+!Platform_description = Part No.: MRA-1001B1C
+!Platform_description = Human miRNA Array
+!Platform_description = Version No. miRHuman_19_HUST_121206
+!Platform_contact_name = Jiachun,,Sun
+!Platform_contact_institute = Department of Oncology, Cancer Institute, First Affiliated Hospital of Henan University of Science and Technology
+!Platform_contact_address = 24 Jinghua road, Jianxi district
+!Platform_contact_city = Luoyang
+!Platform_contact_state = Henan
+!Platform_contact_zip/postal_code = 471003
+!Platform_contact_country = China
+!Platform_supplementary_file = ftp://ftp.ncbi.nlm.nih.gov/geo/platforms/GPL20nnn/GPL20814/suppl/GPL20814_miRHuman_19_HUST_121206.xls.gz
+!Platform_sample_id = GSM1855902
+!Platform_sample_id = GSM1855903
+!Platform_series_id = GSE72138
+!Platform_data_row_count = 2088
+#ID = 
+#Reporter Name = 
+#miRNA_ID =  LINK_PRE:"http://www.mirbase.org/cgi-bin/mature.pl?mature_acc="
+#SPOT_ID = 
+!platform_table_begin
+ID	Reporter Name	miRNA_ID	SPOT_ID
+272	hsa-miR-99b-5p	MIMAT0000689	
+271	hsa-miR-99b-3p	MIMAT0004678	
+83	2.027336763
+!sample_table_end
+^SERIES = GSE72138
+!Series_title = Globally construct ceRNA regulation network based on comparison with SHEE and SHEEC cell lines
+!Series_geo_accession = GSE72138
+!Series_status = Public on Jun 12 2017
+!Series_submission_date = Aug 18 2015
+!Series_last_update_date = Jun 14 2017
+!Series_pubmed_id = 28536623
+!Series_summary = Long non-coding RNAs (lncRNAs), new star ncRNA class of mRNA-like transcripts, play complicate and critical roles in regulating various key biological processes including chromatin modification, transcription and post-transcriptional processing. Remarkably, some lncRNAs serve as a miRNA “sponge” to inhibit mediation of the differentiation of miRNA target in post-transcriptional regulation. Here, we firstly constructed the putative ceRNA network by integrating lncRNAs, miRNAs and mRNAs expression in compared with SHEE and SHEEC cell lines based on the high-though RNA sequencing data and microarray data. Though the biology function analysis, the result showed that ceRNA network mainly participate in PI3K-Akt pathway and may play a modulating role in regulation of essential signal molecules including SYK, FGF11, IL7R, MET, LAMB3, PRS6KB1, ITGB6, ITGB4, ITGA2, ITGA6, EPHA2, SOS2, VEGFA, GRB2, KRAS, CCDN1 and TP53 in primary ESCC. These results could provide us more essential clues for the development of novel therapeutic strategies and efficient drugs target in primary ESCC.
+!Series_overall_design = The SHEEC and SHEE cell lines were pooled with 5 cell lines respectively.
+!Series_type = Non-coding RNA profiling by array
+!Series_contributor = Jiachun,,Sun
+!Series_sample_id = GSM1855902
+!Series_sample_id = GSM1855903
+!Series_contact_name = Jiachun,,Sun
+!Series_contact_institute = Department of Oncology, Cancer Institute, First Affiliated Hospital of Henan University of Science and Technology
+!Series_contact_address = 24 Jinghua road, Jianxi district
+!Series_contact_city = Luoyang
+!Series_contact_state = Henan
+!Series_contact_zip/postal_code = 471003
+!Series_contact_country = China
+!Series_supplementary_file = ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE72nnn/GSE72138/suppl/GSE72138_RAW.tar
+!Series_platform_id = GPL20814
+!Series_platform_taxid = 9606
+!Series_sample_taxid = 9606
+!Series_relation = BioProject: https://www.ncbi.nlm.nih.gov/bioproject/PRJNA293166

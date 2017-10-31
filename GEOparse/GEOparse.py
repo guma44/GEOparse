@@ -398,6 +398,7 @@ def parse_GPL(filepath, entry_name=None):
     gses = {}
     gpl_soft = []
     has_table = False
+    gpl_name = None
     if isinstance(filepath, str):
         with utils.smart_open(filepath) as soft:
             groupper = groupby(soft, lambda x: x.startswith("^"))
@@ -420,13 +421,19 @@ def parse_GPL(filepath, entry_name=None):
                         # TODO Use database!
                         database = GEODatabase(name=entry_name,
                                                metadata=database_metadata)
-                    else:
+                    elif entry_type == "PLATFORM":
+                        gpl_name = entry_name
                         is_data, data_group = next(groupper)
                         for line in data_group:
                             if ("_table_begin" in line or
                                     line[0] not in ("^", "!", "#")):
                                 has_table = True
                             gpl_soft.append(line)
+                    else:
+                        raise RuntimeError(
+                            "Cannot parse {etype}. Unknown for GPL.".format(
+                                etype=entry_type
+                            ))
     else:
         for line in filepath:
             if "_table_begin" in line or (line[0] not in ("^", "!", "#")):
@@ -445,7 +452,7 @@ def parse_GPL(filepath, entry_name=None):
     else:
         table_data = DataFrame()
 
-    gpl = GPL(name=entry_name,
+    gpl = GPL(name=gpl_name,
               gses=gses,
               gsms=gsms,
               table=table_data,
