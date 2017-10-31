@@ -42,8 +42,9 @@ def get_GEO(geo=None, filepath=None, destdir="./", how='full',
         destdir (:obj:`str`, optional): Directory to download data. Defaults to
             None.
         how (:obj:`str`, optional): GSM download mode. Defaults to "full".
-        annotate_gpl (:obj:`bool`, optional): Annotate GPL object. Defaults to
-            False.
+        annotate_gpl (:obj:`bool`, optional): Download the GPL annotation
+            instead of regular GPL. If not available, fallback to regular GPL
+            file. Defaults to False.
         geotype (:obj:`str`, optional): Type of GEO entry. By default it is
             inferred from the ID or the file name.
         include_data (:obj:`bool`, optional): Full download of GPLs including
@@ -98,8 +99,9 @@ def get_GEO_file(geo, destdir=None, annotate_gpl=False, how="full",
         geo (:obj:`str`): GEO database identifier.
         destdir (:obj:`str`, optional): Directory to download data. Defaults to
             None.
-        annotate_gpl (:obj:`bool`, optional): Annotate GPL object. Defaults to
-            False.
+        annotate_gpl (:obj:`bool`, optional): Download the GPL annotation
+            instead of regular GPL. If not available, fallback to regular GPL
+            file. Defaults to False.
         how (:obj:`str`, optional): GSM download mode. Defaults to "full".
         include_data (:obj:`bool`, optional): Full download of GPLs including
             series and samples. Defaults to False.
