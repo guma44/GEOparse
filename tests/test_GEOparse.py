@@ -207,6 +207,7 @@ class TestGPL(unittest.TestCase):
     def test_get_geo_and_data(self):
         gpl = GEO.get_GEO(geo="GPL96", destdir=download_geo)
         self.assertTrue(isinstance(gpl, GPL))
+        self.assertEqual(gpl.name, "GPL96")
         self.assertEqual(gpl.get_accession(), "GPL96")
         self.assertEqual(len(gpl.table.index), 22283)
         self.assertEqual(len(gpl.columns), 16)
@@ -237,6 +238,7 @@ class TestGPL(unittest.TestCase):
     def test_get_geo_and_data_with_annotations(self):
         gpl = GEO.get_GEO(geo="GPL96", destdir=download_geo, annotate_gpl=True)
         self.assertTrue(isinstance(gpl, GPL))
+        self.assertEqual(gpl.name, "GPL96")
         self.assertEqual(gpl.get_metadata_attribute('platform'), "GPL96")
         self.assertEqual(len(gpl.table.index), 22283)
         self.assertEqual(len(gpl.columns), 21)
