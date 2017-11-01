@@ -326,6 +326,7 @@ class TestGDS(unittest.TestCase):
     def test_get_geo_and_data(self):
         gds = GEO.get_GEO(geo="GDS507", destdir=download_geo)
         self.assertTrue(isinstance(gds, GDS))
+        self.assertEqual(gds.name, "GDS507")
         self.assertEqual(len(gds.table.index), 22645)
         self.assertEqual(len(gds.table.columns), 19)
         self.assertEqual(len(gds.metadata.keys()),
