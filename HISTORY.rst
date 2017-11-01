@@ -3,6 +3,11 @@
 History
 -------
 
+1.0.2 (2017-11-01)
+------------------
+
+ * Bugfix: type name was depended on the order of entries
+
 1.0.1 (2017-08-10)
 ------------------
 
