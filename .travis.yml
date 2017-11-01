@@ -9,3 +9,18 @@ install: pip install -U tox-travis
 
 # command to run tests, e.g. python setup.py test
 script: tox
+
+before_deploy:
+  - test $TRAVIS_TEST_RESULT = 0 && make dist
+
+deploy:
+  provider: pypi
+  distributions: sdist
+  user: guma44
+  password:
+    secure: PSaN+PrKtPpHxQHR9NQKDmf+HiUZ1hchTZ1UfgprlgGAcoQe/hFIshfPJyH/ps4H3FvnanT25K/kfOb9sHB3AzwfoscJF7YOWAHFO6NB2o0z6a+H+uMDmFRGxK36K8dcF11XKjoZkkKT5PK574ydWrjlHNNAg27XP11dy1IjB3/8Q5V9asezmXC+Bp5NV8xW1fpWsTayFjEzOvKJju4FhxQWPyLOQ6ziHnDBxfhTQ8P/Q5PKqk3Shd3upxniL9nKV7BC3uooqZVHgdGjL85feSSfOhOzKt07EiB6IckWKlRxXChJu8qP0qd0C/Kue0yGsIMEf/poi75xjAojAOq+UBUc2I1szVSxel647bHYi8yjmqzAvrvyAGIn25s9iNV8rdGZs3kICWSfvC8PuJWQ90rt5+uAGHhTNP9O6Fz49WPBYcgS2vA22Sp2WtT1xAMB0V9bE9h6C2yae9ulTfCuov3Gr0W8eoxoi2jJRTiWvbsQgVSJsYQ28TjLYxCNcwYfsZto6R6VAhboiiLy+XdVc1TCXKafqxP7fpGoCjJUHvYcXOEezPHZBmhdZjg70uKZdhl7P3hWr2nPYbW3iXdbWOENZnEFTG1p2z60RfIdWYKgxuPB5YPSeu4FhAM5DBmvMPEIYgjjjR5+AyfMO4a76MBOP73eJfKfCgE0HPdh8Tc=
+  on:
+    tags: true
+    condition: "$TRAVIS_TAG =~ ^v.*$"
+    repo: guma44/GEOparse
+    python: 2.7
