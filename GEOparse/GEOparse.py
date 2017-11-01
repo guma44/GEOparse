@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from os import path
-from re import sub
+from re import sub, split, match
 from six import StringIO
 from tempfile import mkdtemp
 from itertools import groupby
@@ -400,7 +400,7 @@ def parse_GPL(filepath, entry_name=None):
     gses = {}
     gpl_soft = []
     has_table = False
-    gpl_name = None
+    gpl_name = entry_name
     if isinstance(filepath, str):
         with utils.smart_open(filepath) as soft:
             groupper = groupby(soft, lambda x: x.startswith("^"))
@@ -423,13 +423,18 @@ def parse_GPL(filepath, entry_name=None):
                         # TODO Use database!
                         database = GEODatabase(name=entry_name,
                                                metadata=database_metadata)
-                    elif entry_type == "PLATFORM":
+                    elif entry_type == "PLATFORM" or entry_type == "Annotation":
                         gpl_name = entry_name
                         is_data, data_group = next(groupper)
+                        has_gpl_name = gpl_name or gpl_name is None
                         for line in data_group:
                             if ("_table_begin" in line or
                                     line[0] not in ("^", "!", "#")):
                                 has_table = True
+                            if not has_gpl_name:
+                                if match("!Annotation_platform\s*=\s*", line):
+                                    gpl_name = split("\s*=\s*", line)[-1].strip()
+                                    has_gpl_name = True
                             gpl_soft.append(line)
                     else:
                         raise RuntimeError(
