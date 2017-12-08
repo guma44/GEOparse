@@ -518,7 +518,7 @@ class GSM(SimpleGEO):
 
         # Setup the query
         ftpaddres = ("ftp://ftp-trace.ncbi.nlm.nih.gov/sra/sra-instant/reads/"
-                     "ByExp/sra/SRX/{range_subdir}/{record_dir}/{file_dir}/"
+                     "ByRun/sra/SRR/{range_subdir}/{file_dir}/"
                      "{file_dir}.sra")
         queries = []
         try:
@@ -600,8 +600,7 @@ class GSM(SimpleGEO):
             for path in df['download_path']:
                 sra_run = path.split("/")[-1]
                 logger.info("Analysing %s" % sra_run)
-                url = ftpaddres.format(range_subdir=query[:6],
-                                       record_dir=query,
+                url = ftpaddres.format(range_subdir=sra_run[:6],
                                        file_dir=sra_run)
                 logger.debug("URL: %s", url)
                 filepath = os.path.abspath(
