@@ -5,7 +5,7 @@ python:
 install: pip install -U tox-travis
 script: tox
 before_deploy:
-- test $TRAVIS_TEST_RESULT = 0 && make dist
+- make dist
 deploy:
   provider: pypi
   user: guma44
