@@ -1,0 +1,19 @@
+^SAMPLE = GSM32878
+!Sample_title = Estrogen actions in human breast cancer cells - 16 hrs (duplicate)
+!Sample_geo_accession = GSM32878
+!Sample_description = total and poly(A)+ RNAs were tested by agarose gel electrophoresis.
+!Sample_description = 
+!Sample_description = cDNA microarray probing
+!Sample_description = cDNA microarray mRNA analysis was carried with UniGEM Human V 2.0 (Incyte Genomics, St. Louis, U.S.A.). 200ng
+!Sample_series_id = GSE1864
+!Sample_data_row_count = 9182
+#ID_REF =  
+#FOLD_CHANGE = Differential Expression (Fold Change)
+#PROBE1 = P1 signal (Cy3): Control (0 hr, -E2)
+#PROBE2 = P2 Signal (Cy5): Estrogen stimulated (16 hrs, + E2)
+#VALUE = log ratio (P1/P2)
+!sample_table_begin
+ID_REF	FOLD_CHANGE	PROBE1	PROBE2	VALUE
+1	1.4	3773	2625	0.157557497
+9182	2.1	495	239	0.316207298
+!sample_table_end

@@ -163,6 +163,12 @@ class TestGSM(unittest.TestCase):
         except:
             self.fail("GSM.head() raised error!")
 
+    def test_empty_line(self):
+        try:
+            gsm = GEO.get_GEO('GSM32878')
+        except IndexError:
+            self.fail("Empty line in the file causes an error.")
+
 
 class TestGPL(unittest.TestCase):
     """Test GPL class"""
