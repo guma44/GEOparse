@@ -26,7 +26,7 @@ test_requirements = [
 
 setup(
     name='GEOparse',
-    version='1.0.3',
+    version='1.0.4',
     description="Python library to access Gene Expression Omnibus Database (GEO)",
     long_description=readme + '\n\n' + history,
     author="Rafal Gumienny",

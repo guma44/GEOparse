@@ -3,6 +3,11 @@
 History
 -------
 
+1.0.4 (2018-01-08)
+------------------
+
+ * Bugfix: Empty line in the SOFT file caused an error in python 3
+
 1.0.3 (2017-11-01)
 ------------------
 

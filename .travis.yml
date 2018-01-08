@@ -1,24 +1,16 @@
-# Config file for automatic testing at travis-ci.org
 language: python
 python:
-  - 3.6
-  - 2.7
-
-# command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
+- 3.6
+- 2.7
 install: pip install -U tox-travis
-
-# command to run tests, e.g. python setup.py test
 script: tox
-
 before_deploy:
-  - test $TRAVIS_TEST_RESULT = 0 && make dist
-
+- test $TRAVIS_TEST_RESULT = 0 && make dist
 deploy:
   provider: pypi
-  distributions: sdist
   user: guma44
   password:
-    secure: kmyG6WzwEMUoCU9Wde0QrOi15w5530tQf1rCRcdvx/1kHYs6mWeDGqExzpsRw90xY0JhtDmwyb64Avt+4w7onUheppP0m9ywmfkAdMwI2kethR3oo9WJbgCLHlHPkeLB7pyrQejq0A9Y5NfH1Vek75SpkZ/KzM0YTkwB13XokpDCDqhBjaZ0Dy4n9DoLoo3GfOxScrkDYJRFVdSA7zph9gG1Wfb6bF/DKHf3UvSFLsWYlqmtXC2riehIWVahzwin/5EI2DthR2iaVcj/8k+eLznBg/IW3KSCBHE6jDXL1P7WKSuB7cvFto6T/1z8jrHofBSL8HxEunmOxCCXzGJIeH6XaTrbSk4GjC6A5P8Sl+iTuOdFa69NUYb4XpASQ4pKaTs9pY7W3B4iQwXYJiyU3IaB7QTd3Kz/U3hWY4zrp4SIU4Y/d3IfvBogK34QMT6Qu/qGI55myAw0GnL8Pz3Effrjas1a4/0NL18h3rMaPWltJDOHWIwN1gkrXMCHNhMU6U9DIAU68s20s7x+kMbjGsHFzqgJ7NUIyh0X34ZHXLfflymK8nIrdmQcJw0GpETkq+I0lJElTfvrINfAj/6sv434C07t8OLg/Z3Q1dP39TmuGP1bcWM2f2TFgYMuK3dpf71Mm6Zwc5uo5k//iGkkbRqfvUIgCb3DRPhmzpvEmkA=
+    secure: JcgvTOSwJZ4nsz6ku3RdxKTBqGtevQrwwCCt+qb41AQtAFI0MP1ryQGt1cn5UtGPc4/SiYpKl3j5OlLF07pcXczG2B4qXdiHye/23pwSh18MmdsemiZUEHjFpljGIU7KnhCcB8SoTsccbqRY7o8STzaPR/OXnD61Uzp6nxyz0lJeV5FWV+A+AMTXIP4dpQYu3r8SI1kaaj8fqN1j5eX+N5DJNBzu+x2x4ibgSTUj2BBlZyWEh5Xy/yM7Fk/P0QQM+WbMyjKTw1Ga0jZEPqca1i85ZKxpOaH11J617Kuam9GaM+tmWUoPV2SowMmiPma2TiIwK2h3bbnDG5rLaCZh6Q+smtdWQ1iqRfoysQdISUCz1nPmLN4lROpE0y/um5qAWWWUNmoTr8WIOKxH3ROD9yLgbwh2lFDGLslLVkVVLZ0tiTFxVpKDTXHnZNyfVAZAy0ge/wl8A1MOsNys7pzhravrg7AR3ci/466KHM0W4Dut8PlFYHbbv1EdT8ppC+zfRbBuTz9It6H+XIxRSg4syeHFKacwU8i6RBqiJBQzJzZtrUkFY6nSBpInSiT9Ip/s1OMM+SlfyHLubdFX4zd+C88iOtP3120zvDAZ7Q98ZCWtdCgQNrn/x75jfyfcOSwYn+sMIL4NJE68ZO1HwXqQvtmsV7Onp6zJXqgxxNd4cH4=
   on:
     tags: true
     condition: "$TRAVIS_TAG =~ ^v.*$"
