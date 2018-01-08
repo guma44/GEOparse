@@ -326,7 +326,8 @@ def parse_table_data(lines):
 
     """
     # filter lines that do not start with symbols
-    data = "\n".join([i.rstrip() for i in lines if i[0] not in ("^", "!", "#")])
+    data = "\n".join([i.rstrip() for i in lines
+                      if not i.startswith(("^", "!", "#"))])
     return DataFrame.from_csv(StringIO(data), index_col=None, sep="\t")
 
 
@@ -348,14 +349,14 @@ def parse_GSM(filepath, entry_name=None):
             soft = []
             has_table = False
             for line in f:
-                if "_table_begin" in line or (line[0] not in ("^", "!", "#")):
+                if "_table_begin" in line or (not line.startswith(("^", "!", "#"))):
                     has_table = True
                 soft.append(line.rstrip())
     else:
         soft = []
         has_table = False
         for line in filepath:
-            if "_table_begin" in line or (line[0] not in ("^", "!", "#")):
+            if "_table_begin" in line or (not line.startswith(("^", "!", "#"))):
                 has_table = True
             soft.append(line.rstrip())
 
@@ -429,7 +430,7 @@ def parse_GPL(filepath, entry_name=None):
                         has_gpl_name = gpl_name or gpl_name is None
                         for line in data_group:
                             if ("_table_begin" in line or
-                                    line[0] not in ("^", "!", "#")):
+                                    not line.startswith(("^", "!", "#"))):
                                 has_table = True
                             if not has_gpl_name:
                                 if match("!Annotation_platform\s*=\s*", line):
@@ -443,7 +444,7 @@ def parse_GPL(filepath, entry_name=None):
                             ))
     else:
         for line in filepath:
-            if "_table_begin" in line or (line[0] not in ("^", "!", "#")):
+            if "_table_begin" in line or (not line.startswith(("^", "!", "#"))):
                 has_table = True
             gpl_soft.append(line.rstrip())
 
