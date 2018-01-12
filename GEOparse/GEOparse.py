@@ -327,8 +327,11 @@ def parse_table_data(lines):
     """
     # filter lines that do not start with symbols
     data = "\n".join([i.rstrip() for i in lines
-                      if not i.startswith(("^", "!", "#"))])
-    return DataFrame.from_csv(StringIO(data), index_col=None, sep="\t")
+                      if not i.startswith(("^", "!", "#")) and i.rstrip()])
+    if data:
+        return DataFrame.from_csv(StringIO(data), index_col=None, sep="\t")
+    else:
+        return DataFrame()
 
 
 def parse_GSM(filepath, entry_name=None):
