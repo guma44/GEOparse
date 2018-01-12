@@ -169,6 +169,12 @@ class TestGSM(unittest.TestCase):
         except IndexError:
             self.fail("Empty line in the file causes an error.")
 
+    def test_no_table(self):
+        try:
+            gsm = GEO.get_GEO('GSM2795971')
+        except:
+            self.fail("No data in the file error.")
+
 
 class TestGPL(unittest.TestCase):
     """Test GPL class"""

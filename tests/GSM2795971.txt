@@ -1,0 +1,12 @@
+^SAMPLE = GSM2795971
+!Sample_title = SMAD2/3, Hs578T, TGFβ 16h_ChIP
+!Sample_geo_accession = GSM2795971
+!Sample_status = Public on Nov 15 2017
+!Sample_submission_date = Sep 27 2017
+!Sample_last_update_date = Nov 15 2017
+!Sample_type = SRA
+!Sample_channel_count = 1
+!Sample_source_name_ch1 = SMAD2/3, Hs578T, TGFβ 16h_ChIP
+!Sample_organism_ch1 = Homo sapiens
+!Sample_taxid_ch1 = 9606
+!Sample_data_row_count = 0
