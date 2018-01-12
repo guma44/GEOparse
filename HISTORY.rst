@@ -3,6 +3,11 @@
 History
 -------
 
+1.0.5 (2018-01-12)
+------------------
+
+ * Bugfix: Some samples do not have table data error in python 3
+
 1.0.4 (2018-01-08)
 ------------------
 
