@@ -30,7 +30,7 @@ def mkdir_p(path_to_dir):
     except OSError as e:  # Python >2.5
         if e.errno == EEXIST and os.path.isdir(path_to_dir):
             logger.debug(
-                "Directory %s already exists. Skipping.\n" % path_to_dir)
+                "Directory %s already exists. Skipping." % path_to_dir)
         else:
             raise e
 
@@ -109,7 +109,7 @@ def download_from_url(url, destination_path, force=False, aspera=False,
             else:
                 if not silent:
                     logger.info(
-                        "Downloading %s to %s\n" % (url, destination_path))
+                        "Downloading %s to %s" % (url, destination_path))
                     fn = wgetter.download(url, outdir=os.path.dirname(
                         destination_path))
                 else:

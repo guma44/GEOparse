@@ -431,17 +431,27 @@ class GSM(SimpleGEO):
                 assert len(metavalue) == 1 and metavalue != ''
                 # logger.info("Downloading %s\n" % metavalue)
                 if 'sra' in metavalue[0] and download_sra:
-                    downloaded_files = self.download_SRA(email,
-                                                         directory=directory,
-                                                         **sra_kwargs)
-                    downloaded_paths[metavalue[0]] = downloaded_files
+                    try:
+                        downloaded_files = self.download_SRA(
+                            email,
+                            directory=directory,
+                            **sra_kwargs)
+                        downloaded_paths[metavalue[0]] = downloaded_files
+                    except Exception as err:
+                        logger.error("Cannot download %s SRA file (%s)" % (
+                            self.get_accession(), err))
                 else:
                     download_path = os.path.abspath(os.path.join(
                         directory,
                         os.path.join(directory_path,
                                      metavalue[0].split("/")[-1])))
-                    utils.download_from_url(metavalue[0], download_path)
-                    downloaded_paths[metavalue[0]] = download_path
+                    try:
+                        utils.download_from_url(metavalue[0], download_path)
+                        downloaded_paths[metavalue[0]] = download_path
+                    except Exception as err:
+                        logger.error(
+                            "Cannot download %s supplementary file (%s)" % (
+                                self.get_accession(), err))
         return downloaded_paths
 
     def download_SRA(self, email, directory='./', **kwargs):
