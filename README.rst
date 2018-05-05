@@ -44,3 +44,4 @@ The main issues are:
 * expand GEOTypes objects with useful functions for differential expression analysis
 * share your idea
 * add more tests - that's always good idea :)
+* add parallel download of SRA and supplementary files

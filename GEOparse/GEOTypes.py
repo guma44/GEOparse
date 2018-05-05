@@ -470,6 +470,8 @@ class GSM(SimpleGEO):
         the download type to fasta or fastq.
 
         Following  ``**kwargs`` can be passed:
+            * nproc - int
+                number of processe to be used for data download and conversion
             * filetype - str
                 can be sra, fasta, or fastq - for fasta or fastq SRA-Toolkit
                 need to be installed
@@ -549,6 +551,7 @@ class GSM(SimpleGEO):
 
         downloaded_paths = list()
         for query in queries:
+            # TODO: add effective parallelization
             # retrieve IDs for given SRX
             searchdata = Entrez.esearch(db='sra', term=query, usehistory='y',
                                         retmode='json')
@@ -999,7 +1002,7 @@ class GSE(BaseGEO):
 
         return downloaded_paths
 
-    def download_SRA(self, email, directory='series', filterby=None, **kwargs):
+    def download_SRA(self, email, directory='series', filterby=None, nproc=1, **kwargs):
         """Download SRA files for each GSM in series.
 
         Args:
@@ -1011,6 +1014,9 @@ class GSE(BaseGEO):
             filterby (:obj:`str`, optional): Filter GSM objects, argument is a
                 function that operates on GSM object  and return bool
                 eg. lambda x: "brain" not in x.name. Defaults to None.
+            nproc (:obj:`int`, optional): Number of cores to be used for parallel 
+                data download. Although the download channel might be limited, 
+                parallelization might be beneficial for SRA parsing step.
             **kwargs: Any arbitrary argument passed to GSM.download_SRA
                 method. See the documentation for more details.
         """
@@ -1029,7 +1035,7 @@ class GSE(BaseGEO):
         for gsm in gsms_to_use:
             logger.info(
                 "Downloading SRA files for %s series\n" % (gsm.name))
-            paths = gsm.download_SRA(email=email, directory=dirpath, **kwargs)
+            paths = gsm.download_SRA(email=email, directory=dirpath, nproc=nproc, **kwargs)
             downloaded_paths[gsm.name] = paths
 
         return downloaded_paths
