@@ -125,6 +125,7 @@ def get_GEO_file(geo, destdir=None, annotate_gpl=False, how="full",
                     " Temporary files will be downloaded at %s" % tmpdir)
     else:
         tmpdir = destdir
+        utils.mkdir_p(tmpdir)
 
     if geotype == "GDS":
         gseurl = ("ftp://ftp.ncbi.nlm.nih.gov/geo/"

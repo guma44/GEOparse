@@ -1,6 +1,7 @@
 import os
 import sys
 import gzip
+import glob
 from errno import EEXIST
 from contextlib import closing
 from shutil import copyfileobj
@@ -13,6 +14,7 @@ except ImportError:
     from urllib2 import urlopen, URLError
 import subprocess as sp
 import wgetter
+from six import iteritems
 
 from .logger import logger
 
@@ -119,6 +121,75 @@ def download_from_url(url, destination_path, force=False, aspera=False,
     except URLError:
         logger.error("Cannot find file %s" % url)
 
+
+def download_unpack_SRA_for_parallel(args):
+    '''
+    Auxiliary function for parallel download of sra.
+    '''
+    return download_unpack_SRA(*args)
+
+def download_unpack_SRA(path, ftpaddres, directory_path,
+                        filetype='fasta', force=False, aspera=False, silent=False,
+                        fastq_dump_options=None, keep_sra=False):
+    '''
+    Combination of download_from_url for sra and unpacking with fastq-dump.
+
+    :param path: downloaed path
+    :param ftpaddres: ftp address
+    :param directory_path: target local directory
+    :param filetype: 'fastq' or 'fasta' for fastq-dump
+    :param force: overwrite existing sra?
+    :param aspera: download with aspera
+    :param silent: supress wgetter log (get rid of enormous log file)
+    :param fastq_dump_options: options for fastq-dump, see .download_SRA description
+    :param keep_sra: keep original sra for later use
+    :return: downloaded paths (note that if sequencing is pair-ended it might generate list of output files)
+    '''
+    mkdir_p(os.path.abspath(directory_path))
+
+    sra_run = path.split("/")[-1]
+    logger.info("Analysing %s" % sra_run)
+    url = ftpaddres.format(range_subdir=sra_run[:6],
+                           file_dir=sra_run)
+    logger.debug("URL: %s", url)
+    filepath = os.path.abspath(
+        os.path.join(directory_path, "%s.sra" % sra_run))
+    download_from_url(url, filepath, aspera=aspera, silent=silent, force=force)
+
+    if filetype in ["fasta", "fastq"]:
+        if which('fastq-dump') is None:
+            raise NoSRAToolkitException(
+                "fastq-dump command not found")
+        ftype = ""
+        if filetype == "fasta":
+            ftype = " --fasta "
+        cmd = "fastq-dump"
+        for fqoption, fqvalue in iteritems(fastq_dump_options):
+            if fqvalue:
+                cmd += (" --%s %s" % (fqoption, fqvalue))
+            else:
+                cmd += (" --%s" % fqoption)
+        cmd += " %s --outdir %s %s"
+        cmd = cmd % (ftype, directory_path, filepath)
+        logger.debug(cmd)
+        process = sp.Popen(cmd, stdout=sp.PIPE,
+                                   stderr=sp.PIPE,
+                                   shell=True)
+        logger.info("Converting to %s/%s*.%s.gz\n" % (
+            directory_path, sra_run, filetype))
+        pout, perr = process.communicate()
+        downloaded_path = glob.glob(os.path.join(
+            directory_path,
+            "%s*.%s.gz" % (sra_run, filetype)
+        ))
+
+    if not keep_sra and filetype != 'sra':
+        # Delete sra file
+        os.unlink(filepath)
+    #else:
+    #    downloaded_path = None
+
+    return downloaded_path
 
 @contextmanager
 def smart_open(filepath):
