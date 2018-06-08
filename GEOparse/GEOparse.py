@@ -12,7 +12,6 @@ try:
 except ImportError:
     from urllib2 import urlopen, URLError
 from pandas import DataFrame, read_csv
-from pandas import __version__ as pdversion
 from .GEOTypes import GSE, GSM, GPL, GDS, GDSSubset, GEODatabase
 from six import iteritems
 from . import utils
