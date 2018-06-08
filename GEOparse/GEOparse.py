@@ -11,7 +11,8 @@ try:
     from urllib.error import URLError
 except ImportError:
     from urllib2 import urlopen, URLError
-from pandas import DataFrame
+from pandas import DataFrame, read_csv
+from pandas import __version__ as pdversion
 from .GEOTypes import GSE, GSM, GPL, GDS, GDSSubset, GEODatabase
 from six import iteritems
 from . import utils
@@ -329,7 +330,7 @@ def parse_table_data(lines):
     data = "\n".join([i.rstrip() for i in lines
                       if not i.startswith(("^", "!", "#")) and i.rstrip()])
     if data:
-        return DataFrame.from_csv(StringIO(data), index_col=None, sep="\t")
+        return read_csv(StringIO(data), index_col=None, sep="\t")
     else:
         return DataFrame()
 
