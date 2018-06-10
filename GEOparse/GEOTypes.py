@@ -8,8 +8,8 @@ import abc
 import gzip
 import json
 import time
-import platform
 import numpy as np
+import platform
 from pandas import DataFrame, concat
 
 from multiprocessing import Pool
@@ -33,10 +33,6 @@ class NoMetadataException(Exception):
 
 
 class NoSRARelationException(Exception):
-    pass
-
-
-class NoSRAToolkitException(Exception):
     pass
 
 
@@ -219,8 +215,7 @@ class SimpleGEO(BaseGEO):
                     columns_are_correct = True
             if not columns_are_correct:
                 # if the columns are still not correct check the order.
-                if sorted(self.columns.index.tolist()) == sorted(
-                    self.table.columns.tolist()):
+                if sorted(self.columns.index.tolist()) == sorted(self.table.columns.tolist()):
                     logger.warning(
                         "Data columns in %s %s are not in order. Reordering.\n" % (
                             self.geotype,
@@ -553,11 +548,11 @@ class GSM(SimpleGEO):
 
         # check if the e-mail is more or less not a total crap
         Entrez.email = email
-        if not (Entrez.email is not None and '@' in email and
-                        email != '' and '.' in email):
+        if not (Entrez.email is not None and '@' in email and email != '' and '.' in email):
             raise Exception('You have to provide valid e-mail')
 
-        downloaded_paths = list()
+        # Construction of DataFrame df with paths to download
+        df = DataFrame(columns=['download_path'])
         for query in queries:
             # retrieve IDs for given SRX
             searchdata = Entrez.esearch(db='sra', term=query, usehistory='y',
@@ -587,10 +582,8 @@ class GSM(SimpleGEO):
                     else:
                         raise httperr
             try:
-                df = DataFrame(
-                    [i.split(',') for i in results.split('\n') if i != ''][1:],
-                    columns=
-                    [i.split(',') for i in results.split('\n') if i != ''][0])
+                df_tmp = DataFrame([i.split(',') for i in results.split('\n') if i != ''][1:],
+                                   columns=[i.split(',') for i in results.split('\n') if i != ''][0])
             except IndexError:
                 logger.error(("SRA is empty (ID: %s, query: %s). "
                               "Check if it is publicly available.") %
@@ -599,45 +592,56 @@ class GSM(SimpleGEO):
 
             # check it first
             try:
-                df['download_path']
+                df_tmp['download_path']
             except KeyError as e:
                 logger.error('KeyError: ' + str(e) + '\n')
                 logger.error(str(results) + '\n')
 
-            # make the directory
-            if platform.system() == "Windows":
-                name_regex = r'[\s\*\?\(\),\.\:\%\|\"\<\>]'
-            else:
-                name_regex = r'[\s\*\?\(\),\.;]'
-            directory_path = os.path.abspath(
-                os.path.join(directory, "%s_%s_%s" % (
-                    'Supp',
-                    self.get_accession(),
-                    # the directory name cannot contain many of the signs
-                    re.sub(name_regex, '_', self.metadata['title'][0]))))
+            df = concat([df, df_tmp], sort=True)
 
-        if nproc==1 and not return_list:
-            # No need to parallelize, simple run for all sra:
+        # Retrieving output directory name
+
+        if platform.system() == "Windows":
+            name_regex = r'[\s\*\?\(\),\.\:\%\|\"\<\>]'
+        else:
+            name_regex = r'[\s\*\?\(\),\.;]'
+
+        directory_path = os.path.abspath(
+            os.path.join(directory, "%s_%s_%s" % (
+                'Supp',
+                self.get_accession(),
+                re.sub(name_regex, '_', self.metadata['title'][0]))))
+
+        # Running download based of df['download_path']
+        if nproc == 1 and not return_list:
+            # No need to parallelize, simple run for all SRAs:
             downloaded_paths = []
             for path in df['download_path']:
-                filepath = utils.download_unpack_SRA(path, ftpaddres,
-                                                     directory_path, filetype,
-                                                     force, aspera, silent,
-                                                     fastq_dump_options, keep_sra)
+                filepath = utils.download_unpack_SRA(path=path,
+                                                     ftpaddres=ftpaddres,
+                                                     directory_path=directory_path,
+                                                     filetype=filetype,
+                                                     force=force,
+                                                     aspera=aspera,
+                                                     silent=silent,
+                                                     fastq_dump_options=fastq_dump_options,
+                                                     keep_sra=keep_sra)
                 downloaded_paths += filepath
 
             return downloaded_paths
 
         elif return_list:
             # Returning list for further parallelization
-            for_map_all = [(path, ftpaddres, directory_path, filetype, force,
-                            aspera, silent, fastq_dump_options, keep_sra) for path in df['download_path']]
+            for_map_all = [
+                (path, ftpaddres, directory_path, filetype, force, aspera, silent, fastq_dump_options, keep_sra)
+                for path in df['download_path']]
             return for_map_all
 
-        elif nproc>1:
+        elif nproc > 1:
             # Parallelization enabled, returning list of downloaded_path
-            for_map_all = [(path, ftpaddres, directory_path, filetype, force,
-                            aspera, silent, fastq_dump_options, keep_sra) for path in df['download_path']]
+            for_map_all = [
+                (path, ftpaddres, directory_path, filetype, force, aspera, silent, fastq_dump_options, keep_sra)
+                for path in df['download_path']]
 
             p = Pool(nproc)
             downloaded_paths = p.map(utils.download_unpack_SRA_for_parallel, for_map_all)
@@ -957,7 +961,7 @@ class GSE(BaseGEO):
         return ndf
 
     def download_supplementary_files(self, directory='series',
-                                     download_sra=True, sra_filetype='fasta',
+                                     download_sra=True,
                                      email=None, sra_kwargs=None):
         """Download supplementary data.
 
@@ -968,9 +972,6 @@ class GSE(BaseGEO):
                 name + _Supp.
             download_sra (:obj:`bool`, optional): Indicates whether to download
                 SRA raw data too. Defaults to True.
-            sra_filetype (:obj:`str`, optional): Indicates what file type to
-                download if we specified SRA, can be sra, fasta or fastq.
-                Defaults to "fasta".
             email (:obj:`str`, optional): E-mail that will be provided to the
                 Entrez. Defaults to None.
             sra_kwargs (:obj:`dict`, optional): Kwargs passed to the
@@ -1007,6 +1008,8 @@ class GSE(BaseGEO):
             filterby (:obj:`str`, optional): Filter GSM objects, argument is a
                 function that operates on GSM object  and return bool
                 eg. lambda x: "brain" not in x.name. Defaults to None.
+            nproc (:obj:`int`, optional): Number of processes for SRA download
+                (default is 1, no parallelization).
             **kwargs: Any arbitrary argument passed to GSM.download_SRA
                 method. See the documentation for more details.
         """
@@ -1021,30 +1024,28 @@ class GSE(BaseGEO):
         else:
             gsms_to_use = self.gsms.values()
 
-        if nproc==1:
+        if nproc == 1:
             # No need to parallelize, running ordinary download in loop
             downloaded_paths = dict()
             for gsm in gsms_to_use:
                 logger.info(
-                    "Downloading SRA files for %s series\n" % (gsm.name))
+                    "Downloading SRA files for %s series\n" % gsm.name)
                 paths = gsm.download_SRA(email=email, directory=dirpath, nproc=1, return_list=False, **kwargs)
                 downloaded_paths[gsm.name] = paths
-        elif nproc>1:
+        elif nproc > 1:
             # Parallelization enabled
-
-            for_map_all = list() # params for Pool.map
-            keys_list = list()  # list of gsm
-            downloaded_paths = dict() # parsed output of Pool.map
+            for_map_all = list()  # params for Pool.map
+            keys_list = list()  # list of gsms
+            downloaded_paths = dict()  # future parsed output of Pool.map
 
             # Collecting params for Pool.map in a loop
             for gsm in gsms_to_use:
                 for_map = gsm.download_SRA(email=email, directory=dirpath, nproc=1, return_list=True, **kwargs)
-                keys_list += [gsm.name for x in range(len(for_map))]
                 for_map_all += for_map
+                keys_list.append(gsm.get_accession())
 
             p = Pool(nproc)
             results = p.map(utils.download_unpack_SRA_for_parallel, for_map_all)
-
             for i, k in enumerate(keys_list):
                 if k in downloaded_paths.keys():
                     downloaded_paths[k] += results[i]

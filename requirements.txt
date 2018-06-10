@@ -3,3 +3,4 @@ pandas>=0.17
 pytz>=2013
 wgetter==0.6
 sphinxcontrib-napoleon>=0.6.1
+biopython>=1.71

@@ -37,7 +37,8 @@ def mkdir_p(path_to_dir):
             raise e
 
 
-def download_aspera(url, dest_path, user="anonftp",
+def download_aspera(url, dest_path,
+                    user="anonftp",
                     ftp="ftp-trace.ncbi.nlm.nih.gov"):
     """Download file with Aspera Connect.
 
@@ -75,8 +76,8 @@ def download_aspera(url, dest_path, user="anonftp",
     stdout, stderr = p.communicate()
 
 
-def download_from_url(url, destination_path, force=False, aspera=False,
-                      silent=False):
+def download_from_url(url, destination_path,
+                      force=False, aspera=False, silent=False):
     """Download file from remote server
 
     Args:
@@ -123,28 +124,36 @@ def download_from_url(url, destination_path, force=False, aspera=False,
 
 
 def download_unpack_SRA_for_parallel(args):
-    '''
+    """
     Auxiliary function for parallel download of sra.
-    '''
+    """
     return download_unpack_SRA(*args)
 
+
 def download_unpack_SRA(path, ftpaddres, directory_path,
-                        filetype='fasta', force=False, aspera=False, silent=False,
-                        fastq_dump_options=None, keep_sra=False):
-    '''
+                        filetype='fasta',
+                        force=False,
+                        aspera=False,
+                        silent=False,
+                        fastq_dump_options=None,
+                        keep_sra=False):
+    """
     Combination of download_from_url for sra and unpacking with fastq-dump.
 
-    :param path: downloaed path
+    :param path: downloaded path
     :param ftpaddres: ftp address
     :param directory_path: target local directory
-    :param filetype: 'fastq' or 'fasta' for fastq-dump
+    :param filetype: 'fastq' or 'fasta' for fastq-dump, 'sra' to leave SRA unpacked
     :param force: overwrite existing sra?
     :param aspera: download with aspera
     :param silent: supress wgetter log (get rid of enormous log file)
     :param fastq_dump_options: options for fastq-dump, see .download_SRA description
     :param keep_sra: keep original sra for later use
     :return: downloaded paths (note that if sequencing is pair-ended it might generate list of output files)
-    '''
+    """
+
+    # Make the directory
+
     mkdir_p(os.path.abspath(directory_path))
 
     sra_run = path.split("/")[-1]
@@ -158,8 +167,7 @@ def download_unpack_SRA(path, ftpaddres, directory_path,
 
     if filetype in ["fasta", "fastq"]:
         if which('fastq-dump') is None:
-            raise NoSRAToolkitException(
-                "fastq-dump command not found")
+            logger.error("fastq-dump command not found")
         ftype = ""
         if filetype == "fasta":
             ftype = " --fasta "
@@ -173,8 +181,8 @@ def download_unpack_SRA(path, ftpaddres, directory_path,
         cmd = cmd % (ftype, directory_path, filepath)
         logger.debug(cmd)
         process = sp.Popen(cmd, stdout=sp.PIPE,
-                                   stderr=sp.PIPE,
-                                   shell=True)
+                           stderr=sp.PIPE,
+                           shell=True)
         logger.info("Converting to %s/%s*.%s.gz\n" % (
             directory_path, sra_run, filetype))
         pout, perr = process.communicate()
@@ -183,13 +191,24 @@ def download_unpack_SRA(path, ftpaddres, directory_path,
             "%s*.%s.gz" % (sra_run, filetype)
         ))
 
+    elif filetype == 'sra':
+        downloaded_path = glob.glob(os.path.join(
+            directory_path,
+            "%s*.%s" % (sra_run, filetype)
+        ))
+
+    else:
+        downloaded_path = glob.glob(os.path.join(
+            directory_path,
+            "%s*" % sra_run))
+        logger.error("Filetype %s not supported." % filetype)
+
     if not keep_sra and filetype != 'sra':
         # Delete sra file
         os.unlink(filepath)
-    #else:
-    #    downloaded_path = None
 
     return downloaded_path
+
 
 @contextmanager
 def smart_open(filepath):

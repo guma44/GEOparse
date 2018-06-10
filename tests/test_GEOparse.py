@@ -99,8 +99,6 @@ class TestGSM(unittest.TestCase):
 
     def test_metadata_as_string(self):
         metadata = {'name': ['SAMPLE1'], 'data': ["Normal"]}
-        metadata_soft = ("!Sample_data = Normal\n"
-                         "!Sample_name = SAMPLE1")
         gsm = GSM(name='name', table=self.table1, metadata=metadata,
                   columns=self.columns1)
         self.assertIn("!Sample_data = Normal", gsm._get_metadata_as_string())
@@ -160,7 +158,7 @@ class TestGSM(unittest.TestCase):
                   columns=self.columns1)
         try:
             gsm.head()
-        except:
+        except Exception:
             self.fail("GSM.head() raised error!")
 
     def test_empty_line(self):
@@ -174,29 +172,23 @@ class TestGSM(unittest.TestCase):
         try:
             gsm = GEO.get_GEO(filepath=join(download_geo, 'GSM2795971.txt'),
                               geotype='GSM')
-        except:
+        except Exception:
             self.fail("No data in the file error.")
 
-    '''
-    TODO for GSM
-    '''
     def test_download_SRA(self):
+        geo_id = 'GSE63525'  # Hi-C dataset from Rao et al.
 
-        geo_id = 'GSE63525' # Hi-C dataset from Rao et al.
-        filterby = lambda x: 'HIC174' in x.metadata['title'][0] or 'HIC173' in x.metadata['title'][0]
-        destdir="./TMP_SOFT"
+        def filterby(x):
+            return 'HIC174' in x.metadata['title'][0] or 'HIC173' in x.metadata['title'][0]
 
+        destdir = "./TMP_SOFT"
         gse = GEO.get_GEO(geo=geo_id, destdir=destdir)
-
-        downloaded_paths = gse.download_SRA('ljosudottir@gmail.com',
+        downloaded_paths = gse.download_SRA("ljosudorrit@gmail.com",  # some unused e-mail, use your own for run
                                             directory=destdir,
-                                            filetype='fastq',
+                                            filetype='sra',
                                             filterby=filterby,
                                             silent=True,
                                             keep_sra=True)
-
-        #print(gse.gsms)
-        #print(downloaded_paths)
         self.assertTrue(isdir(destdir))
         self.assertEqual(len(downloaded_paths), 2)
         for k in downloaded_paths.keys():
@@ -208,25 +200,26 @@ class TestGSM(unittest.TestCase):
                 self.assertTrue(isfile(f))
 
     def test_download_SRA_parallel_by_gsm(self):
+        geo_id = 'GSE63525'  # Hi-C dataset from Rao et al.
 
-        geo_id = 'GSE63525' # Hi-C dataset from Rao et al.
-        filterby = lambda x: x.metadata['title'][0] in ['HIC173', 'HIC174', 'HIC175']
-        destdir="./TMP_SOFT_parallel"
+        def filterby(x):
+            return 'HIC173' in x.metadata['title'][0] \
+                   or 'HIC174' in x.metadata['title'][0] \
+                   or 'HIC175' in x.metadata['title'][0]
+
+        destdir = "./TMP_SOFT_parallel_by_gsm"
 
         gse = GEO.get_GEO(geo=geo_id, destdir=destdir)
         gsms_to_use = [gsm for gsm in gse.gsms.values() if filterby(gsm)]
         downloaded_paths = dict()
         for gsm in gsms_to_use:
-            downloaded_paths[gsm.name] = gsm.download_SRA(email='ljosudottir@gmail.com',
-                                               directory=destdir,
-                                               nproc=3,
-                                               return_list=False,
-                                               filetype='fastq',
-                                               silent=True,
-                                               keep_sra=True)
-
-        print(downloaded_paths)
-
+            downloaded_paths[gsm.name] = gsm.download_SRA("ljosudorrit@gmail.com",  # some unused e-mail
+                                                          directory=destdir,
+                                                          nproc=3,
+                                                          return_list=False,
+                                                          filetype='sra',
+                                                          silent=True,
+                                                          keep_sra=True)
         self.assertTrue(isdir(destdir))
         self.assertEqual(len(downloaded_paths), 3)
         for k in downloaded_paths.keys():
@@ -238,21 +231,23 @@ class TestGSM(unittest.TestCase):
                 self.assertTrue(isfile(f))
 
     def test_download_SRA_parallel_by_sra(self):
-
         geo_id = 'GSE63525'  # Hi-C dataset from Rao et al.
-        filterby = lambda x: x.metadata['title'][0] in ['HIC173', 'HIC174', 'HIC175']
-        destdir = "./TMP_SOFT_parallel"
 
+        def filterby(x):
+            return 'HIC173' in x.metadata['title'][0] \
+                   or 'HIC174' in x.metadata['title'][0] \
+                   or 'HIC175' in x.metadata['title'][0]
+
+        destdir = "./TMP_SOFT_parallel_by_sra"
         gse = GEO.get_GEO(geo=geo_id, destdir=destdir)
-
-        downloaded_paths = gse.download_SRA('ljosudottir@gmail.com',
-            directory=destdir,
-            filetype='fastq',
-            filterby=filterby,
-            silent=True,
-            keep_sra=True,
-            nproc=3)
-
+        downloaded_paths = gse.download_SRA("ljosudorrit@gmail.com",  # some unused e-mail
+                                            directory=destdir,
+                                            filetype='sra',
+                                            filterby=filterby,
+                                            silent=True,
+                                            keep_sra=True,
+                                            nproc=3)
+        print(downloaded_paths)
         self.assertTrue(isdir(destdir))
         self.assertEqual(len(downloaded_paths), 3)
         for k in downloaded_paths.keys():
@@ -262,6 +257,7 @@ class TestGSM(unittest.TestCase):
         for k in downloaded_paths.keys():
             for f in downloaded_paths[k]:
                 self.assertTrue(isfile(f))
+
 
 class TestGPL(unittest.TestCase):
     """Test GPL class"""
@@ -545,8 +541,7 @@ class TestGSE(unittest.TestCase):
     TODO for GSE
     '''
     def test_download_SRA(self):
-        print(download_geo)
-        pass
+
         gse = GEO.get_GEO(geo="GSE1563", destdir=download_geo)
         self.assertTrue(isinstance(gse, GSE))
         self.assertEqual(gse.get_accession(), "GSE1563")

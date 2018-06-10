@@ -305,13 +305,7 @@ def parse_GDS_columns(lines, subsets):
     subset_ids = defaultdict(dict)
     for subsetname, subset in iteritems(subsets):
         for expid in subset.metadata["sample_id"][0].split(","):
-            try:
-                subset_type = subset.get_type()
-                subset_ids[subset_type][expid] = \
-                    subset.metadata['description'][0]
-            except Exception as err:
-                logger.error("Error processing subsets: %s for subset %s" % (
-                    subset.get_type(), subsetname))
+            pass
 
     return df.join(DataFrame(subset_ids))
 
@@ -426,8 +420,7 @@ def parse_GPL(filepath, entry_name=None):
                         is_data, data_group = next(groupper)
                         database_metadata = parse_metadata(data_group)
                         # TODO Use database!
-                        database = GEODatabase(name=entry_name,
-                                               metadata=database_metadata)
+
                     elif entry_type == "PLATFORM" or entry_type == "Annotation":
                         gpl_name = entry_name
                         is_data, data_group = next(groupper)
@@ -455,7 +448,7 @@ def parse_GPL(filepath, entry_name=None):
     columns = None
     try:
         columns = parse_columns(gpl_soft)
-    except:
+    except Exception:
         pass
     metadata = parse_metadata(gpl_soft)
 
