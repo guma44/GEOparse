@@ -3,6 +3,14 @@
 History
 -------
 
+1.1.0 (YYYY-MM-DD)
+------------------
+
+ * Bugfix: Keep `logger` as a module name and rename `logger` object to
+   `geoparse_logger`. This is a breaking change.
+
+ * Bugfix: Some samples do not have table data error in python 3
+
 1.0.5 (2018-01-12)
 ------------------
 
