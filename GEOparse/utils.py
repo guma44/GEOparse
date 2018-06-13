@@ -14,7 +14,7 @@ except ImportError:
 import subprocess as sp
 import wgetter
 
-from .logger import logger
+from .logger import geoparse_logger as logger
 
 
 def mkdir_p(path_to_dir):

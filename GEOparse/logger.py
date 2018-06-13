@@ -10,9 +10,9 @@ _formatter = logging.Formatter(
     datefmt="%d-%b-%Y %H:%M:%S")
 _console_handler = logging.StreamHandler()
 _console_handler.setFormatter(_formatter)
-logger = logging.getLogger('GEOparse')
-logger.setLevel(logging.getLevelName('DEBUG'))
-logger.addHandler(_console_handler)
+geoparse_logger = logging.getLogger('GEOparse')
+geoparse_logger.setLevel(logging.getLevelName('DEBUG'))
+geoparse_logger.addHandler(_console_handler)
 
 
 def set_verbosity(level):
@@ -21,7 +21,7 @@ def set_verbosity(level):
     Args:
         level (:obj:`str`): Level name eg. DEBUG or ERROR
     """
-    logger.setLevel(logging.getLevelName(level))
+    geoparse_logger.setLevel(logging.getLevelName(level))
 
 
 def add_log_file(path):
@@ -36,7 +36,7 @@ def add_log_file(path):
         fmt='%(asctime)s %(levelname)s %(module)s - %(message)s',
         datefmt="%d-%b-%Y %H:%M:%S")
     logfile_handler.setFormatter(formatter)
-    logger.addHandler(logfile_handler)
+    geoparse_logger.addHandler(logfile_handler)
 
 
-__all__ = ('logger', 'set_verbosity', 'add_log_file')
+__all__ = ('geoparse_logger', 'set_verbosity', 'add_log_file')

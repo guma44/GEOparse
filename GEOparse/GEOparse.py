@@ -15,7 +15,7 @@ from pandas import DataFrame, read_csv
 from .GEOTypes import GSE, GSM, GPL, GDS, GDSSubset, GEODatabase
 from six import iteritems
 from . import utils
-from .logger import logger
+from .logger import geoparse_logger as logger
 
 
 class UnknownGEOTypeException(Exception):

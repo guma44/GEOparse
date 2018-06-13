@@ -21,7 +21,7 @@ except ImportError:
 from six import iteritems, itervalues
 
 from . import utils
-from .logger import logger
+from .logger import geoparse_logger as logger
 
 
 class DataIncompatibilityException(Exception):
