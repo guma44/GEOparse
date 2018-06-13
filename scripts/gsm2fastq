@@ -4,6 +4,7 @@ import os
 import argparse
 import GEOparse
 
+
 def parse(args):
 
     description = """
@@ -11,30 +12,29 @@ def parse(args):
     """
 
     p = argparse.ArgumentParser(
-	    description=description
-	    )
+        description=description
+    )
 
     p.add_argument("term",
-            help="GEO accession",
-            metavar="GSM"
-            )
+                   help="GEO accession",
+                   metavar="GSM"
+                   )
     p.add_argument("email",
-            help="e-mail address for Entrez API",
-            metavar="EMAIL"
-            )
+                   help="e-mail address for Entrez API",
+                   metavar="EMAIL"
+                   )
     p.add_argument("-o", "--outdir",
-            dest="outdir",
-            help="output directory",
-            metavar="DIR",
-            default="./"
-            )
+                   dest="outdir",
+                   help="output directory",
+                   metavar="DIR",
+                   default="./"
+                   )
     p.add_argument("-f", "--filetype",
-            dest="filetype",
-            help="filetype (fastq or sra)",
-            metavar="TYPE",
-            default="fastq"
-            )
-
+                   dest="filetype",
+                   help="filetype (fastq or sra)",
+                   metavar="TYPE",
+                   default="fastq"
+                   )
 
     return p.parse_args(args)
 
@@ -45,7 +45,7 @@ if __name__ == "__main__":
     gsm = GEOparse.get_GEO(args.term)
     title = gsm.metadata.get("title", [])[0]
     gsm.download_SRA(
-            args.email, 
+            args.email,
             directory=args.outdir,
             filetype=args.filetype,
             aspera=os.environ.has_key("ASPERA_HOME"),

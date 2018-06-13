@@ -14,10 +14,12 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read().replace('.. :changelog:', '')
 
+# TODO: Automatically add requirements from requirements.txt
 requirements = [
                 'numpy>=1.7',
                 'pandas>=0.17',
                 'wgetter>=0.6',
+                'biopython>=1.71'
                 ]
 
 test_requirements = [
