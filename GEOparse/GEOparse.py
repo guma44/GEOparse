@@ -305,7 +305,13 @@ def parse_GDS_columns(lines, subsets):
     subset_ids = defaultdict(dict)
     for subsetname, subset in iteritems(subsets):
         for expid in subset.metadata["sample_id"][0].split(","):
-            pass
+            try:
+                subset_type = subset.get_type()
+                subset_ids[subset_type][expid] = \
+                    subset.metadata['description'][0]
+            except Exception as err:
+                logger.error("Error processing subsets: %s for subset %s" % (
+                    subset.get_type(), subsetname))
 
     return df.join(DataFrame(subset_ids))
 
