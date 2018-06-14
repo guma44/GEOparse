@@ -400,6 +400,7 @@ def parse_GPL(filepath, entry_name=None):
     gpl_soft = []
     has_table = False
     gpl_name = entry_name
+    database = None
     if isinstance(filepath, str):
         with utils.smart_open(filepath) as soft:
             groupper = groupby(soft, lambda x: x.startswith("^"))
@@ -419,7 +420,8 @@ def parse_GPL(filepath, entry_name=None):
                     elif entry_type == "DATABASE":
                         is_data, data_group = next(groupper)
                         database_metadata = parse_metadata(data_group)
-                        # TODO Use database!
+                        database = GEODatabase(name=entry_name,
+                                               metadata=database_metadata)
 
                     elif entry_type == "PLATFORM" or entry_type == "Annotation":
                         gpl_name = entry_name
@@ -463,6 +465,7 @@ def parse_GPL(filepath, entry_name=None):
               table=table_data,
               metadata=metadata,
               columns=columns,
+              database=database
               )
 
     # link samples to series, if these were present in the GPL soft file
