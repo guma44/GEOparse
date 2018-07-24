@@ -97,7 +97,7 @@ def download_from_url(url, destination_path, force=False, aspera=False,
                     fn = wgetter.download(url, outdir=os.path.dirname(
                         destination_path))
                 else:
-                    with closing(urlopen(url)) as r:
+                    with closing(urlopen(url, timeout=30)) as r:
                         with open(destination_path, mode='wb') as f:
                             copyfileobj(r, f)
             else:
@@ -113,7 +113,7 @@ def download_from_url(url, destination_path, force=False, aspera=False,
                     fn = wgetter.download(url, outdir=os.path.dirname(
                         destination_path))
                 else:
-                    with closing(urlopen(url)) as r:
+                    with closing(urlopen(url, timeout=30)) as r:
                         with open(destination_path, mode='wb') as f:
                             copyfileobj(r, f)
     except URLError:
