@@ -258,7 +258,7 @@ class SimpleGEO(BaseGEO):
         summary.append(" " * 40 + "..." + " " * 40 + "\n")
         summary.append(" " * 40 + "..." + " " * 40 + "\n")
         summary.append(self.table.tail().to_string(header=None) + "\n")
-        return "\n".join(summary)
+        return "\n".join([str(s) for s in summary])
 
     def show_columns(self):
         """Print columns in SOFT format."""
