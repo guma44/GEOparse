@@ -446,7 +446,7 @@ class GSM(SimpleGEO):
                     email,
                     directory=directory,
                     **sra_kwargs)
-                downloaded_paths["SRA"] = downloaded_files
+                downloaded_paths.update(downloaded_files)
             except Exception as err:
                 logger.error("Cannot download %s SRA file (%s)" % (
                     self.get_accession(), err))
@@ -468,9 +468,6 @@ class GSM(SimpleGEO):
         the download type to fasta or fastq.
 
         Following  ``**kwargs`` can be passed:
-            * return_list - bool
-                if True returns list of arguments for multiprocess.Pool.map
-                else
             * filetype - str
                 can be sra, fasta, or fastq - for fasta or fastq SRA-Toolkit
                 need to be installed
@@ -506,7 +503,7 @@ class GSM(SimpleGEO):
             :obj:`HTTPError`: Cannot access or connect to DB
         """
         downloader = SRADownloader(self, email, directory, **kwargs)
-        return downloader.download()
+        return {"SRA": downloader.download()}
 
 
 class GPL(SimpleGEO):
