@@ -21,6 +21,7 @@ except ImportError:
 from six import iteritems, itervalues
 
 from . import utils
+from .sra_downloader import SRADownloader, sra_worker, supp_worker
 from .logger import geoparse_logger as logger
 
 
@@ -29,10 +30,6 @@ class DataIncompatibilityException(Exception):
 
 
 class NoMetadataException(Exception):
-    pass
-
-
-class NoSRARelationException(Exception):
     pass
 
 
@@ -342,9 +339,8 @@ class GSM(SimpleGEO):
             return annotated
 
     def annotate_and_average(self, gpl, expression_column, group_by_column,
-                             rename=True,
-                             force=False, merge_on_column=None, gsm_on=None,
-                             gpl_on=None):
+                             rename=True, force=False, merge_on_column=None,
+                             gsm_on=None, gpl_on=None):
         """Annotate GSM table with provided GPL.
 
         Args:
@@ -421,21 +417,18 @@ class GSM(SimpleGEO):
         downloaded_paths = dict()
         if sra_kwargs is None:
             sra_kwargs = {}
+        # Possible erroneous values that could be identified and skipped right
+        # after
+        blacklist = ('NONE',)
         for metakey, metavalue in iteritems(self.metadata):
             if 'supplementary_file' in metakey:
                 assert len(metavalue) == 1 and metavalue != ''
-                # logger.info("Downloading %s\n" % metavalue)
-                if 'sra' in metavalue[0] and download_sra:
-                    try:
-                        downloaded_files = self.download_SRA(
-                            email,
-                            directory=directory,
-                            **sra_kwargs)
-                        downloaded_paths[metavalue[0]] = downloaded_files
-                    except Exception as err:
-                        logger.error("Cannot download %s SRA file (%s)" % (
-                            self.get_accession(), err))
-                else:
+                if metavalue[0] in blacklist:
+                    logger.warn("%s value is blacklisted as '%s' - skipping" %
+                                (metakey, metavalue[0]))
+                    continue
+                # SRA will be downloaded elsewhere
+                if 'sra' not in metavalue[0]:
                     download_path = os.path.abspath(os.path.join(
                         directory,
                         os.path.join(directory_path,
@@ -447,6 +440,16 @@ class GSM(SimpleGEO):
                         logger.error(
                             "Cannot download %s supplementary file (%s)" % (
                                 self.get_accession(), err))
+        if download_sra:
+            try:
+                downloaded_files = self.download_SRA(
+                    email,
+                    directory=directory,
+                    **sra_kwargs)
+                downloaded_paths["SRA"] = downloaded_files
+            except Exception as err:
+                logger.error("Cannot download %s SRA file (%s)" % (
+                    self.get_accession(), err))
         return downloaded_paths
 
     def download_SRA(self, email, directory='./', **kwargs):
@@ -465,9 +468,6 @@ class GSM(SimpleGEO):
         the download type to fasta or fastq.
 
         Following  ``**kwargs`` can be passed:
-            * nproc - int
-                number of processes to be used for data download and conversion,
-                ignored if return_list==True
             * return_list - bool
                 if True returns list of arguments for multiprocess.Pool.map
                 else
@@ -505,151 +505,8 @@ class GSM(SimpleGEO):
             :obj:`Exception`: Wrong e-mail
             :obj:`HTTPError`: Cannot access or connect to DB
         """
-        from Bio import Entrez
-
-        # Unpack arguments
-        filetype = kwargs.get('filetype', 'fasta')
-        aspera = kwargs.get('aspera', False)
-        keep_sra = kwargs.get('keep_sra', False)
-        silent = kwargs.get('silent', False)
-        force = kwargs.get('force', False)
-        nproc = kwargs.get('nproc', 1)
-        return_list = kwargs.get('return_list', False)
-
-        fq_options = {
-            'split-files': None,
-            'readids': None,
-            'read-filter': 'pass',
-            'dumpbase': None,
-            'gzip': None
-        }
-        fastq_dump_options = kwargs.get('fastq_dump_options', fq_options)
-
-        # Check download filetype
-        filetype = filetype.lower()
-        if filetype not in ["sra", "fastq", "fasta"]:
-            raise TypeError("Unknown type to downlod: %s. Use sra, fastq or "
-                            "fasta." % filetype)
-
-        # Setup the query
-        ftpaddres = ("ftp://ftp-trace.ncbi.nlm.nih.gov/sra/sra-instant/reads/"
-                     "ByRun/sra/SRR/{range_subdir}/{file_dir}/"
-                     "{file_dir}.sra")
-        queries = []
-        try:
-            for sra in self.relations['SRA']:
-                query = sra.split("=")[-1]
-                assert 'SRX' in query, "Sample looks like it is not SRA: %s" % query
-                logger.info("Query: %s" % query)
-                queries.append(query)
-        except KeyError:
-            raise NoSRARelationException(
-                'No relation called SRA for %s' % self.get_accession())
-
-        # check if the e-mail is more or less not a total crap
-        Entrez.email = email
-        if not (Entrez.email is not None and '@' in email and email != '' and '.' in email):
-            raise Exception('You have to provide valid e-mail')
-
-        # Construction of DataFrame df with paths to download
-        df = DataFrame(columns=['download_path'])
-        for query in queries:
-            # retrieve IDs for given SRX
-            searchdata = Entrez.esearch(db='sra', term=query, usehistory='y',
-                                        retmode='json')
-            answer = json.loads(searchdata.read())
-            ids = answer["esearchresult"]["idlist"]
-            assert len(ids) == 1, "There should be one and only one ID per SRX"
-
-            # using ID fetch the info
-            number_of_trials = 10
-            wait_time = 30
-            for trial in range(number_of_trials):
-                try:
-                    results = Entrez.efetch(db="sra", id=ids[0],
-                                            rettype="runinfo",
-                                            retmode="text").read()
-                    break
-                except HTTPError as httperr:
-                    if "502" in str(httperr):
-                        logger.error(("Error: %s, trial %i out of %i, waiting "
-                                      "for %i seconds.") % (
-                                         str(httperr),
-                                         trial,
-                                         number_of_trials,
-                                         wait_time))
-                        time.sleep(wait_time)
-                    else:
-                        raise httperr
-            try:
-                df_tmp = DataFrame([i.split(',') for i in results.split('\n') if i != ''][1:],
-                                   columns=[i.split(',') for i in results.split('\n') if i != ''][0])
-            except IndexError:
-                logger.error(("SRA is empty (ID: %s, query: %s). "
-                              "Check if it is publicly available.") %
-                             (ids[0], query))
-                continue
-
-            # check it first
-            try:
-                df_tmp['download_path']
-            except KeyError as e:
-                logger.error('KeyError: ' + str(e) + '\n')
-                logger.error(str(results) + '\n')
-
-            df = concat([df, df_tmp], sort=True)
-
-        # Retrieving output directory name
-
-        if platform.system() == "Windows":
-            name_regex = r'[\s\*\?\(\),\.\:\%\|\"\<\>]'
-        else:
-            name_regex = r'[\s\*\?\(\),\.;]'
-
-        directory_path = os.path.abspath(
-            os.path.join(directory, "%s_%s_%s" % (
-                'Supp',
-                self.get_accession(),
-                re.sub(name_regex, '_', self.metadata['title'][0]))))
-
-        # Running download based of df['download_path']
-        if nproc == 1 and not return_list:
-            # No need to parallelize, simple run for all SRAs:
-            downloaded_paths = []
-            for path in df['download_path']:
-                filepath = utils.download_unpack_SRA(path=path,
-                                                     ftpaddres=ftpaddres,
-                                                     directory_path=directory_path,
-                                                     filetype=filetype,
-                                                     force=force,
-                                                     aspera=aspera,
-                                                     silent=silent,
-                                                     fastq_dump_options=fastq_dump_options,
-                                                     keep_sra=keep_sra)
-                downloaded_paths += filepath
-
-            return downloaded_paths
-
-        elif return_list:
-            # Returning list for further parallelization
-            for_map_all = [
-                (path, ftpaddres, directory_path, filetype, force, aspera, silent, fastq_dump_options, keep_sra)
-                for path in df['download_path']]
-            return for_map_all
-
-        elif nproc > 1:
-            # Parallelization enabled, returning list of downloaded_path
-            for_map_all = [
-                (path, ftpaddres, directory_path, filetype, force, aspera, silent, fastq_dump_options, keep_sra)
-                for path in df['download_path']]
-
-            p = Pool(nproc)
-            downloaded_paths = p.map(utils.download_unpack_SRA_for_parallel, for_map_all)
-
-            return [y for x in downloaded_paths for y in x]
-
-        else:
-            raise ValueError("Nproc should be non-negative: %s" % str(nproc))
+        downloader = SRADownloader(self, email, directory, **kwargs)
+        return downloader.download()
 
 
 class GPL(SimpleGEO):
@@ -961,8 +818,8 @@ class GSE(BaseGEO):
         return ndf
 
     def download_supplementary_files(self, directory='series',
-                                     download_sra=True,
-                                     email=None, sra_kwargs=None):
+                                     download_sra=True, email=None,
+                                     sra_kwargs=None, nproc=1):
         """Download supplementary data.
 
         Args:
@@ -980,6 +837,8 @@ class GSE(BaseGEO):
         Returns:
             :obj:`dict`: Downloaded paths for each of the GSM
         """
+        if sra_kwargs is None:
+            sra_kwargs = dict()
         if directory == 'series':
             dirpath = os.path.abspath(self.get_accession() + "_Supp")
             utils.mkdir_p(dirpath)
@@ -987,12 +846,33 @@ class GSE(BaseGEO):
             dirpath = os.path.abspath(directory)
             utils.mkdir_p(dirpath)
         downloaded_paths = dict()
-        for gsmname, gsm in iteritems(self.gsms):
-            paths = gsm.download_supplementary_files(email=email,
-                                                     download_sra=download_sra,
-                                                     directory=dirpath,
-                                                     sra_kwargs=sra_kwargs)
-            downloaded_paths[gsmname] = paths
+        if nproc == 1:
+            # No need to parallelize, running ordinary download in loop
+            downloaded_paths = dict()
+            for gsm in itervalues(self.gsms):
+                logger.info(
+                    "Downloading SRA files for %s series\n" % gsm.name)
+                paths = gsm.download_supplementary_files(email=email,
+                                                         download_sra=download_sra,
+                                                         directory=dirpath,
+                                                         sra_kwargs=sra_kwargs)
+                downloaded_paths[gsm.name] = paths
+        elif nproc > 1:
+            # Parallelization enabled
+            downloaders = list()
+            # Collecting params for Pool.map in a loop
+            for gsm in itervalues(self.gsms):
+                downloaders.append([
+                    gsm,
+                    download_sra,
+                    email,
+                    dirpath,
+                    sra_kwargs])
+            p = Pool(nproc)
+            results = p.map(supp_worker, downloaders)
+            downloaded_paths = dict(results)
+        else:
+            raise ValueError("Nproc should be non-negative: %s" % str(nproc))
 
         return downloaded_paths
 
@@ -1030,27 +910,24 @@ class GSE(BaseGEO):
             for gsm in gsms_to_use:
                 logger.info(
                     "Downloading SRA files for %s series\n" % gsm.name)
-                paths = gsm.download_SRA(email=email, directory=dirpath, nproc=1, return_list=False, **kwargs)
-                downloaded_paths[gsm.name] = paths
+                downloaded_paths[gsm.name] = gsm.download_SRA(
+                    email=email,
+                    directory=dirpath,
+                    **kwargs)
         elif nproc > 1:
             # Parallelization enabled
-            for_map_all = list()  # params for Pool.map
-            keys_list = list()  # list of gsms
-            downloaded_paths = dict()  # future parsed output of Pool.map
-
+            downloaders = list()
             # Collecting params for Pool.map in a loop
             for gsm in gsms_to_use:
-                for_map = gsm.download_SRA(email=email, directory=dirpath, nproc=1, return_list=True, **kwargs)
-                for_map_all += for_map
-                keys_list.append(gsm.get_accession())
+                downloaders.append([
+                    gsm,
+                    email,
+                    dirpath,
+                    kwargs])
 
             p = Pool(nproc)
-            results = p.map(utils.download_unpack_SRA_for_parallel, for_map_all)
-            for i, k in enumerate(keys_list):
-                if k in downloaded_paths.keys():
-                    downloaded_paths[k] += results[i]
-                else:
-                    downloaded_paths[k] = results[i]
+            results = p.map(sra_worker, downloaders)
+            downloaded_paths = dict(results)
         else:
             raise ValueError("Nproc should be non-negative: %s" % str(nproc))
 
