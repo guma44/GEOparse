@@ -78,7 +78,10 @@ def download_aspera(url, dest_path,
 
 def download_from_url(url, destination_path,
                       force=False, aspera=False, silent=False):
-    """Download file from remote server
+    """Download file from remote server.
+    
+    If the file is already downloaded and  ``force`` flag is on the file will
+    be removed.
 
     Args:
         url (:obj:`str`): Path to the file on remote server (including file

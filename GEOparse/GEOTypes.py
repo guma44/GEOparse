@@ -404,7 +404,8 @@ class GSM(SimpleGEO):
                 download_SRA method. Defaults to None.
 
         Returns:
-            :obj:`dict`: A key-value pair of name and paths downloaded
+            :obj:`dict`: A key-value pair of name taken from the metadata and
+                paths downloaded, in the case of SRA files the key is ``SRA``.
         """
         directory_path = os.path.abspath(
             os.path.join(directory, "%s_%s_%s" % (
@@ -459,7 +460,7 @@ class GSM(SimpleGEO):
         or the directory specified by the parameter. The sample has to come
         from sequencing eg. mRNA-seq, CLIP etc.
 
-        An important parameter is a download_type. By default an SRA
+        An important parameter is a filetype. By default an SRA
         is accessed by FTP and such file is downloaded. This does not
         require additional libraries. However in order
         to produce FASTA of FASTQ files one would need to use SRA-Toolkit.
@@ -467,25 +468,8 @@ class GSM(SimpleGEO):
         will be installed in the near future. One can immediately specify
         the download type to fasta or fastq.
 
-        Following  ``**kwargs`` can be passed:
-            * filetype - str
-                can be sra, fasta, or fastq - for fasta or fastq SRA-Toolkit
-                need to be installed
-            * aspera - bool
-                use Aspera to download samples, defaults to False
-            * keep_sra - bool
-                keep SRA files after download. Removes SRA file only if the
-                selected file type is different than "sra", defaults to False
-            * fastq_dump_options - dict
-                pass options to fastq-dump (if used, the options has to be in
-                long form eg. --split-files), defaults to::
-                    {
-                        'split-files': None,
-                        'readids': None,
-                        'read-filter': 'pass',
-                        'dumpbase': None,
-                        'gzip': None
-                    }
+        To see all possible ``**kwargs`` that could be passed to the function
+        see the description of :class:`~GEOparse.sra_downloader.SRADownloader`.
 
         Args:
             email (:obj:`str`): an email (any) - Required by NCBI for access
@@ -494,7 +478,8 @@ class GSM(SimpleGEO):
             **kwargs: Arbitrary keyword arguments, see description
 
         Returns:
-            :obj:`list` of :obj:`str`: List of downloaded files.
+            :obj:`dict`: A dictionary containing only one key (``SRA``) with
+                the list of downloaded files.
 
         Raises:
             :obj:`TypeError`: Type to download unknown
@@ -830,9 +815,11 @@ class GSE(BaseGEO):
                 Entrez. Defaults to None.
             sra_kwargs (:obj:`dict`, optional): Kwargs passed to the
                 GSM.download_SRA method. Defaults to None.
+            nproc (:obj:`int`, optional): Number of processes for SRA download
+                (default is 1, no parallelization).
 
         Returns:
-            :obj:`dict`: Downloaded paths for each of the GSM
+            :obj:`dict`: Downloaded data for each of the GSM
         """
         if sra_kwargs is None:
             sra_kwargs = dict()
@@ -873,7 +860,8 @@ class GSE(BaseGEO):
 
         return downloaded_paths
 
-    def download_SRA(self, email, directory='series', filterby=None, nproc=1, **kwargs):
+    def download_SRA(self, email, directory='series', filterby=None, nproc=1,
+                     **kwargs):
         """Download SRA files for each GSM in series.
 
         Args:
@@ -889,6 +877,11 @@ class GSE(BaseGEO):
                 (default is 1, no parallelization).
             **kwargs: Any arbitrary argument passed to GSM.download_SRA
                 method. See the documentation for more details.
+
+            Returns:
+                :obj:`dict`: A dictionary containing output of ``GSM.download_SRA``
+                    method where each GSM accession ID is the key for the
+                    output.
         """
         if directory == 'series':
             dirpath = os.path.abspath(self.get_accession() + "_SRA")

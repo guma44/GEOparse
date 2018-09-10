@@ -10,7 +10,7 @@ import subprocess as sp
 
 from Bio import Entrez
 from pandas import DataFrame, concat
-from six import iteritems, itervalues
+from six import iteritems
 
 try:
     from urllib.error import HTTPError
@@ -22,6 +22,10 @@ from .logger import geoparse_logger as logger
 
 
 def sra_worker(*args):
+    """A worker to download SRA files.
+
+    To be used with multiprocessing.
+    """
     gsm = args[0][0]
     email = args[0][1]
     dirpath = args[0][2]
@@ -30,6 +34,10 @@ def sra_worker(*args):
 
 
 def supp_worker(*args):
+    """A worker to download supplementary files.
+
+    To be used with multiprocessing.
+    """
     gsm = args[0][0]
     download_sra = args[0][1]
     email = args[0][2]
@@ -52,48 +60,13 @@ class SRADownloader(object):
     or the directory specified by the parameter. The sample has to come
     from sequencing eg. mRNA-seq, CLIP etc.
 
-    An important parameter is a download_type. By default an SRA
+    An important parameter is a filetype. By default an SRA
     is accessed by FTP and such file is downloaded. This does not
     require additional libraries. However in order
     to produce FASTA of FASTQ files one would need to use SRA-Toolkit.
     Thus, it is assumed that this library is already installed or it
     will be installed in the near future. One can immediately specify
     the download type to fasta or fastq.
-
-    Following  ``**kwargs`` can be passed:
-        * filetype - str
-            can be sra, fasta, or fastq - for fasta or fastq SRA-Toolkit
-            need to be installed
-        * aspera - bool
-            use Aspera to download samples, defaults to False
-        * keep_sra - bool
-            keep SRA files after download. Removes SRA file only if the
-            selected file type is different than "sra", defaults to False
-        * fastq_dump_options - dict
-            pass options to fastq-dump (if used, the options has to be in
-            long form eg. --split-files), defaults to::
-                {
-                    'split-files': None,
-                    'readids': None,
-                    'read-filter': 'pass',
-                    'dumpbase': None,
-                    'gzip': None
-                }
-
-    Args:
-        email (:obj:`str`): an email (any) - Required by NCBI for access
-        directory (:obj:`str`, optional): The directory to which download
-            the data. Defaults to "./".
-        **kwargs: Arbitrary keyword arguments, see description
-
-    Returns:
-        :obj:`list` of :obj:`str`: List of downloaded files.
-
-    Raises:
-        :obj:`TypeError`: Type to download unknown
-        :obj:`NoSRARelationException`: No SRAToolkit
-        :obj:`Exception`: Wrong e-mail
-        :obj:`HTTPError`: Cannot access or connect to DB
     """
 
     ALLOWED_FILETYPES = ("sra", "fastq", "fasta")
@@ -102,7 +75,39 @@ class SRADownloader(object):
                        "{file_dir}.sra")
 
     def __init__(self, gsm, email, directory='./', **kwargs):
-        """Initialize downloader."""
+        """Initialize downloader object.
+
+        Args:
+            gsm (:class:`GEOparse.GSM`): A GSM object
+            email (:obj:`str`): an email (any) - Required by NCBI for access
+            directory (:obj:`str`, optional): The directory to which download
+                the data. Defaults to "./".
+            **kwargs: Arbitrary keyword arguments, see description
+
+        Following  ``**kwargs`` can be passed:
+            * filetype - str
+                can be sra, fasta, or fastq - for fasta or fastq SRA-Toolkit
+                need to be installed
+            * aspera - bool
+                use Aspera to download samples, defaults to False
+            * keep_sra - bool
+                keep SRA files after download. Removes SRA file only if the
+                selected file type is different than "sra", defaults to False
+            * fastq_dump_options - dict
+                pass options to fastq-dump (if used, the options has to be in
+                long form eg. --split-files), defaults to::
+                    {
+                        'split-files': None,
+                        'readids': None,
+                        'read-filter': 'pass',
+                        'dumpbase': None,
+                        'gzip': None
+                    }
+
+        Raises:
+            :obj:`TypeError`: Type to download unknown
+            :obj:`TypeError`: Wrong e-mail
+        """
         # Unpack arguments
         self.gsm = gsm
         self.email = email
@@ -146,6 +151,7 @@ class SRADownloader(object):
 
     @property
     def paths_for_download(self):
+        """List of URLs available for downloading."""
         if self._paths_for_download is None:
             queries = list()
             try:
@@ -213,6 +219,11 @@ class SRADownloader(object):
         return self._paths_for_download
 
     def download(self):
+        """Download SRA files.
+
+        Returns:
+            :obj:`list` of :obj:`str`: List of downloaded files.
+        """
         self.downloaded_paths = list()
         for path in self.paths_for_download:
             downloaded_path = list()
