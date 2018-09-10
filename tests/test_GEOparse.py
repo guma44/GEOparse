@@ -196,7 +196,7 @@ class TestGSM(unittest.TestCase):
         for k in ['GSM1551718', 'GSM1551719']:
             self.assertTrue(k in downloaded_paths.keys())
         for k in downloaded_paths.keys():
-            for f in downloaded_paths[k]:
+            for f in downloaded_paths[k]['SRA']:
                 self.assertTrue(isfile(f))
 
     def test_download_SRA_parallel_by_gsm(self):
@@ -227,7 +227,7 @@ class TestGSM(unittest.TestCase):
         for k in ['GSM1551718', 'GSM1551719', 'GSM1551720']:
             self.assertTrue(k in downloaded_paths.keys())
         for k in downloaded_paths.keys():
-            for f in downloaded_paths[k]:
+            for f in downloaded_paths[k]['SRA']:
                 self.assertTrue(isfile(f))
 
     def test_download_SRA_parallel_by_sra(self):
@@ -255,7 +255,7 @@ class TestGSM(unittest.TestCase):
         for k in ['GSM1551718', 'GSM1551719', 'GSM1551720']:
             self.assertTrue(k in downloaded_paths.keys())
         for k in downloaded_paths.keys():
-            for f in downloaded_paths[k]:
+            for f in downloaded_paths[k]['SRA']:
                 self.assertTrue(isfile(f))
 
 
