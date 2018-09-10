@@ -14,3 +14,5 @@ Contributors
 * Tycho Bismeijer <tychobismeijer@gmail.com>
 * Haries Ramdhani
 * KwatME
+* Rich Jones <miserlou@gmail.com>
+* agalitsyna

@@ -6,10 +6,19 @@ History
 1.1.0 (YYYY-MM-DD)
 ------------------
 
+ * Allow parallel download of supplementary files
+ 
+ * Add timeout to urlopen callsq
+
  * Bugfix: Keep `logger` as a module name and rename `logger` object to
    `geoparse_logger`. This is a breaking change.
 
  * Bugfix: Some samples do not have table data error in python 3
+ 
+ * Bugfix: broken download when supplementary_files is empty or contains invalid URLs
+ 
+ * Some small bugfixes
+ 
 
 1.0.5 (2018-01-12)
 ------------------
