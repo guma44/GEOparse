@@ -21,34 +21,6 @@ from . import utils
 from .logger import geoparse_logger as logger
 
 
-def sra_worker(*args):
-    """A worker to download SRA files.
-
-    To be used with multiprocessing.
-    """
-    gsm = args[0][0]
-    email = args[0][1]
-    dirpath = args[0][2]
-    kwargs = args[0][3]
-    return (gsm.get_accession(), gsm.download_SRA(email, dirpath, **kwargs))
-
-
-def supp_worker(*args):
-    """A worker to download supplementary files.
-
-    To be used with multiprocessing.
-    """
-    gsm = args[0][0]
-    download_sra = args[0][1]
-    email = args[0][2]
-    dirpath = args[0][3]
-    sra_kwargs = args[0][4]
-    return (gsm.get_accession(), gsm.download_supplementary_files(
-        directory=dirpath,
-        download_sra=download_sra,
-        email=email, **sra_kwargs))
-
-
 class NoSRARelationException(Exception):
     pass
 

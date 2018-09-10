@@ -21,8 +21,36 @@ except ImportError:
 from six import iteritems, itervalues
 
 from . import utils
-from .sra_downloader import SRADownloader, sra_worker, supp_worker
+from .sra_downloader import SRADownloader
 from .logger import geoparse_logger as logger
+
+
+def _sra_download_worker(*args):
+    """A worker to download SRA files.
+
+    To be used with multiprocessing.
+    """
+    gsm = args[0][0]
+    email = args[0][1]
+    dirpath = args[0][2]
+    kwargs = args[0][3]
+    return (gsm.get_accession(), gsm.download_SRA(email, dirpath, **kwargs))
+
+
+def _supplementary_files_download_worker(*args):
+    """A worker to download supplementary files.
+
+    To be used with multiprocessing.
+    """
+    gsm = args[0][0]
+    download_sra = args[0][1]
+    email = args[0][2]
+    dirpath = args[0][3]
+    sra_kwargs = args[0][4]
+    return (gsm.get_accession(), gsm.download_supplementary_files(
+        directory=dirpath,
+        download_sra=download_sra,
+        email=email, **sra_kwargs))
 
 
 class DataIncompatibilityException(Exception):
@@ -804,6 +832,12 @@ class GSE(BaseGEO):
                                      sra_kwargs=None, nproc=1):
         """Download supplementary data.
 
+        .. warning::
+
+            Do not use parallel option (nproc > 1) in the interactive shell.
+            For more details see `this issue <https://stackoverflow.com/questions/23641475/multiprocessing-working-in-python-but-not-in-ipython/23641560#23641560>`_
+            on SO.
+
         Args:
             directory (:obj:`str`, optional): Directory to download the data
                 (in this directory function will create new directory with the
@@ -853,7 +887,7 @@ class GSE(BaseGEO):
                     dirpath,
                     sra_kwargs])
             p = Pool(nproc)
-            results = p.map(supp_worker, downloaders)
+            results = p.map(_supplementary_files_download_worker, downloaders)
             downloaded_paths = dict(results)
         else:
             raise ValueError("Nproc should be non-negative: %s" % str(nproc))
@@ -863,6 +897,12 @@ class GSE(BaseGEO):
     def download_SRA(self, email, directory='series', filterby=None, nproc=1,
                      **kwargs):
         """Download SRA files for each GSM in series.
+
+        .. warning::
+
+            Do not use parallel option (nproc > 1) in the interactive shell.
+            For more details see `this issue <https://stackoverflow.com/questions/23641475/multiprocessing-working-in-python-but-not-in-ipython/23641560#23641560>`_
+            on SO.
 
         Args:
             email (:obj:`str`): E-mail that will be provided to the Entrez.
@@ -916,7 +956,7 @@ class GSE(BaseGEO):
                     kwargs])
 
             p = Pool(nproc)
-            results = p.map(sra_worker, downloaders)
+            results = p.map(_sra_download_worker, downloaders)
             downloaded_paths = dict(results)
         else:
             raise ValueError("Nproc should be non-negative: %s" % str(nproc))
