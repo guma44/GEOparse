@@ -1,8 +1,18 @@
 language: python
 python:
-- 3.7
-- 2.7
-install: pip install -U tox-travis
+  - 2.7
+  - 3.7
+matrix:
+  include:
+    - python: 3.7
+      dist: xenial  # required for Python 3.7 (travis-ci/travis-ci#9069)
+os:
+  - linux
+install:
+  # Tox needs an older version of virtualenv.
+  - pip install "virtualenv<14.0.0"
+  - pip install tox tox-travis
+  - pip install "setuptools>20.0.0"
 script: tox
 before_deploy:
 - make dist
