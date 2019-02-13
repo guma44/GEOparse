@@ -30,7 +30,7 @@ class NoEntriesException(Exception):
 
 def get_GEO(geo=None, filepath=None, destdir="./", how='full',
             annotate_gpl=False, geotype=None, include_data=False, silent=False,
-            aspera=False):
+            aspera=False, partial=None):
     """Get the GEO entry.
 
     The GEO entry is taken directly from the GEO database or read it from SOFT
@@ -54,6 +54,8 @@ def get_GEO(geo=None, filepath=None, destdir="./", how='full',
         aspera (:obj:`bool`, optional): EXPERIMENTAL Download using Aspera
             Connect. Follow Aspera instructions for further details. Defaults
             to False.
+        partial (:obj:'iterable', optional): Accession ID of GSM that you want
+            to parse partially from the GPL.
 
     Returns:
         :obj:`GEOparse.BaseGEO`: A GEO object of given type.
@@ -83,7 +85,7 @@ def get_GEO(geo=None, filepath=None, destdir="./", how='full',
     elif geotype.upper() == "GSE":
         return parse_GSE(filepath)
     elif geotype.upper() == 'GPL':
-        return parse_GPL(filepath)
+        return parse_GPL(filepath, partial=partial)
     elif geotype.upper() == 'GDS':
         return parse_GDS(filepath)
     else:
@@ -388,7 +390,7 @@ def parse_GSM(filepath, entry_name=None):
     return gsm
 
 
-def parse_GPL(filepath, entry_name=None):
+def parse_GPL(filepath, entry_name=None, partial=None):
     """Parse GPL entry from SOFT file.
 
     Args:
@@ -396,6 +398,8 @@ def parse_GPL(filepath, entry_name=None):
             or list of lines representing GPL from GSE file.
         entry_name (:obj:`str`, optional): Name of the entry. By default it is
             inferred from the data.
+        partial (:obj:'iterable', optional): Accession ID of GSM that you want
+            to parse partially from the GPL.
 
     Returns:
         :obj:`GEOparse.GPL`: A GPL object.
@@ -421,6 +425,8 @@ def parse_GPL(filepath, entry_name=None):
                         gses[entry_name] = GSE(name=entry_name,
                                                metadata=gse_metadata)
                     elif entry_type == "SAMPLE":
+                        if (partial) and (entry_name not in partial):
+                            continue
                         is_data, data_group = next(groupper)
                         gsms[entry_name] = parse_GSM(data_group, entry_name)
                     elif entry_type == "DATABASE":

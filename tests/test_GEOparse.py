@@ -330,6 +330,24 @@ class TestGPL(unittest.TestCase):
         self.assertEqual(6, len(gpl.gses["GSE68087"].gsms))
         self.assertEqual(2, len(gpl.gses["GSE67974"].gsms))
 
+    def test_get_geo_gpl_partially(self):
+        partial = [
+            "GSM1662787",
+            "GSM1662789",
+            "GSM1662791",
+            "GSM1859499"
+        ]
+
+        gpl = GEO.get_GEO(geo="GPL20082", destdir=download_geo,
+                          include_data=True, partial=partial)
+        self.assertTrue(isinstance(gpl, GPL))
+        self.assertEqual(gpl.get_accession(), "GPL20082")
+
+        for gsm in gpl.gsms:
+            self.assertTrue(gsm in partial)
+
+        self.assertEqual(4, len(gpl.gsms))
+
     def test_get_geo_and_data_with_annotations(self):
         gpl = GEO.get_GEO(geo="GPL96", destdir=download_geo, annotate_gpl=True)
         self.assertTrue(isinstance(gpl, GPL))
