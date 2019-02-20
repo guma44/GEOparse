@@ -67,8 +67,8 @@ class TestGSM(unittest.TestCase):
     def test_simple_data(self):
         gsm = GSM(name='name', table=self.table1, metadata=self.metadata,
                   columns=self.columns1)
-        self.assertEqual(gsm.table.ix[0, 'a'], 1)
-        self.assertEqual(gsm.table.ix[1, 'b'], 5)
+        self.assertEqual(gsm.table.loc[0, 'a'], 1)
+        self.assertEqual(gsm.table.loc[1, 'b'], 5)
 
     def test_get_geo_and_data(self):
         gsm = GEO.get_GEO(geo="GSM11805", destdir=download_geo)
@@ -296,8 +296,8 @@ class TestGPL(unittest.TestCase):
     def test_simple_data(self):
         gpl = GPL(name='name', table=self.table1, metadata=self.metadata,
                   columns=self.columns1)
-        self.assertEqual(gpl.table.ix[0, 'a'], 1)
-        self.assertEqual(gpl.table.ix[1, 'b'], 5)
+        self.assertEqual(gpl.table.loc[0, 'a'], 1)
+        self.assertEqual(gpl.table.loc[1, 'b'], 5)
 
     def test_get_geo_and_data(self):
         gpl = GEO.get_GEO(geo="GPL96", destdir=download_geo)
@@ -415,8 +415,8 @@ class TestGDS(unittest.TestCase):
     def test_simple_data(self):
         gsm = GDS(name='name', table=self.table1, metadata=self.metadata,
                   columns=self.columns1, subsets=self.subsets)
-        self.assertEqual(gsm.table.ix[0, 'a'], 1)
-        self.assertEqual(gsm.table.ix[1, 'b'], 5)
+        self.assertEqual(gsm.table.loc[0, 'a'], 1)
+        self.assertEqual(gsm.table.loc[1, 'b'], 5)
 
     def test_get_geo_and_data(self):
         gds = GEO.get_GEO(geo="GDS507", destdir=download_geo)
@@ -500,7 +500,7 @@ class TestGSE(unittest.TestCase):
         result = read_table(
             join(download_geo, "test_merged_by_id_and_averaged_by_gb_acc.tab"),
             index_col=0)
-        result = result.ix[sorted(result.index), sorted(
+        result = result.loc[sorted(result.index), sorted(
             result.columns)]  # gse.gsms is a dict so the columns might be in different order
         merged = gse.merge_and_average(gse.gpls[next(iter(gse.gpls))], "VALUE",
                                        "GB_ACC", gpl_on="ID", gsm_on="ID_REF")

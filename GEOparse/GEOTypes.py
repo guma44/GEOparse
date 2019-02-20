@@ -245,7 +245,7 @@ class SimpleGEO(BaseGEO):
                         "Data columns in %s %s are not in order. Reordering.\n" % (
                             self.geotype,
                             self.name))
-                    self.columns = self.columns.ix[self.table.columns]
+                    self.columns = self.columns.loc[self.table.columns]
                     if self.columns.index.tolist() == self.table.columns.tolist():
                         columns_are_correct = True
         else:
