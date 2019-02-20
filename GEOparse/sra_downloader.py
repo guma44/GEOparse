@@ -168,6 +168,20 @@ class SRADownloader(object):
                                              number_of_trials,
                                              wait_time))
                             time.sleep(wait_time)
+                        elif httperr.code == 429:
+                            # This means that there is too many requests
+                            try:
+                                header_wait_time = int(
+                                    httperr.headers["Retry-After"])
+                            except:
+                                header_wait_time = wait_time
+                            logger.warn(("%s, trial %i out of %i, waiting "
+                                         "for %i seconds.") % (
+                                             str(httperr),
+                                             trial,
+                                             number_of_trials,
+                                             header_wait_time))
+                            time.sleep(header_wait_time)
                         else:
                             raise httperr
                 try:
