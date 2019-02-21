@@ -13,9 +13,9 @@ try:
 except ImportError:
     from urllib2 import urlopen, URLError
 import subprocess as sp
-import wgetter
 from six import iteritems
 
+import downloader
 from .logger import geoparse_logger as logger
 
 
@@ -103,15 +103,10 @@ def download_from_url(url, destination_path,
                     if not silent:
                         logger.error("Cannot delete %s" % destination_path,
                                      exc_info=True)
-                if not silent:
-                    logger.info(
-                        "Downloading %s to %s" % (url, destination_path))
-                    fn = wgetter.download(url, outdir=os.path.dirname(
-                        destination_path))
-                else:
-                    with closing(urlopen(url, timeout=30)) as r:
-                        with open(destination_path, mode='wb') as f:
-                            copyfileobj(r, f)
+                fn = downloader.download(
+                    url,
+                    outdir=os.path.dirname(destination_path),
+                    silent=silent)
             else:
                 logger.info(("File %s already exist. Use force=True if you"
                              " would like to overwrite it.") %
@@ -120,15 +115,10 @@ def download_from_url(url, destination_path,
             if aspera:
                 download_aspera(url, destination_path)
             else:
-                if not silent:
-                    logger.info(
-                        "Downloading %s to %s" % (url, destination_path))
-                    fn = wgetter.download(url, outdir=os.path.dirname(
-                        destination_path))
-                else:
-                    with closing(urlopen(url, timeout=30)) as r:
-                        with open(destination_path, mode='wb') as f:
-                            copyfileobj(r, f)
+                fn = downloader.download(
+                    url,
+                    outdir=os.path.dirname(destination_path),
+                    silent=silent)
     except URLError:
         logger.error("Cannot find file %s" % url)
 
