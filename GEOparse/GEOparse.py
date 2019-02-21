@@ -54,8 +54,10 @@ def get_GEO(geo=None, filepath=None, destdir="./", how='full',
         aspera (:obj:`bool`, optional): EXPERIMENTAL Download using Aspera
             Connect. Follow Aspera instructions for further details. Defaults
             to False.
-        partial (:obj:'iterable', optional): Accession ID of GSM that you want
-            to parse partially from the GPL.
+        partial (:obj:'iterable', optional): A list of accession IDs of GSMs
+            to be partially extracted from GPL, works only if a file/accession
+            is a GPL.
+
 
     Returns:
         :obj:`GEOparse.BaseGEO`: A GEO object of given type.
@@ -398,8 +400,9 @@ def parse_GPL(filepath, entry_name=None, partial=None):
             or list of lines representing GPL from GSE file.
         entry_name (:obj:`str`, optional): Name of the entry. By default it is
             inferred from the data.
-        partial (:obj:'iterable', optional): Accession ID of GSM that you want
-            to parse partially from the GPL.
+        partial (:obj:'iterable', optional): A list of accession IDs of GSMs
+            to be partially extracted from GPL, works only if a file/accession
+            is a GPL.
 
     Returns:
         :obj:`GEOparse.GPL`: A GPL object.
