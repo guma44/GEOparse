@@ -15,7 +15,7 @@ except ImportError:
 import subprocess as sp
 from six import iteritems
 
-import downloader
+from .downloader import Downloader
 from .logger import geoparse_logger as logger
 
 
@@ -79,7 +79,7 @@ def download_aspera(url, dest_path,
 def download_from_url(url, destination_path,
                       force=False, aspera=False, silent=False):
     """Download file from remote server.
-    
+
     If the file is already downloaded and  ``force`` flag is on the file will
     be removed.
 
@@ -103,10 +103,11 @@ def download_from_url(url, destination_path,
                     if not silent:
                         logger.error("Cannot delete %s" % destination_path,
                                      exc_info=True)
-                fn = downloader.download(
+                fn = Downloader(
                     url,
                     outdir=os.path.dirname(destination_path),
                     silent=silent)
+                fn.download()
             else:
                 logger.info(("File %s already exist. Use force=True if you"
                              " would like to overwrite it.") %
@@ -115,10 +116,11 @@ def download_from_url(url, destination_path,
             if aspera:
                 download_aspera(url, destination_path)
             else:
-                fn = downloader.download(
+                fn = Downloader(
                     url,
                     outdir=os.path.dirname(destination_path),
                     silent=silent)
+                fn.download()
     except URLError:
         logger.error("Cannot find file %s" % url)
 
