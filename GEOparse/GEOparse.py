@@ -425,7 +425,7 @@ def parse_GPL(filepath, entry_name=None, partial=None):
                         gses[entry_name] = GSE(name=entry_name,
                                                metadata=gse_metadata)
                     elif entry_type == "SAMPLE":
-                        if (partial) and (entry_name not in partial):
+                        if partial and entry_name not in partial:
                             continue
                         is_data, data_group = next(groupper)
                         gsms[entry_name] = parse_GSM(data_group, entry_name)
