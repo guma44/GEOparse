@@ -3,7 +3,10 @@ import requests
 
 from tqdm import tqdm
 from ftplib import FTP
-from urlparse import urlparse
+try:
+    from urlparse import urlparse
+except ImportError:
+    from urllib.parse import urlparse
 
 from .logger import geoparse_logger as logger
 
@@ -12,19 +15,15 @@ class Downloader(object):
     def __init__(self, url, outdir, filename=None, silent=False):
         self.url = url
         if outdir is None:
-            self.outdir = os.getcwd()
-        else:
-            self.outdir = outdir
+            outdir = os.getcwd()
         if filename is None:
-            self.filename = self._get_filename()
-        else:
-            self.filename = filename
+            filename = self._get_filename()
         self.silent = silent
-
+    
     @property
     def destination(self):
         """Get the destination path.
-
+        
         This is the property should be calculated every time it is used because
         a user could change the outdir and filename dynamically.
         """
@@ -39,7 +38,8 @@ class Downloader(object):
             self._download_ftp()
         else:
             raise ValueError("Invalid URL %s" % self.url)
-
+        
+        
     def _get_filename(self):
         filename = os.path.basename(urlparse(self.url).path).strip(" \n\t.")
         if len(filename) == 0:
@@ -54,7 +54,7 @@ class Downloader(object):
             total_size = ftp.size(parsed_url.path)
             if total_size is None:
                 total_size = 0
-            with open(self.destination, 'wb') as f:
+            with open(destination, 'wb') as f:
                 with tqdm(total=total_size,
                           unit="B",
                           unit_scale=True,
@@ -78,7 +78,7 @@ class Downloader(object):
         # Total size in bytes.
         total_size = int(r.headers.get('content-length', 0))
         chunk_size = 1024
-        with open(self.destination, 'wb') as f:
+        with open(destination, 'wb') as f:
             if self.silent:
                 for chunk in r.iter_content(chunk_size):
                     if chunk:
