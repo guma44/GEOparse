@@ -37,45 +37,6 @@ def mkdir_p(path_to_dir):
             raise e
 
 
-def download_aspera(url, dest_path,
-                    user="anonftp",
-                    ftp="ftp-trace.ncbi.nlm.nih.gov"):
-    """Download file with Aspera Connect.
-
-    For details see the documentation ov Aspera Connect
-
-    Args:
-        url (:obj:`str`): URL to the file
-        dest_path (:obj:`str`): Destination path.
-        user (:obj:`str`, optional): User. Defaults to anonftp.
-        ftp (:obj:`str`, optional): FTP path. Defaults to
-            "ftp-trace.ncbi.nlm.nih.gov".
-    """
-    logger.info("Downloading {} using aspera\n".format(url))
-    aspera_home = os.environ.get("ASPERA_HOME", None)
-    if not aspera_home:
-        raise ValueError("environment variable $ASPERA_HOME not set")
-    if not os.path.exists(aspera_home):
-        raise ValueError(
-            "$ASPERA_HOME directory {} does not exist".format(aspera_home))
-    ascp = os.path.join(aspera_home, "connect/bin/ascp")
-    key = os.path.join(aspera_home, "connect/etc/asperaweb_id_dsa.openssh")
-    if not os.path.exists(ascp):
-        raise ValueError("could not find ascp binary")
-    if not os.path.exists(key):
-        raise ValueError("could not find openssh key")
-
-    if url.startswith("ftp://"):
-        url = url.replace("ftp://", "")
-    url = url.replace(ftp, "")
-
-    cmd = "{} -i {} -k1 -T -l400m {}@{}:{} {}".format(
-        ascp, key, user, ftp, url, dest_path)
-    logger.debug(cmd)
-    p = sp.Popen(cmd, shell=True, stdout=sp.PIPE, stderr=sp.PIPE)
-    stdout, stderr = p.communicate()
-
-
 def download_from_url(url, destination_path,
                       force=False, aspera=False, silent=False):
     """Download file from remote server.
@@ -93,34 +54,22 @@ def download_from_url(url, destination_path,
         aspera (:obj:`bool`): Download with Aspera Connect. Defaults to False.
         silent (:obj:`bool`): Do not print any message. Defaults to False.
     """
+    if aspera and url.startswith("http"):
+        logger.warn("Aspera Connect allows only FTP servers - falling back to "
+                    "normal download")
+        aspera = False
+
     try:
-        is_already_downloaded = os.path.isfile(destination_path)
-        if is_already_downloaded:
-            if force:
-                try:
-                    os.remove(destination_path)
-                except Exception:
-                    if not silent:
-                        logger.error("Cannot delete %s" % destination_path,
-                                     exc_info=True)
-                fn = Downloader(
-                    url,
-                    outdir=os.path.dirname(destination_path),
-                    silent=silent)
-                fn.download()
-            else:
-                logger.info(("File %s already exist. Use force=True if you"
-                             " would like to overwrite it.") %
-                            destination_path)
+        fn = Downloader(
+            url,
+            outdir=os.path.dirname(destination_path))
+        if aspera:
+            fn.download_aspera(
+                user="anonftp",
+                host="ftp-trace.ncbi.nlm.nih.gov",
+                silent=silent)
         else:
-            if aspera:
-                download_aspera(url, destination_path)
-            else:
-                fn = Downloader(
-                    url,
-                    outdir=os.path.dirname(destination_path),
-                    silent=silent)
-                fn.download()
+            fn.download(silent=silent, force=force)
     except URLError:
         logger.error("Cannot find file %s" % url)
 
