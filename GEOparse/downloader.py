@@ -12,7 +12,7 @@ from .logger import geoparse_logger as logger
 
 class Downloader(object):
     """Downloader class."""
-    def __init__(self, url, outdir, filename=None, silent=False):
+    def __init__(self, url, outdir=None, filename=None, silent=False):
         self.url = url
         if outdir is None:
             self.outdir = os.getcwd()
