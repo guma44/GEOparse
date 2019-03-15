@@ -48,6 +48,6 @@ if __name__ == "__main__":
             args.email,
             directory=args.outdir,
             filetype=args.filetype,
-            aspera=os.environ.has_key("ASPERA_HOME"),
+            aspera="ASPERA_HOME" in os.environ,
             )
-    print "Supp_{}_{}".format(gsm.name, title)
+    print("Supp_{}_{}".format(gsm.name, title))
