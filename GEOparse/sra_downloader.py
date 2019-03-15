@@ -65,6 +65,9 @@ class SRADownloader(object):
             * keep_sra - bool
                 keep SRA files after download. Removes SRA file only if the
                 selected file type is different than "sra", defaults to False
+            * threads - int
+                number of threads to use if parallel-fastq-dump is used,
+                defaults to 4
             * fastq_dump_options - dict
                 pass options to fastq-dump (if used, the options has to be in
                 long form eg. --split-files), defaults to::
@@ -101,6 +104,7 @@ class SRADownloader(object):
         self.keep_sra = kwargs.get('keep_sra', False)
         self.silent = kwargs.get('silent', False)
         self.force = kwargs.get('force', False)
+        self.threads = kwargs.get('threads', 4)
 
         self.fastq_dump_options = {
             'split-files': None,
@@ -223,13 +227,20 @@ class SRADownloader(object):
                 if self.filetype == "fasta":
                     ftype = " --fasta "
                 cmd = "fastq-dump"
+                if utils.which('parallel-fastq-dump') is None:
+                    cmd += " %s --outdir %s %s"
+                else:
+                    logger.debug("Using parallel fastq-dump")
+                    cmd = " parallel-fastq-dump --threads %s"
+                    cmd = cmd % self.threads
+                    cmd += " %s --outdir %s -s %s"
+                cmd = cmd % (ftype, self.directory, filepath)
+
                 for fqoption, fqvalue in iteritems(self.fastq_dump_options):
                     if fqvalue:
                         cmd += (" --%s %s" % (fqoption, fqvalue))
-                    else:
+                    elif fqvalue is None:
                         cmd += (" --%s" % fqoption)
-                cmd += " %s --outdir %s %s"
-                cmd = cmd % (ftype, self.directory, filepath)
                 logger.debug(cmd)
                 process = sp.Popen(cmd, stdout=sp.PIPE,
                                    stderr=sp.PIPE,
