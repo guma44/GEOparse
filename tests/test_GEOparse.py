@@ -67,8 +67,8 @@ class TestGSM(unittest.TestCase):
     def test_simple_data(self):
         gsm = GSM(name='name', table=self.table1, metadata=self.metadata,
                   columns=self.columns1)
-        self.assertEqual(gsm.table.ix[0, 'a'], 1)
-        self.assertEqual(gsm.table.ix[1, 'b'], 5)
+        self.assertEqual(gsm.table.loc[0, 'a'], 1)
+        self.assertEqual(gsm.table.loc[1, 'b'], 5)
 
     def test_get_geo_and_data(self):
         gsm = GEO.get_GEO(geo="GSM11805", destdir=download_geo)
@@ -296,8 +296,8 @@ class TestGPL(unittest.TestCase):
     def test_simple_data(self):
         gpl = GPL(name='name', table=self.table1, metadata=self.metadata,
                   columns=self.columns1)
-        self.assertEqual(gpl.table.ix[0, 'a'], 1)
-        self.assertEqual(gpl.table.ix[1, 'b'], 5)
+        self.assertEqual(gpl.table.loc[0, 'a'], 1)
+        self.assertEqual(gpl.table.loc[1, 'b'], 5)
 
     def test_get_geo_and_data(self):
         gpl = GEO.get_GEO(geo="GPL96", destdir=download_geo)
@@ -329,6 +329,24 @@ class TestGPL(unittest.TestCase):
 
         self.assertEqual(6, len(gpl.gses["GSE68087"].gsms))
         self.assertEqual(2, len(gpl.gses["GSE67974"].gsms))
+
+    def test_get_geo_gpl_partially(self):
+        partial = [
+            "GSM1662787",
+            "GSM1662789",
+            "GSM1662791",
+            "GSM1859499"
+        ]
+
+        gpl = GEO.get_GEO(geo="GPL20082", destdir=download_geo,
+                          include_data=True, partial=partial)
+        self.assertTrue(isinstance(gpl, GPL))
+        self.assertEqual(gpl.get_accession(), "GPL20082")
+
+        for gsm in gpl.gsms:
+            self.assertTrue(gsm in partial)
+
+        self.assertEqual(4, len(gpl.gsms))
 
     def test_get_geo_and_data_with_annotations(self):
         gpl = GEO.get_GEO(geo="GPL96", destdir=download_geo, annotate_gpl=True)
@@ -415,8 +433,8 @@ class TestGDS(unittest.TestCase):
     def test_simple_data(self):
         gsm = GDS(name='name', table=self.table1, metadata=self.metadata,
                   columns=self.columns1, subsets=self.subsets)
-        self.assertEqual(gsm.table.ix[0, 'a'], 1)
-        self.assertEqual(gsm.table.ix[1, 'b'], 5)
+        self.assertEqual(gsm.table.loc[0, 'a'], 1)
+        self.assertEqual(gsm.table.loc[1, 'b'], 5)
 
     def test_get_geo_and_data(self):
         gds = GEO.get_GEO(geo="GDS507", destdir=download_geo)
@@ -500,7 +518,7 @@ class TestGSE(unittest.TestCase):
         result = read_table(
             join(download_geo, "test_merged_by_id_and_averaged_by_gb_acc.tab"),
             index_col=0)
-        result = result.ix[sorted(result.index), sorted(
+        result = result.loc[sorted(result.index), sorted(
             result.columns)]  # gse.gsms is a dict so the columns might be in different order
         merged = gse.merge_and_average(gse.gpls[next(iter(gse.gpls))], "VALUE",
                                        "GB_ACC", gpl_on="ID", gsm_on="ID_REF")

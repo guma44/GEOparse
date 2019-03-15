@@ -35,6 +35,7 @@ htmlcov
 .mr.developer.cfg
 .project
 .pydevproject
+.venv
 
 # Complexity
 output/*.html
