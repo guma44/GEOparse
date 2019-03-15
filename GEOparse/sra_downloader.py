@@ -239,7 +239,7 @@ class SRADownloader(object):
                 for fqoption, fqvalue in iteritems(self.fastq_dump_options):
                     if fqvalue:
                         cmd += (" --%s %s" % (fqoption, fqvalue))
-                    else:
+                    elif fqvalue is None:
                         cmd += (" --%s" % fqoption)
                 logger.debug(cmd)
                 process = sp.Popen(cmd, stdout=sp.PIPE,
