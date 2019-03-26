@@ -35,8 +35,13 @@ def parse(args):
                    metavar="TYPE",
                    default="fastq"
                    )
-
+    p.add_argument("-j", "--jobs",
+                   help="number of threads/jobs for the fastq dump",
+                   metavar="NRTHREADS",
+                   default=4
+                   )
     return p.parse_args(args)
+
 
 if __name__ == "__main__":
     args = parse(sys.argv[1:])
@@ -48,6 +53,7 @@ if __name__ == "__main__":
             args.email,
             directory=args.outdir,
             filetype=args.filetype,
+            threads=args.jobs,
             aspera="ASPERA_HOME" in os.environ,
             )
     print("Supp_{}_{}".format(gsm.name, title))
