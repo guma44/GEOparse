@@ -18,7 +18,8 @@ with open('HISTORY.rst') as history_file:
 requirements = [
                 'numpy>=1.7',
                 'pandas>=0.17',
-                'wgetter>=0.6',
+                'requests>=2.21.0',
+                'tqdm>=4.31.1',
                 'biopython>=1.71'
                 ]
 
