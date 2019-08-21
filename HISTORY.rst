@@ -3,7 +3,25 @@
 History
 -------
 
-1.1.0 (YYYY-MM-DD)
+
+1.1.1 (2019-08-21)
+------------------
+
+ * Remove BioPython dependency - use requests instead
+
+ * Replace wget with custom file downloader
+
+ * Allow to parse GSE file partially
+
+ * Support for parallel-fastq-dump
+
+ * Allow to use proxy server (FTP)
+
+ * Fix Travis-CI issues with FTP download
+
+ * Various bugfixes
+
+1.1.0 (2018-09-10)
 ------------------
 
  * Allow parallel download of supplementary files
