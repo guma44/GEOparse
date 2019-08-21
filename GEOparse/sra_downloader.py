@@ -6,19 +6,80 @@ import time
 import json
 import glob
 import platform
+import requests
 import subprocess as sp
 
-from Bio import Entrez
 from pandas import DataFrame, concat
 from six import iteritems
 
-try:
-    from urllib.error import HTTPError
-except ImportError:
-    from urllib2 import HTTPError
-
 from . import utils
 from .logger import geoparse_logger as logger
+
+
+def esearch(db, term, **kwargs):
+    """Run an Entrez search.
+
+    ESearch searches and retrieves primary IDs (for use in EFetch, ELink
+    and ESummary) and term translations.
+    See the online documentation for an explanation of the parameters:
+    http://www.ncbi.nlm.nih.gov/books/NBK25499/#chapter4.ESearch
+
+    Arguments:
+        db {:class:`str`} -- A DB to use
+        term {:class:`str`} -- term to search
+
+    Returns:
+        :class:`dict` -- results of the search
+    """
+    url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
+    data = {
+        "db": db,
+        "term": term,
+        "usehistory": "y",
+        "retmode": "json",
+        "tool": "geoparse"}
+    data.update(kwargs)
+    res = requests.post(url, data=data)
+    res.raise_for_status()
+    return res.json()
+
+
+def efetch(db, **kwargs):
+    """Fetch Entrez results.
+
+    Retrieves records in the requested format from a list of one or
+    more UIs.
+    See the online documentation for an explanation of the parameters:
+    http://www.ncbi.nlm.nih.gov/books/NBK25499/#chapter4.EFetch
+
+    Args:
+        db {:class:`str`} -- A DB to use. eg. sra
+
+    Returns:
+        :class:`dict`-- results of the fetch
+    """
+    url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
+    data = {
+        "db": db,
+        "retmode": "text",
+        "tool": "geoparse"}
+    data.update(kwargs)
+    try:
+        ids = data["id"]
+    except KeyError:
+        pass
+    else:
+        if isinstance(ids, list):
+            ids = ",".join(ids)
+            data["id"] = ids
+        elif isinstance(ids, int):
+            ids = str(ids)
+            data["id"] = ids
+
+    res = requests.post(url, data=data)
+    res.raise_for_status()
+    return res.text
+
 
 
 class NoSRARelationException(Exception):
@@ -122,7 +183,6 @@ class SRADownloader(object):
 
         if not ('@' in email and email != '' and '.' in email):
             raise TypeError('Provided e-mail (%s) is invalid' % self.email)
-        Entrez.email = self.email
         self._paths_for_download = None
 
     @property
@@ -146,9 +206,7 @@ class SRADownloader(object):
             df = DataFrame(columns=['download_path'])
             for query in queries:
                 # retrieve IDs for given SRX
-                searchdata = Entrez.esearch(db='sra', term=query, usehistory='y',
-                                            retmode='json')
-                answer = json.loads(searchdata.read())
+                answer = esearch(db='sra', term=query, email=self.email)
                 ids = answer["esearchresult"]["idlist"]
                 if len(ids) != 1:
                     raise ValueError(
@@ -159,11 +217,13 @@ class SRADownloader(object):
                 wait_time = 30
                 for trial in range(number_of_trials):
                     try:
-                        results = Entrez.efetch(db="sra", id=ids[0],
-                                                rettype="runinfo",
-                                                retmode="text").read()
+                        results = efetch(
+                            db="sra",
+                            id=ids[0],
+                            rettype="runinfo",
+                            email=self.email)
                         break
-                    except HTTPError as httperr:
+                    except requests.exceptions.HTTPError as httperr:
                         if "502" in str(httperr):
                             logger.warn(("%s, trial %i out of %i, waiting "
                                          "for %i seconds.") % (
@@ -172,7 +232,7 @@ class SRADownloader(object):
                                              number_of_trials,
                                              wait_time))
                             time.sleep(wait_time)
-                        elif httperr.code == 429:
+                        elif httperr.response.status_code == 429:
                             # This means that there is too many requests
                             try:
                                 header_wait_time = int(

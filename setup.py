@@ -20,7 +20,6 @@ requirements = [
                 'pandas>=0.17',
                 'requests>=2.21.0',
                 'tqdm>=4.31.1',
-                'biopython>=1.71'
                 ]
 
 test_requirements = [

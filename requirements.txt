@@ -2,6 +2,5 @@ numpy>=1.7
 pandas>=0.21
 pytz>=2013
 sphinxcontrib-napoleon>=0.6.1
-biopython>=1.71
 requests>=2.21.0
 tqdm>=4.31.1
