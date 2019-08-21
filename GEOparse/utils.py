@@ -62,6 +62,7 @@ def download_from_url(url, destination_path,
     if os.environ.get("http_proxy") is not None or use_http_for_ftp:
         if url.startswith("ftp://"):
             url = url.replace("ftp://", "http://")
+            logger.warning("Changing FTP to HTTP: %s" % url)
     try:
         fn = Downloader(
             url,
