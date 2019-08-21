@@ -58,7 +58,8 @@ def download_from_url(url, destination_path,
         logger.warn("Aspera Connect allows only FTP servers - falling back to "
                     "normal download")
         aspera = False
-    if os.environ.get("http_proxy") is not None:
+    use_http_for_ftp = os.environ.get("GEOPARSE_USE_HTTP_FOR_FTP") == "yes"
+    if os.environ.get("http_proxy") is not None or use_http_for_ftp:
         if url.startswith("ftp://"):
             url = url.replace("ftp://", "http://")
     try:
