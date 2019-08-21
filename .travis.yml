@@ -1,6 +1,7 @@
 language: python
 env:
-  - GEOPARSE_USE_HTTP_FOR_FTP=yes
+  global:
+    - GEOPARSE_USE_HTTP_FOR_FTP=yes
 python:
   - 2.7
   - 3.7
