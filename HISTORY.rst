@@ -4,7 +4,7 @@ History
 -------
 
 
-1.1.1 (2019-08-21)
+1.2.0 (2019-08-21)
 ------------------
 
  * Remove BioPython dependency - use requests instead
