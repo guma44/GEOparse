@@ -225,7 +225,7 @@ class SRADownloader(object):
                         break
                     except requests.exceptions.HTTPError as httperr:
                         if "502" in str(httperr):
-                            logger.warn(("%s, trial %i out of %i, waiting "
+                            logger.warning(("%s, trial %i out of %i, waiting "
                                          "for %i seconds.") % (
                                              str(httperr),
                                              trial,
@@ -239,7 +239,7 @@ class SRADownloader(object):
                                     httperr.headers["Retry-After"])
                             except:
                                 header_wait_time = wait_time
-                            logger.warn(("%s, trial %i out of %i, waiting "
+                            logger.warning(("%s, trial %i out of %i, waiting "
                                          "for %i seconds.") % (
                                              str(httperr),
                                              trial,

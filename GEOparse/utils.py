@@ -55,8 +55,8 @@ def download_from_url(url, destination_path,
         silent (:obj:`bool`): Do not print any message. Defaults to False.
     """
     if aspera and url.startswith("http"):
-        logger.warn("Aspera Connect allows only FTP servers - falling back to "
-                    "normal download")
+        logger.warning("Aspera Connect allows only FTP servers - falling "
+                       "back to normal download")
         aspera = False
     use_http_for_ftp = os.environ.get("GEOPARSE_USE_HTTP_FOR_FTP") == "yes"
     if os.environ.get("http_proxy") is not None or use_http_for_ftp:

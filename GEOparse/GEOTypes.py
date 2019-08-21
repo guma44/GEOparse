@@ -453,8 +453,8 @@ class GSM(SimpleGEO):
             if 'supplementary_file' in metakey:
                 assert len(metavalue) == 1 and metavalue != ''
                 if metavalue[0] in blacklist:
-                    logger.warn("%s value is blacklisted as '%s' - skipping" %
-                                (metakey, metavalue[0]))
+                    logger.warning("%s value is blacklisted as '%s' - skipping"
+                                   % (metakey, metavalue[0]))
                     continue
                 # SRA will be downloaded elsewhere
                 if 'sra' not in metavalue[0]:
