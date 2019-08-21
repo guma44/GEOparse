@@ -64,7 +64,8 @@ def download_from_url(url, destination_path,
     try:
         fn = Downloader(
             url,
-            outdir=os.path.dirname(destination_path))
+            outdir=os.path.dirname(destination_path),
+            filename=os.path.basename(destination_path))
         if aspera:
             fn.download_aspera(
                 user="anonftp",
