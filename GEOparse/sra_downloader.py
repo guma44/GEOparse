@@ -180,7 +180,7 @@ class SRADownloader(object):
         self.downloaded_paths = list()
         for path in self.paths_for_download:
             downloaded_path = list()
-            os.makedirs(os.path.abspath(self.directory), exist_ok=True)
+            utils.mkdir_p(os.path.abspath(self.directory))
 
             sra_run = path.split("/")[-1]
             logger.info("Analysing %s" % sra_run)

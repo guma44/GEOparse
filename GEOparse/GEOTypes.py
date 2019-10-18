@@ -442,7 +442,7 @@ class GSM(SimpleGEO):
                 # the directory name cannot contain many of the signs
                 re.sub(r'[\s\*\?\(\),\.;]', '_', self.metadata['title'][0]))))
 
-        os.makedirs(os.path.abspath(directory_path), exist_ok=True)
+        utils.mkdir_p(os.path.abspath(directory_path))
         downloaded_paths = dict()
         if sra_kwargs is None:
             sra_kwargs = {}
@@ -859,10 +859,10 @@ class GSE(BaseGEO):
             sra_kwargs = dict()
         if directory == 'series':
             dirpath = os.path.abspath(self.get_accession() + "_Supp")
-            os.makedirs(dirpath, exist_ok=True)
+            utils.mkdir_p(dirpath)
         else:
             dirpath = os.path.abspath(directory)
-            os.makedirs(dirpath, exist_ok=True)
+            utils.mkdir_p(dirpath)
         downloaded_paths = dict()
         if nproc == 1:
             # No need to parallelize, running ordinary download in loop
@@ -925,10 +925,10 @@ class GSE(BaseGEO):
         """
         if directory == 'series':
             dirpath = os.path.abspath(self.get_accession() + "_SRA")
-            os.makedirs(dirpath, exist_ok=True)
+            utils.mkdir_p(dirpath)
         else:
             dirpath = os.path.abspath(directory)
-            os.makedirs(dirpath, exist_ok=True)
+            utils.mkdir_p(dirpath)
         if filterby is not None:
             gsms_to_use = [gsm for gsm in self.gsms.values() if filterby(gsm)]
         else:

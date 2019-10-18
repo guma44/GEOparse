@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from os import path, makedirs
+from os import path
 from re import sub, split, match
 from six import StringIO
 from tempfile import mkdtemp
@@ -129,7 +129,7 @@ def get_GEO_file(geo, destdir=None, annotate_gpl=False, how="full",
                     " Temporary files will be downloaded at %s" % tmpdir)
     else:
         tmpdir = destdir
-        makedirs(tmpdir, exist_ok=True)
+        utils.mkdir_p(tmpdir)
 
     if geotype == "GDS":
         gseurl = ("ftp://ftp.ncbi.nlm.nih.gov/geo/"
