@@ -5,7 +5,6 @@ import glob
 import time
 import requests
 from random import choice
-from errno import EEXIST
 from contextlib import closing
 from shutil import copyfileobj
 from contextlib import contextmanager
@@ -20,24 +19,6 @@ from six import iteritems
 
 from .downloader import Downloader
 from .logger import geoparse_logger as logger
-
-
-def mkdir_p(path_to_dir):
-    """Make directory(ies).
-
-    This function behaves like mkdir -p.
-
-    Args:
-        path_to_dir (:obj:`str`): Path to the directory to make.
-    """
-    try:
-        os.makedirs(path_to_dir)
-    except OSError as e:  # Python >2.5
-        if e.errno == EEXIST and os.path.isdir(path_to_dir):
-            logger.debug(
-                "Directory %s already exists. Skipping." % path_to_dir)
-        else:
-            raise e
 
 
 def download_from_url(url, destination_path,
