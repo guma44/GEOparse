@@ -41,7 +41,7 @@ setup(
                  'GEOparse'},
     include_package_data=True,
     scripts=[
-        "scripts/gsm2fastq",
+        "scripts/geo2fastq",
         ],
     install_requires=requirements,
     license="BSD",
