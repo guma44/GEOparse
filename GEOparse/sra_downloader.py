@@ -2,11 +2,9 @@
 
 import os
 import re
-import time
 import json
 import glob
 import platform
-import requests
 import subprocess as sp
 
 from pandas import DataFrame, concat
@@ -16,75 +14,11 @@ from . import utils
 from .logger import geoparse_logger as logger
 
 
-def esearch(db, term, **kwargs):
-    """Run an Entrez search.
-
-    ESearch searches and retrieves primary IDs (for use in EFetch, ELink
-    and ESummary) and term translations.
-    See the online documentation for an explanation of the parameters:
-    http://www.ncbi.nlm.nih.gov/books/NBK25499/#chapter4.ESearch
-
-    Arguments:
-        db {:class:`str`} -- A DB to use
-        term {:class:`str`} -- term to search
-
-    Returns:
-        :class:`dict` -- results of the search
-    """
-    url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
-    data = {
-        "db": db,
-        "term": term,
-        "usehistory": "y",
-        "retmode": "json",
-        "tool": "geoparse"}
-    data.update(kwargs)
-    res = requests.post(url, data=data)
-    res.raise_for_status()
-    return res.json()
-
-
-def efetch(db, **kwargs):
-    """Fetch Entrez results.
-
-    Retrieves records in the requested format from a list of one or
-    more UIs.
-    See the online documentation for an explanation of the parameters:
-    http://www.ncbi.nlm.nih.gov/books/NBK25499/#chapter4.EFetch
-
-    Args:
-        db {:class:`str`} -- A DB to use. eg. sra
-
-    Returns:
-        :class:`dict`-- results of the fetch
-    """
-    url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
-    data = {
-        "db": db,
-        "retmode": "text",
-        "tool": "geoparse"}
-    data.update(kwargs)
-    try:
-        ids = data["id"]
-    except KeyError:
-        pass
-    else:
-        if isinstance(ids, list):
-            ids = ",".join(ids)
-            data["id"] = ids
-        elif isinstance(ids, int):
-            ids = str(ids)
-            data["id"] = ids
-
-    res = requests.post(url, data=data)
-    res.raise_for_status()
-    return res.text
-
-
-
 class NoSRARelationException(Exception):
     pass
 
+class FastqDumpException(Exception):
+    pass
 
 class SRADownloader(object):
     """Manage download RAW data as SRA files.
@@ -206,48 +140,17 @@ class SRADownloader(object):
             df = DataFrame(columns=['download_path'])
             for query in queries:
                 # retrieve IDs for given SRX
-                answer = esearch(db='sra', term=query, email=self.email)
+                answer = utils.esearch(db='sra', term=query, email=self.email)
                 ids = answer["esearchresult"]["idlist"]
                 if len(ids) != 1:
                     raise ValueError(
                         "There should be one and only one ID per SRX")
 
-                # using ID fetch the info
-                number_of_trials = 10
-                wait_time = 30
-                for trial in range(number_of_trials):
-                    try:
-                        results = efetch(
-                            db="sra",
-                            id=ids[0],
-                            rettype="runinfo",
-                            email=self.email)
-                        break
-                    except requests.exceptions.HTTPError as httperr:
-                        if "502" in str(httperr):
-                            logger.warning(("%s, trial %i out of %i, waiting "
-                                         "for %i seconds.") % (
-                                             str(httperr),
-                                             trial,
-                                             number_of_trials,
-                                             wait_time))
-                            time.sleep(wait_time)
-                        elif httperr.response.status_code == 429:
-                            # This means that there is too many requests
-                            try:
-                                header_wait_time = int(
-                                    httperr.headers["Retry-After"])
-                            except:
-                                header_wait_time = wait_time
-                            logger.warning(("%s, trial %i out of %i, waiting "
-                                         "for %i seconds.") % (
-                                             str(httperr),
-                                             trial,
-                                             number_of_trials,
-                                             header_wait_time))
-                            time.sleep(header_wait_time)
-                        else:
-                            raise httperr
+                results = utils.efetch(
+                    db="sra",
+                    id=ids[0],
+                    rettype="runinfo",
+                    email=self.email)
                 try:
                     df_tmp = DataFrame([i.split(',') for i in results.split('\n') if i != ''][1:],
                                        columns=[i.split(',') for i in results.split('\n') if i != ''][0])
@@ -293,6 +196,7 @@ class SRADownloader(object):
                 aspera=self.aspera,
                 silent=self.silent,
                 force=self.force)
+            logger.info("Successfully downloaded %s" % filepath)
 
             if self.filetype in ("fasta", "fastq"):
                 if utils.which('fastq-dump') is None:
@@ -316,12 +220,17 @@ class SRADownloader(object):
                     elif fqvalue is None:
                         cmd += (" --%s" % fqoption)
                 logger.debug(cmd)
-                process = sp.Popen(cmd, stdout=sp.PIPE,
-                                   stderr=sp.PIPE,
-                                   shell=True)
+                process = sp.Popen(
+                    cmd,
+                    stderr=sp.PIPE,
+                    stdout=sp.PIPE,
+                    shell=True,
+                    bufsize=9999999)
                 logger.info("Converting to %s/%s*.%s.gz\n" % (
                     self.directory, sra_run, self.filetype))
-                pout, perr = process.communicate()
+                stdout, stderr = process.communicate()
+                if process.returncode != 0:
+                    raise FastqDumpException("fastq-dump failed: %s" % stderr)
                 downloaded_path = glob.glob(os.path.join(
                     self.directory,
                     "%s*.%s.gz" % (sra_run, self.filetype)))
