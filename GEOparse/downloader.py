@@ -183,6 +183,7 @@ class Downloader(object):
 
     def _download_http(self, silent=False):
         r = requests.get(self.url, stream=True)
+        r.raise_for_status()
         # Total size in bytes.
         total_size = int(r.headers.get('content-length', 0))
         logger.debug("Total size: %s" % total_size)

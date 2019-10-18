@@ -78,8 +78,10 @@ def download_from_url(url, destination_path,
                 silent=silent)
         else:
             fn.download(silent=silent, force=force)
-    except URLError:
-        logger.error("Cannot find file %s" % url)
+    except Exception as err:
+        raise IOError(
+            "Download failed due to '%s'. ID could be incorrect or the " % err
+            + "data might not be public yet.")
 
 
 @contextmanager
