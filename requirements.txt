@@ -4,3 +4,7 @@ pytz>=2013
 sphinxcontrib-napoleon>=0.6.1
 requests>=2.21.0
 tqdm>=4.31.1
+pytest
+isort
+black
+pre-commit
