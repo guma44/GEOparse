@@ -9,3 +9,4 @@ isort
 black
 pre-commit
 pytest-cov
+flake8
