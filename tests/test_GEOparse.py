@@ -15,7 +15,6 @@ from pandas import DataFrame, read_table
 from pandas.util.testing import assert_frame_equal
 from six import iteritems
 
-path.append(join(abspath(__file__), ".."))
 from GEOparse.GEOTypes import (GSE, GSM, GPL, GDS,
                                GDSSubset, GEODatabase,
                                DataIncompatibilityException,

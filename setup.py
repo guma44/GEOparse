@@ -1,11 +1,20 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import io
+import re
+from glob import glob
+from os.path import basename
+from os.path import dirname
+from os.path import join
+from os.path import splitext
 
 try:
     from setuptools import setup
 except ImportError:
     from distutils.core import setup
+
+from setuptools import find_packages
 
 
 with open('README.rst') as readme_file:
@@ -34,11 +43,9 @@ setup(
     author="Rafal Gumienny",
     author_email='guma44@gmail.com',
     url='https://github.com/guma44/GEOparse',
-    packages=[
-        'GEOparse',
-    ],
-    package_dir={'GEOparse':
-                 'GEOparse'},
+    packages=find_packages('src'),
+    package_dir={'': 'src'},
+    py_modules=[splitext(basename(path))[0] for path in glob('src/*.py')],
     include_package_data=True,
     scripts=[
         "scripts/geo2fastq",
@@ -58,5 +65,10 @@ setup(
         'Programming Language :: Python :: 3.7',
     ],
     test_suite='tests',
-    tests_require=test_requirements
+    tests_require=test_requirements,
+    project_urls={
+            'Documentation': 'https://geoparse.readthedocs.io/',
+            'Changelog': 'https://geoparse.readthedocs.io/en/latest/history.html',
+            'Issue Tracker': 'https://github.com/guma44/GEOparse/issues',
+        },
 )
