@@ -202,9 +202,12 @@ class SRADownloader(object):
 
             sra_run = path.split("/")[-1]
             logger.info("Analysing %s" % sra_run)
-            url = type(self).FTP_ADDRESS_TPL.format(
-                range_subdir=sra_run[:6], file_dir=sra_run
-            )
+            if self.aspera:
+                url = type(self).FTP_ADDRESS_TPL.format(
+                    range_subdir=sra_run[:6], file_dir=sra_run
+                )
+            else:
+                url = path
             logger.debug("URL: %s", url)
             filepath = os.path.abspath(os.path.join(self.directory, "%s.sra" % sra_run))
             utils.download_from_url(
