@@ -418,9 +418,10 @@ class GSM(SimpleGEO):
         Returns:
             :obj:`pandas.DataFrame`: Annotated data
         """
-        if gpl.name != self.metadata["d_id"][0] and not force:
+        if gpl.name != self.metadata["platform_id"][0] and not force:
             raise KeyError(
-                "ds from GSM (%s) and from GPL (%s)" % (gpl.name, self.metadata["d_id"])
+                "ds from GSM (%s) and from GPL (%s)"
+                % (gpl.name, self.metadata["platform_id"])
                 + " are incompatible. Use force=True to use this GPL."
             )
         if merge_on_column is None and gpl_on is None and gsm_on is None:
@@ -807,7 +808,7 @@ class GSE(BaseGEO):
 
         data = []
         for gsm in self.gsms.values():
-            if gpl.name == gsm.metadata["d_id"][0]:
+            if gpl.name == gsm.metadata["platform_id"][0]:
                 data.append(
                     gsm.annotate_and_average(
                         gpl=gpl,
