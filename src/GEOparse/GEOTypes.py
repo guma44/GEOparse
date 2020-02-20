@@ -2,27 +2,26 @@
 Classes that represent different GEO entities
 """
 
-import os
-import re
 import abc
 import gzip
 import json
+import os
+import re
 import time
-import numpy as np
-import platform
-from pandas import DataFrame, concat
-
 from multiprocessing import Pool
+
+import numpy as np
+from pandas import DataFrame, concat
+from six import iteritems, itervalues
+
+from . import utils
+from .logger import geoparse_logger as logger
+from .sra_downloader import SRADownloader
 
 try:
     from urllib.error import HTTPError
 except ImportError:
     from urllib2 import HTTPError
-from six import iteritems, itervalues
-
-from . import utils
-from .sra_downloader import SRADownloader
-from .logger import geoparse_logger as logger
 
 
 def _sra_download_worker(*args):
@@ -47,10 +46,12 @@ def _supplementary_files_download_worker(*args):
     email = args[0][2]
     dirpath = args[0][3]
     sra_kwargs = args[0][4]
-    return (gsm.get_accession(), gsm.download_supplementary_files(
-        directory=dirpath,
-        download_sra=download_sra,
-        email=email, **sra_kwargs))
+    return (
+        gsm.get_accession(),
+        gsm.download_supplementary_files(
+            directory=dirpath, download_sra=download_sra, email=email, **sra_kwargs
+        ),
+    )
 
 
 class DataIncompatibilityException(Exception):
@@ -78,15 +79,16 @@ class BaseGEO(object):
         """
 
         if not isinstance(metadata, dict):
-            raise TypeError("Metadata should be a dictionary not a %s" % str(
-                type(metadata)))
+            raise TypeError(
+                "Metadata should be a dictionary not a %s" % str(type(metadata))
+            )
 
         self.name = name
         self.metadata = metadata
         self.relations = {}
-        if 'relation' in self.metadata:
-            for relation in self.metadata['relation']:
-                tmp = re.split(r':\s+', relation)
+        if "relation" in self.metadata:
+            for relation in self.metadata["relation"]:
+                tmp = re.split(r":\s+", relation)
                 relname = tmp[0]
                 relval = tmp[1]
 
@@ -111,8 +113,7 @@ class BaseGEO(object):
         """
         metadata_value = self.metadata.get(metaname, None)
         if metadata_value is None:
-            raise NoMetadataException(
-                "No metadata attribute named %s" % metaname)
+            raise NoMetadataException("No metadata attribute named %s" % metaname)
         if not isinstance(metadata_value, list):
             raise TypeError("Metadata is not a list and it should be.")
 
@@ -148,8 +149,9 @@ class BaseGEO(object):
             assert isinstance(meta, list), message
             for data in meta:
                 if data:
-                    metalist.append("!%s_%s = %s" % (self.geotype.capitalize(),
-                                                     metaname, data))
+                    metalist.append(
+                        "!%s_%s = %s" % (self.geotype.capitalize(), metaname, data)
+                    )
         return "\n".join(metalist)
 
     def show_metadata(self):
@@ -166,10 +168,10 @@ class BaseGEO(object):
         """
         if isinstance(path_or_handle, str):
             if as_gzip:
-                with gzip.open(path_or_handle, 'wt') as outfile:
+                with gzip.open(path_or_handle, "wt") as outfile:
                     outfile.write(self._get_object_as_soft())
             else:
-                with open(path_or_handle, 'w') as outfile:
+                with open(path_or_handle, "w") as outfile:
                     outfile.write(self._get_object_as_soft())
         else:
             path_or_handle.write(self._get_object_as_soft())
@@ -207,11 +209,18 @@ class SimpleGEO(BaseGEO):
             :obj:`ValueError`: Description has to be present in columns
         """
         if not isinstance(table, DataFrame):
-            raise ValueError(("Table data should be an instance of "
-                              "pandas.DataFrame not %s") % str(type(table)))
+            raise ValueError(
+                ("Table data should be an instance of " "pandas.DataFrame not %s")
+                % str(type(table))
+            )
         if not isinstance(columns, DataFrame):
-            raise ValueError(("Columns description should be an instance of "
-                              "pandas.DataFrame not %s") % str(type(columns)))
+            raise ValueError(
+                (
+                    "Columns description should be an instance of "
+                    "pandas.DataFrame not %s"
+                )
+                % str(type(columns))
+            )
 
         BaseGEO.__init__(self, name=name, metadata=metadata)
 
@@ -223,9 +232,9 @@ class SimpleGEO(BaseGEO):
                 # try to correct duplicate index in the same way pandas is
                 # doing the columns
                 logger.warning(
-                    "Detected duplicated columns in %s %s. Correcting.\n" % (
-                        self.geotype,
-                        self.name))
+                    "Detected duplicated columns in %s %s. Correcting.\n"
+                    % (self.geotype, self.name)
+                )
                 indices = {}
                 new_index = []
                 for idx in self.columns.index:
@@ -240,11 +249,13 @@ class SimpleGEO(BaseGEO):
                     columns_are_correct = True
             if not columns_are_correct:
                 # if the columns are still not correct check the order.
-                if sorted(self.columns.index.tolist()) == sorted(self.table.columns.tolist()):
+                if sorted(self.columns.index.tolist()) == sorted(
+                    self.table.columns.tolist()
+                ):
                     logger.warning(
-                        "Data columns in %s %s are not in order. Reordering.\n" % (
-                            self.geotype,
-                            self.name))
+                        "Data columns in %s %s are not in order. Reordering.\n"
+                        % (self.geotype, self.name)
+                    )
                     self.columns = self.columns.loc[self.table.columns]
                     if self.columns.index.tolist() == self.table.columns.tolist():
                         columns_are_correct = True
@@ -255,29 +266,32 @@ class SimpleGEO(BaseGEO):
             rows_in_columns = ", ".join(self.columns.index.tolist())
             columns_in_table = ", ".join(self.table.columns.tolist())
             raise DataIncompatibilityException(
-                "\nData columns do not match columns description index in %s\n" % (
-                    self.name) +
-                "Columns in table are: %s\n" % columns_in_table +
-                "Index in columns are: %s\n" % rows_in_columns)
-        if self.columns.columns[0] != 'description':
-            raise ValueError(("Columns table must contain a column named"
-                              "'description'. Here columns are: %s") % (
-                                 ", ".join(map(str, self.columns.columns))))
+                "\nData columns do not match columns description index in %s\n"
+                % (self.name)
+                + "Columns in table are: %s\n" % columns_in_table
+                + "Index in columns are: %s\n" % rows_in_columns
+            )
+        if self.columns.columns[0] != "description":
+            raise ValueError(
+                (
+                    "Columns table must contain a column named"
+                    "'description'. Here columns are: %s"
+                )
+                % (", ".join(map(str, self.columns.columns)))
+            )
 
     def head(self):
         """Print short description of the object."""
         summary = list()
         summary.append("%s %s" % (self.geotype, self.name) + "\n")
         summary.append(" - Metadata:" + "\n")
-        summary.append(
-            "\n".join(self._get_metadata_as_string().split("\n")[:5]) + "\n")
+        summary.append("\n".join(self._get_metadata_as_string().split("\n")[:5]) + "\n")
         summary.append("\n")
         summary.append(" - Columns:" + "\n")
         summary.append(self.columns.to_string() + "\n")
         summary.append("\n")
         summary.append(" - Table:" + "\n")
-        summary.append(
-            "\t".join(["Index"] + self.table.columns.tolist()) + "\n")
+        summary.append("\t".join(["Index"] + self.table.columns.tolist()) + "\n")
         summary.append(self.table.head().to_string(header=None) + "\n")
         summary.append(" " * 40 + "..." + " " * 40 + "\n")
         summary.append(" " * 40 + "..." + " " * 40 + "\n")
@@ -299,10 +313,12 @@ class SimpleGEO(BaseGEO):
 
     def _get_object_as_soft(self):
         """Get the object as SOFT formated string."""
-        soft = ["^%s = %s" % (self.geotype, self.name),
-                self._get_metadata_as_string(),
-                self._get_columns_as_string(),
-                self._get_table_as_string()]
+        soft = [
+            "^%s = %s" % (self.geotype, self.name),
+            self._get_metadata_as_string(),
+            self._get_columns_as_string(),
+            self._get_table_as_string(),
+        ]
         return "\n".join(soft)
 
     def _get_table_as_string(self):
@@ -326,14 +342,15 @@ class SimpleGEO(BaseGEO):
 class GSM(SimpleGEO):
     """Class that represents sample from GEO database."""
 
-    geotype = 'SAMPLE'
+    geotype = "SAMPLE"
 
-    def annotate(self, gpl, annotation_column, gpl_on="ID", gsm_on="ID_REF",
-                 in_place=False):
+    def annotate(
+        self, gpl, annotation_column, gpl_on="ID", gsm_on="ID_REF", in_place=False
+    ):
         """Annotate GSM with provided GPL
 
         Args:
-            gpl (:obj:`pandas.DataFrame`): A Platform or DataFrame to annotate with
+            gpl (:obj:`pandas.DataFrame`): A d or DataFrame to annotate with
             annotation_column (str`): Column in a table for annotation
             gpl_on (:obj:`str`): Use this column in GSM to merge. Defaults to "ID".
             gsm_on (:obj:`str`): Use this column in GPL to merge.
@@ -357,8 +374,10 @@ class GSM(SimpleGEO):
 
         # annotate by merging
         annotated = self.table.merge(
-            annotation_table[[gpl_on, annotation_column]], left_on=gsm_on,
-            right_on=gpl_on)
+            annotation_table[[gpl_on, annotation_column]],
+            left_on=gsm_on,
+            right_on=gpl_on,
+        )
         del annotated[gpl_on]
         if in_place:
             self.table = annotated
@@ -366,20 +385,28 @@ class GSM(SimpleGEO):
         else:
             return annotated
 
-    def annotate_and_average(self, gpl, expression_column, group_by_column,
-                             rename=True, force=False, merge_on_column=None,
-                             gsm_on=None, gpl_on=None):
+    def annotate_and_average(
+        self,
+        gpl,
+        expression_column,
+        group_by_column,
+        rename=True,
+        force=False,
+        merge_on_column=None,
+        gsm_on=None,
+        gpl_on=None,
+    ):
         """Annotate GSM table with provided GPL.
 
         Args:
-            gpl (:obj:`GEOTypes.GPL`): Platform for annotations
+            gpl (:obj:`GEOTypes.GPL`): d for annotations
             expression_column (:obj:`str`): Column name which "expressions"
                 are represented
             group_by_column (:obj:`str`): The data will be grouped and averaged
                 over this column and only this column will be kept
             rename (:obj:`bool`): Rename output column to the
                 self.name. Defaults to True.
-            force (:obj:`bool`): If the name of the GPL does not match the platform
+            force (:obj:`bool`): If the name of the GPL does not match the d
                 name in GSM proceed anyway. Defaults to False.
             merge_on_column (:obj:`str`): Column to merge the data
                 on. Defaults to None.
@@ -391,33 +418,37 @@ class GSM(SimpleGEO):
         Returns:
             :obj:`pandas.DataFrame`: Annotated data
         """
-        if gpl.name != self.metadata['platform_id'][0] and not force:
-            raise KeyError("Platforms from GSM (%s) and from GPL (%s)" % (
-                gpl.name, self.metadata['platform_id']) +
-                           " are incompatible. Use force=True to use this GPL.")
+        if gpl.name != self.metadata["d_id"][0] and not force:
+            raise KeyError(
+                "ds from GSM (%s) and from GPL (%s)" % (gpl.name, self.metadata["d_id"])
+                + " are incompatible. Use force=True to use this GPL."
+            )
         if merge_on_column is None and gpl_on is None and gsm_on is None:
-            raise Exception("You have to provide one of the two: "
-                            "merge_on_column or gpl_on and gsm_on parameters")
+            raise Exception(
+                "You have to provide one of the two: "
+                "merge_on_column or gpl_on and gsm_on parameters"
+            )
         if merge_on_column:
             logger.info("merge_on_column is not None. Using this option.")
-            tmp_data = self.table.merge(gpl.table, on=merge_on_column,
-                                        how='outer')
-            tmp_data = tmp_data.groupby(group_by_column).mean()[
-                [expression_column]]
+            tmp_data = self.table.merge(gpl.table, on=merge_on_column, how="outer")
+            tmp_data = tmp_data.groupby(group_by_column).mean()[[expression_column]]
         else:
             if gpl_on is None or gsm_on is None:
-                raise Exception("Please provide both gpl_on and gsm_on or "
-                                "provide merge_on_column only")
-            tmp_data = self.table.merge(gpl.table, left_on=gsm_on,
-                                        right_on=gpl_on, how='outer')
-            tmp_data = tmp_data.groupby(group_by_column).mean()[
-                [expression_column]]
+                raise Exception(
+                    "Please provide both gpl_on and gsm_on or "
+                    "provide merge_on_column only"
+                )
+            tmp_data = self.table.merge(
+                gpl.table, left_on=gsm_on, right_on=gpl_on, how="outer"
+            )
+            tmp_data = tmp_data.groupby(group_by_column).mean()[[expression_column]]
         if rename:
             tmp_data.columns = [self.name]
         return tmp_data
 
-    def download_supplementary_files(self, directory="./", download_sra=True,
-                                     email=None, sra_kwargs=None):
+    def download_supplementary_files(
+        self, directory="./", download_sra=True, email=None, sra_kwargs=None
+    ):
         """Download all supplementary data available for the sample.
 
         Args:
@@ -436,11 +467,17 @@ class GSM(SimpleGEO):
                 paths downloaded, in the case of SRA files the key is ``SRA``.
         """
         directory_path = os.path.abspath(
-            os.path.join(directory, "%s_%s_%s" % (
-                'Supp',
-                self.get_accession(),
-                # the directory name cannot contain many of the signs
-                re.sub(r'[\s\*\?\(\),\.;]', '_', self.metadata['title'][0]))))
+            os.path.join(
+                directory,
+                "%s_%s_%s"
+                % (
+                    "Supp",
+                    self.get_accession(),
+                    # the directory name cannot contain many of the signs
+                    re.sub(r"[\s\*\?\(\),\.;]", "_", self.metadata["title"][0]),
+                ),
+            )
+        )
 
         utils.mkdir_p(os.path.abspath(directory_path))
         downloaded_paths = dict()
@@ -448,40 +485,45 @@ class GSM(SimpleGEO):
             sra_kwargs = {}
         # Possible erroneous values that could be identified and skipped right
         # after
-        blacklist = ('NONE',)
+        blacklist = ("NONE",)
         for metakey, metavalue in iteritems(self.metadata):
-            if 'supplementary_file' in metakey:
-                assert len(metavalue) == 1 and metavalue != ''
+            if "supplementary_file" in metakey:
+                assert len(metavalue) == 1 and metavalue != ""
                 if metavalue[0] in blacklist:
-                    logger.warning("%s value is blacklisted as '%s' - skipping"
-                                   % (metakey, metavalue[0]))
+                    logger.warning(
+                        "%s value is blacklisted as '%s' - skipping"
+                        % (metakey, metavalue[0])
+                    )
                     continue
                 # SRA will be downloaded elsewhere
-                if 'sra' not in metavalue[0]:
-                    download_path = os.path.abspath(os.path.join(
-                        directory,
-                        os.path.join(directory_path,
-                                     metavalue[0].split("/")[-1])))
+                if "sra" not in metavalue[0]:
+                    download_path = os.path.abspath(
+                        os.path.join(
+                            directory,
+                            os.path.join(directory_path, metavalue[0].split("/")[-1]),
+                        )
+                    )
                     try:
                         utils.download_from_url(metavalue[0], download_path)
                         downloaded_paths[metavalue[0]] = download_path
                     except Exception as err:
                         logger.error(
-                            "Cannot download %s supplementary file (%s)" % (
-                                self.get_accession(), err))
+                            "Cannot download %s supplementary file (%s)"
+                            % (self.get_accession(), err)
+                        )
         if download_sra:
             try:
                 downloaded_files = self.download_SRA(
-                    email,
-                    directory=directory,
-                    **sra_kwargs)
+                    email, directory=directory, **sra_kwargs
+                )
                 downloaded_paths.update(downloaded_files)
             except Exception as err:
-                logger.error("Cannot download %s SRA file (%s)" % (
-                    self.get_accession(), err))
+                logger.error(
+                    "Cannot download %s SRA file (%s)" % (self.get_accession(), err)
+                )
         return downloaded_paths
 
-    def download_SRA(self, email, directory='./', **kwargs):
+    def download_SRA(self, email, directory="./", **kwargs):
         """Download RAW data as SRA file.
 
         The files will be downloaded to the sample directory created ad hoc
@@ -520,12 +562,20 @@ class GSM(SimpleGEO):
 
 
 class GPL(SimpleGEO):
-    """Class that represents platform from GEO database"""
+    """Class that represents d from GEO database"""
 
-    geotype = "PLATFORM"
+    geotype = "d"
 
-    def __init__(self, name, metadata, table=None, columns=None, gses=None,
-                 gsms=None, database=None):
+    def __init__(
+        self,
+        name,
+        metadata,
+        table=None,
+        columns=None,
+        gses=None,
+        gsms=None,
+        database=None,
+    ):
         """Initialize GPL.
 
         Args:
@@ -543,12 +593,10 @@ class GPL(SimpleGEO):
         """
         gses = {} if gses is None else gses
         if not isinstance(gses, dict):
-            raise ValueError(
-                "GSEs should be a dictionary not a %s" % str(type(gses)))
+            raise ValueError("GSEs should be a dictionary not a %s" % str(type(gses)))
         gsms = {} if gsms is None else gsms
         if not isinstance(gsms, dict):
-            raise ValueError(
-                "GSMs should be a dictionary not a %s" % str(type(gsms)))
+            raise ValueError("GSMs should be a dictionary not a %s" % str(type(gsms)))
 
         for gsm_name, gsm in iteritems(gsms):
             assert isinstance(gsm, GSM), "All GSMs should be of type GSM"
@@ -557,13 +605,14 @@ class GPL(SimpleGEO):
         if database is not None:
             if not isinstance(database, GEODatabase):
                 raise ValueError(
-                    "Database should be a GEODatabase not a %s" % str(
-                        type(database)))
+                    "Database should be a GEODatabase not a %s" % str(type(database))
+                )
 
         table = DataFrame() if table is None else table
         columns = DataFrame() if columns is None else columns
-        SimpleGEO.__init__(self, name=name, metadata=metadata, table=table,
-                           columns=columns)
+        SimpleGEO.__init__(
+            self, name=name, metadata=metadata, table=table, columns=columns
+        )
 
         self.gses = gses
         self.gsms = gsms
@@ -577,8 +626,7 @@ class GDSSubset(BaseGEO):
 
     def _get_object_as_soft(self):
         """Get the object as SOFT formatted string."""
-        soft = ["^%s = %s" % (self.geotype, self.name),
-                self._get_metadata_as_string()]
+        soft = ["^%s = %s" % (self.geotype, self.name), self._get_metadata_as_string()]
         return "\n".join(soft)
 
 
@@ -589,8 +637,7 @@ class GEODatabase(BaseGEO):
 
     def _get_object_as_soft(self):
         """Return object as SOFT formatted string."""
-        soft = ["^%s = %s" % (self.geotype, self.name),
-                self._get_metadata_as_string()]
+        soft = ["^%s = %s" % (self.geotype, self.name), self._get_metadata_as_string()]
         return "\n".join(soft)
 
 
@@ -616,15 +663,17 @@ class GDS(SimpleGEO):
         """
         if not isinstance(subsets, dict):
             raise ValueError(
-                "Subsets should be a dictionary not a %s" % str(type(subsets)))
+                "Subsets should be a dictionary not a %s" % str(type(subsets))
+            )
         if database is not None:
             if not isinstance(database, GEODatabase):
                 raise ValueError(
-                    "Database should be a GEODatabase not a %s" % str(
-                        type(database)))
+                    "Database should be a GEODatabase not a %s" % str(type(database))
+                )
 
-        SimpleGEO.__init__(self, name=name, metadata=metadata, table=table,
-                           columns=columns)
+        SimpleGEO.__init__(
+            self, name=name, metadata=metadata, table=table, columns=columns
+        )
         # effectively deletes the columns with ID_REF
         self.columns = self.columns.dropna()
         self.subsets = subsets
@@ -639,13 +688,14 @@ class GDS(SimpleGEO):
         soft = []
         if self.database is not None:
             soft.append(self.database._get_object_as_soft())
-        soft += ["^%s = %s" % (self.geotype, self.name),
-                 self._get_metadata_as_string()]
+        soft += ["^%s = %s" % (self.geotype, self.name), self._get_metadata_as_string()]
         for subset in self.subsets.values():
             soft.append(subset._get_object_as_soft())
-        soft += ["^%s = %s" % (self.geotype, self.name),
-                 self._get_columns_as_string(),
-                 self._get_table_as_string()]
+        soft += [
+            "^%s = %s" % (self.geotype, self.name),
+            self._get_columns_as_string(),
+            self._get_table_as_string(),
+        ]
         return "\n".join(soft)
 
 
@@ -669,12 +719,10 @@ class GSE(BaseGEO):
         """
         gpls = {} if gpls is None else gpls
         if not isinstance(gpls, dict):
-            raise ValueError(
-                "GPLs should be a dictionary not a %s" % str(type(gpls)))
+            raise ValueError("GPLs should be a dictionary not a %s" % str(type(gpls)))
         gsms = {} if gsms is None else gsms
         if not isinstance(gsms, dict):
-            raise ValueError(
-                "GSMs should be a dictionary not a %s" % str(type(gsms)))
+            raise ValueError("GSMs should be a dictionary not a %s" % str(type(gsms)))
 
         for gsm_name, gsm in iteritems(gsms):
             assert isinstance(gsm, GSM), "All GSMs should be of type GSM"
@@ -683,8 +731,8 @@ class GSE(BaseGEO):
         if database is not None:
             if not isinstance(database, GEODatabase):
                 raise ValueError(
-                    "Database should be a GEODatabase not a %s" % str(
-                        type(database)))
+                    "Database should be a GEODatabase not a %s" % str(type(database))
+                )
         BaseGEO.__init__(self, name=name, metadata=metadata)
 
         self.gpls = gpls
@@ -704,34 +752,39 @@ class GSE(BaseGEO):
                         tmp[key] = np.nan
                     elif key.startswith("characteristics_"):
                         for i, char in enumerate(value):
-                            char = re.split(":\s+", char)
-                            char_type, char_value = [char[0],
-                                                     ": ".join(char[1:])]
-                            tmp[key + "." + str(
-                                i) + "." + char_type] = char_value
+                            char = re.split(r":\s+", char)
+                            char_type, char_value = [char[0], ": ".join(char[1:])]
+                            tmp[key + "." + str(i) + "." + char_type] = char_value
                     else:
                         tmp[key] = ",".join(value)
                 pheno_data[gsm_name] = tmp
             self._phenotype_data = DataFrame(pheno_data).T
         return self._phenotype_data
 
-    def merge_and_average(self, platform, expression_column, group_by_column,
-                          force=False, merge_on_column=None, gsm_on=None,
-                          gpl_on=None):
+    def merge_and_average(
+        self,
+        d,
+        expression_column,
+        group_by_column,
+        force=False,
+        merge_on_column=None,
+        gsm_on=None,
+        gpl_on=None,
+    ):
         """Merge and average GSE samples.
 
-        For given platform prepare the DataFrame with all the samples present in
-        the GSE annotated with given column from platform and averaged over
+        For given d prepare the DataFrame with all the samples present in
+        the GSE annotated with given column from d and averaged over
         the column.
 
         Args:
-            platform (:obj:`str` or :obj:`GEOparse.GPL`): GPL platform to use.
+            d (:obj:`str` or :obj:`GEOparse.GPL`): GPL d to use.
             expression_column (:obj:`str`): Column name in which "expressions"
                 are represented
             group_by_column (:obj:`str`): The data will be grouped and averaged
                 over this column and only this column will be kept
             force (:obj:`bool`): If the name of the GPL does not match the
-                platform name in GSM proceed anyway
+                d name in GSM proceed anyway
             merge_on_column (:obj:`str`): Column to merge the data on - should
                 be present in both GSM and GPL
             gsm_on (:obj:`str`): In the case columns to merge are different in
@@ -743,27 +796,31 @@ class GSE(BaseGEO):
             :obj:`pandas.DataFrame`: Merged and averaged table of results.
 
         """
-        if isinstance(platform, str):
-            gpl = self.gpls[platform]
-        elif isinstance(platform, GPL):
-            gpl = platform
+        if isinstance(d, str):
+            gpl = self.gpls[d]
+        elif isinstance(d, GPL):
+            gpl = d
         else:
-            raise ValueError("Platform has to be of type GPL or string with "
-                             "key for platform in GSE")
+            raise ValueError(
+                "d has to be of type GPL or string with " "key for d in GSE"
+            )
 
         data = []
         for gsm in self.gsms.values():
-            if gpl.name == gsm.metadata['platform_id'][0]:
-                data.append(gsm.annotate_and_average(
-                    gpl=gpl,
-                    merge_on_column=merge_on_column,
-                    expression_column=expression_column,
-                    group_by_column=group_by_column,
-                    force=force,
-                    gpl_on=gpl_on,
-                    gsm_on=gsm_on))
+            if gpl.name == gsm.metadata["d_id"][0]:
+                data.append(
+                    gsm.annotate_and_average(
+                        gpl=gpl,
+                        merge_on_column=merge_on_column,
+                        expression_column=expression_column,
+                        group_by_column=group_by_column,
+                        force=force,
+                        gpl_on=gpl_on,
+                        gsm_on=gsm_on,
+                    )
+                )
         if len(data) == 0:
-            logger.warning("No samples for the platform were found\n")
+            logger.warning("No samples for the d were found\n")
             return None
         elif len(data) == 1:
             return data[0]
@@ -794,13 +851,14 @@ class GSE(BaseGEO):
         ndf = concat(data).pivot(index=index, values=values, columns="name")
         return ndf
 
-    def pivot_and_annotate(self, values, gpl, annotation_column, gpl_on="ID",
-                           gsm_on="ID_REF"):
+    def pivot_and_annotate(
+        self, values, gpl, annotation_column, gpl_on="ID", gsm_on="ID_REF"
+    ):
         """Annotate GSM with provided GPL.
 
         Args:
             values (:obj:`str`): Column to use as values eg. "VALUES"
-            gpl (:obj:`pandas.DataFrame` or :obj:`GEOparse.GPL`): A Platform or
+            gpl (:obj:`pandas.DataFrame` or :obj:`GEOparse.GPL`): A d or
                 DataFrame to annotate with.
             annotation_column (:obj:`str`): Column in table for annotation.
             gpl_on (:obj:`str`, optional): Use this column in GPL to merge.
@@ -819,17 +877,27 @@ class GSE(BaseGEO):
         else:
             raise TypeError("gpl should be a GPL object or a pandas.DataFrame")
         pivoted_samples = self.pivot_samples(values=values, index=gsm_on)
-        ndf = pivoted_samples.reset_index().merge(
-            annotation_table[[gpl_on, annotation_column]],
-            left_on=gsm_on,
-            right_on=gpl_on).set_index(gsm_on)
+        ndf = (
+            pivoted_samples.reset_index()
+            .merge(
+                annotation_table[[gpl_on, annotation_column]],
+                left_on=gsm_on,
+                right_on=gpl_on,
+            )
+            .set_index(gsm_on)
+        )
         del ndf[gpl_on]
-        ndf.columns.name = 'name'
+        ndf.columns.name = "name"
         return ndf
 
-    def download_supplementary_files(self, directory='series',
-                                     download_sra=True, email=None,
-                                     sra_kwargs=None, nproc=1):
+    def download_supplementary_files(
+        self,
+        directory="series",
+        download_sra=True,
+        email=None,
+        sra_kwargs=None,
+        nproc=1,
+    ):
         """Download supplementary data.
 
         .. warning::
@@ -857,7 +925,7 @@ class GSE(BaseGEO):
         """
         if sra_kwargs is None:
             sra_kwargs = dict()
-        if directory == 'series':
+        if directory == "series":
             dirpath = os.path.abspath(self.get_accession() + "_Supp")
             utils.mkdir_p(dirpath)
         else:
@@ -868,24 +936,20 @@ class GSE(BaseGEO):
             # No need to parallelize, running ordinary download in loop
             downloaded_paths = dict()
             for gsm in itervalues(self.gsms):
-                logger.info(
-                    "Downloading SRA files for %s series\n" % gsm.name)
-                paths = gsm.download_supplementary_files(email=email,
-                                                         download_sra=download_sra,
-                                                         directory=dirpath,
-                                                         sra_kwargs=sra_kwargs)
+                logger.info("Downloading SRA files for %s series\n" % gsm.name)
+                paths = gsm.download_supplementary_files(
+                    email=email,
+                    download_sra=download_sra,
+                    directory=dirpath,
+                    sra_kwargs=sra_kwargs,
+                )
                 downloaded_paths[gsm.name] = paths
         elif nproc > 1:
             # Parallelization enabled
             downloaders = list()
             # Collecting params for Pool.map in a loop
             for gsm in itervalues(self.gsms):
-                downloaders.append([
-                    gsm,
-                    download_sra,
-                    email,
-                    dirpath,
-                    sra_kwargs])
+                downloaders.append([gsm, download_sra, email, dirpath, sra_kwargs])
             p = Pool(nproc)
             results = p.map(_supplementary_files_download_worker, downloaders)
             downloaded_paths = dict(results)
@@ -894,8 +958,7 @@ class GSE(BaseGEO):
 
         return downloaded_paths
 
-    def download_SRA(self, email, directory='series', filterby=None, nproc=1,
-                     **kwargs):
+    def download_SRA(self, email, directory="series", filterby=None, nproc=1, **kwargs):
         """Download SRA files for each GSM in series.
 
         .. warning::
@@ -923,7 +986,7 @@ class GSE(BaseGEO):
                     method where each GSM accession ID is the key for the
                     output.
         """
-        if directory == 'series':
+        if directory == "series":
             dirpath = os.path.abspath(self.get_accession() + "_SRA")
             utils.mkdir_p(dirpath)
         else:
@@ -938,22 +1001,16 @@ class GSE(BaseGEO):
             # No need to parallelize, running ordinary download in loop
             downloaded_paths = dict()
             for gsm in gsms_to_use:
-                logger.info(
-                    "Downloading SRA files for %s series\n" % gsm.name)
+                logger.info("Downloading SRA files for %s series\n" % gsm.name)
                 downloaded_paths[gsm.name] = gsm.download_SRA(
-                    email=email,
-                    directory=dirpath,
-                    **kwargs)
+                    email=email, directory=dirpath, **kwargs
+                )
         elif nproc > 1:
             # Parallelization enabled
             downloaders = list()
             # Collecting params for Pool.map in a loop
             for gsm in gsms_to_use:
-                downloaders.append([
-                    gsm,
-                    email,
-                    dirpath,
-                    kwargs])
+                downloaders.append([gsm, email, dirpath, kwargs])
 
             p = Pool(nproc)
             results = p.map(_sra_download_worker, downloaders)
@@ -968,8 +1025,7 @@ class GSE(BaseGEO):
         soft = []
         if self.database is not None:
             soft.append(self.database._get_object_as_soft())
-        soft += ["^%s = %s" % (self.geotype, self.name),
-                 self._get_metadata_as_string()]
+        soft += ["^%s = %s" % (self.geotype, self.name), self._get_metadata_as_string()]
         for gsm in itervalues(self.gsms):
             soft.append(gsm._get_object_as_soft())
         for gpl in itervalues(self.gpls):
@@ -978,9 +1034,13 @@ class GSE(BaseGEO):
         return "\n".join(soft)
 
     def __str__(self):
-        return str("<%s: %s - %i SAMPLES, %i PLATFORM(s)>" % (
-            self.geotype, self.name, len(self.gsms), len(self.gpls)))
+        return str(
+            "<%s: %s - %i SAMPLES, %i d(s)>"
+            % (self.geotype, self.name, len(self.gsms), len(self.gpls))
+        )
 
     def __repr__(self):
-        return str("<%s: %s - %i SAMPLES, %i PLATFORM(s)>" % (
-            self.geotype, self.name, len(self.gsms), len(self.gpls)))
+        return str(
+            "<%s: %s - %i SAMPLES, %i d(s)>"
+            % (self.geotype, self.name, len(self.gsms), len(self.gpls))
+        )

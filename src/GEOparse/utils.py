@@ -1,25 +1,25 @@
-import os
-import sys
-import gzip
 import glob
+import gzip
+import os
+import subprocess as sp
+import sys
 import time
-import requests
-from random import choice
+from contextlib import closing, contextmanager
 from errno import EEXIST
-from contextlib import closing
+from random import choice
 from shutil import copyfileobj
-from contextlib import contextmanager
+
+import requests
+from six import iteritems
+
+from .downloader import Downloader
+from .logger import geoparse_logger as logger
 
 try:
     from urllib.request import urlopen
     from urllib.error import URLError
 except ImportError:
     from urllib2 import urlopen, URLError
-import subprocess as sp
-from six import iteritems
-
-from .downloader import Downloader
-from .logger import geoparse_logger as logger
 
 
 def mkdir_p(path_to_dir):
@@ -34,14 +34,12 @@ def mkdir_p(path_to_dir):
         os.makedirs(path_to_dir)
     except OSError as e:  # Python >2.5
         if e.errno == EEXIST and os.path.isdir(path_to_dir):
-            logger.debug(
-                "Directory %s already exists. Skipping." % path_to_dir)
+            logger.debug("Directory %s already exists. Skipping." % path_to_dir)
         else:
             raise e
 
 
-def download_from_url(url, destination_path,
-                      force=False, aspera=False, silent=False):
+def download_from_url(url, destination_path, force=False, aspera=False, silent=False):
     """Download file from remote server.
 
     If the file is already downloaded and  ``force`` flag is on the file will
@@ -58,8 +56,10 @@ def download_from_url(url, destination_path,
         silent (:obj:`bool`): Do not print any message. Defaults to False.
     """
     if aspera and url.startswith("http"):
-        logger.warning("Aspera Connect allows only FTP servers - falling "
-                       "back to normal download")
+        logger.warning(
+            "Aspera Connect allows only FTP servers - falling "
+            "back to normal download"
+        )
         aspera = False
     use_http_for_ftp = os.environ.get("GEOPARSE_USE_HTTP_FOR_FTP") == "yes"
     if os.environ.get("http_proxy") is not None or use_http_for_ftp:
@@ -70,18 +70,19 @@ def download_from_url(url, destination_path,
         fn = Downloader(
             url,
             outdir=os.path.dirname(destination_path),
-            filename=os.path.basename(destination_path))
+            filename=os.path.basename(destination_path),
+        )
         if aspera:
             fn.download_aspera(
-                user="anonftp",
-                host="ftp-trace.ncbi.nlm.nih.gov",
-                silent=silent)
+                user="anonftp", host="ftp-trace.ncbi.nlm.nih.gov", silent=silent
+            )
         else:
             fn.download(silent=silent, force=force)
     except Exception as err:
         raise IOError(
             "Download failed due to '%s'. ID could be incorrect or the " % err
-            + "data might not be public yet.")
+            + "data might not be public yet."
+        )
 
 
 @contextmanager
@@ -168,7 +169,8 @@ def esearch(db, term, **kwargs):
         "term": term,
         "usehistory": "y",
         "retmode": "json",
-        "tool": "geoparse"}
+        "tool": "geoparse",
+    }
     data.update(kwargs)
     is_successfull = False
     error = None
@@ -180,28 +182,25 @@ def esearch(db, term, **kwargs):
             break
         except requests.exceptions.HTTPError as httperr:
             error = httperr
-            logger.warning("An error occurred: %s for %s with data %s" % (httperr, url, str(data)))
+            logger.warning(
+                "An error occurred: %s for %s with data %s" % (httperr, url, str(data))
+            )
             if httperr.response.status_code == 429:
                 # This means that there is too many requests
                 try:
-                    header_wait_time = int(
-                        httperr.headers["Retry-After"])
-                except:
+                    header_wait_time = int(httperr.headers["Retry-After"])
+                except Exception:
                     header_wait_time = wait_time
-                logger.warning(("%s, trial %i out of %i, waiting "
-                             "for %i seconds.") % (
-                                 str(httperr),
-                                 trial,
-                                 number_of_trials,
-                                 header_wait_time))
+                logger.warning(
+                    ("%s, trial %i out of %i, waiting " "for %i seconds.")
+                    % (str(httperr), trial, number_of_trials, header_wait_time)
+                )
                 time.sleep(header_wait_time)
             else:
-                logger.warning(("%s, trial %i out of %i, waiting "
-                             "for %i seconds.") % (
-                                 str(httperr),
-                                 trial,
-                                 number_of_trials,
-                                 wait_time))
+                logger.warning(
+                    ("%s, trial %i out of %i, waiting " "for %i seconds.")
+                    % (str(httperr), trial, number_of_trials, wait_time)
+                )
                 time.sleep(wait_time)
     if not is_successfull:
         if error is not None:
@@ -229,10 +228,7 @@ def efetch(db, **kwargs):
     number_of_trials = 10
     wait_time = 10
     url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
-    data = {
-        "db": db,
-        "retmode": "text",
-        "tool": "geoparse"}
+    data = {"db": db, "retmode": "text", "tool": "geoparse"}
     data.update(kwargs)
     try:
         ids = data["id"]
@@ -255,28 +251,25 @@ def efetch(db, **kwargs):
             break
         except requests.exceptions.HTTPError as httperr:
             error = httperr
-            logger.warning("An error occurred: %s for %s with data %s" % (httperr, url, str(data)))
+            logger.warning(
+                "An error occurred: %s for %s with data %s" % (httperr, url, str(data))
+            )
             if httperr.response.status_code == 429:
                 # This means that there is too many requests
                 try:
-                    header_wait_time = int(
-                        httperr.headers["Retry-After"])
-                except:
+                    header_wait_time = int(httperr.headers["Retry-After"])
+                except Exception:
                     header_wait_time = wait_time
-                logger.warning(("%s, trial %i out of %i, waiting "
-                             "for %i seconds.") % (
-                                 str(httperr),
-                                 trial,
-                                 number_of_trials,
-                                 header_wait_time))
+                logger.warning(
+                    ("%s, trial %i out of %i, waiting " "for %i seconds.")
+                    % (str(httperr), trial, number_of_trials, header_wait_time)
+                )
                 time.sleep(header_wait_time)
             else:
-                logger.warning(("%s, trial %i out of %i, waiting "
-                             "for %i seconds.") % (
-                                 str(httperr),
-                                 trial,
-                                 number_of_trials,
-                                 wait_time))
+                logger.warning(
+                    ("%s, trial %i out of %i, waiting " "for %i seconds.")
+                    % (str(httperr), trial, number_of_trials, wait_time)
+                )
                 time.sleep(wait_time)
     if not is_successfull:
         if error is not None:

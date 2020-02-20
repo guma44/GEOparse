@@ -1,10 +1,10 @@
 """A module that helps to deal with SRA files."""
 
-import os
-import re
-import json
 import glob
+import json
+import os
 import platform
+import re
 import subprocess as sp
 
 from pandas import DataFrame, concat
@@ -17,8 +17,10 @@ from .logger import geoparse_logger as logger
 class NoSRARelationException(Exception):
     pass
 
+
 class FastqDumpException(Exception):
     pass
+
 
 class SRADownloader(object):
     """Manage download RAW data as SRA files.
@@ -37,11 +39,13 @@ class SRADownloader(object):
     """
 
     ALLOWED_FILETYPES = ("sra", "fastq", "fasta")
-    FTP_ADDRESS_TPL = ("ftp://ftp-trace.ncbi.nlm.nih.gov/sra/sra-instant/reads"
-                       "/ByRun/sra/SRR/{range_subdir}/{file_dir}/"
-                       "{file_dir}.sra")
+    FTP_ADDRESS_TPL = (
+        "ftp://ftp-trace.ncbi.nlm.nih.gov/sra/sra-instant/reads"
+        "/ByRun/sra/SRR/{range_subdir}/{file_dir}/"
+        "{file_dir}.sra"
+    )
 
-    def __init__(self, gsm, email, directory='./', **kwargs):
+    def __init__(self, gsm, email, directory="./", **kwargs):
         """Initialize downloader object.
 
         Args:
@@ -84,39 +88,46 @@ class SRADownloader(object):
         # Retrieving output directory name
 
         if platform.system() == "Windows":
-            name_regex = r'[\s\*\?\(\),\.\:\%\|\"\<\>]'
+            name_regex = r"[\s\*\?\(\),\.\:\%\|\"\<\>]"
         else:
-            name_regex = r'[\s\*\?\(\),\.;]'
+            name_regex = r"[\s\*\?\(\),\.;]"
 
         self.directory = os.path.abspath(
-            os.path.join(directory, "%s_%s_%s" % (
-                'Supp',
-                self.gsm.get_accession(),
-                re.sub(name_regex, '_', self.gsm.metadata['title'][0]))))
+            os.path.join(
+                directory,
+                "%s_%s_%s"
+                % (
+                    "Supp",
+                    self.gsm.get_accession(),
+                    re.sub(name_regex, "_", self.gsm.metadata["title"][0]),
+                ),
+            )
+        )
 
-        self.filetype = kwargs.get('filetype', 'fasta').lower()
-        self.aspera = kwargs.get('aspera', False)
-        self.keep_sra = kwargs.get('keep_sra', False)
-        self.silent = kwargs.get('silent', False)
-        self.force = kwargs.get('force', False)
-        self.threads = kwargs.get('threads', 4)
+        self.filetype = kwargs.get("filetype", "fasta").lower()
+        self.aspera = kwargs.get("aspera", False)
+        self.keep_sra = kwargs.get("keep_sra", False)
+        self.silent = kwargs.get("silent", False)
+        self.force = kwargs.get("force", False)
+        self.threads = kwargs.get("threads", 4)
 
         self.fastq_dump_options = {
-            'split-files': None,
-            'readids': None,
-            'read-filter': 'pass',
-            'dumpbase': None,
-            'gzip': None
+            "split-files": None,
+            "readids": None,
+            "read-filter": "pass",
+            "dumpbase": None,
+            "gzip": None,
         }
-        self.fastq_dump_options.update(kwargs.get('fastq_dump_options', {}))
+        self.fastq_dump_options.update(kwargs.get("fastq_dump_options", {}))
 
         if self.filetype not in type(self).ALLOWED_FILETYPES:
             raise TypeError(
-                "Unknown type to downlod: %s. Allowed filetypes: %s" %
-                (self.filetype, type(self).ALLOWED_FILETYPES))
+                "Unknown type to downlod: %s. Allowed filetypes: %s"
+                % (self.filetype, type(self).ALLOWED_FILETYPES)
+            )
 
-        if not ('@' in email and email != '' and '.' in email):
-            raise TypeError('Provided e-mail (%s) is invalid' % self.email)
+        if not ("@" in email and email != "" and "." in email):
+            raise TypeError("Provided e-mail (%s) is invalid" % self.email)
         self._paths_for_download = None
 
     @property
@@ -125,50 +136,57 @@ class SRADownloader(object):
         if self._paths_for_download is None:
             queries = list()
             try:
-                for sra in self.gsm.relations['SRA']:
+                for sra in self.gsm.relations["SRA"]:
                     query = sra.split("=")[-1]
-                    if 'SRX' not in query:
+                    if "SRX" not in query:
                         raise ValueError(
-                            "Sample looks like it is not an SRA: %s" % query)
+                            "Sample looks like it is not an SRA: %s" % query
+                        )
                     logger.info("Query: %s" % query)
                     queries.append(query)
             except KeyError:
                 raise NoSRARelationException(
-                    'No relation called SRA for %s' % self.gsm.get_accession())
+                    "No relation called SRA for %s" % self.gsm.get_accession()
+                )
 
             # Construction of DataFrame df with paths to download
-            df = DataFrame(columns=['download_path'])
+            df = DataFrame(columns=["download_path"])
             for query in queries:
                 # retrieve IDs for given SRX
-                answer = utils.esearch(db='sra', term=query, email=self.email)
+                answer = utils.esearch(db="sra", term=query, email=self.email)
                 ids = answer["esearchresult"]["idlist"]
                 if len(ids) != 1:
-                    raise ValueError(
-                        "There should be one and only one ID per SRX")
+                    raise ValueError("There should be one and only one ID per SRX")
 
                 results = utils.efetch(
-                    db="sra",
-                    id=ids[0],
-                    rettype="runinfo",
-                    email=self.email)
+                    db="sra", id=ids[0], rettype="runinfo", email=self.email
+                )
                 try:
-                    df_tmp = DataFrame([i.split(',') for i in results.split('\n') if i != ''][1:],
-                                       columns=[i.split(',') for i in results.split('\n') if i != ''][0])
+                    df_tmp = DataFrame(
+                        [i.split(",") for i in results.split("\n") if i != ""][1:],
+                        columns=[i.split(",") for i in results.split("\n") if i != ""][
+                            0
+                        ],
+                    )
                 except IndexError:
-                    logger.error(("SRA is empty (ID: %s, query: %s). "
-                                  "Check if it is publicly available.") %
-                                 (ids[0], query))
+                    logger.error(
+                        (
+                            "SRA is empty (ID: %s, query: %s). "
+                            "Check if it is publicly available."
+                        )
+                        % (ids[0], query)
+                    )
                     continue
 
                 # check it first
                 try:
-                    df_tmp['download_path']
+                    df_tmp["download_path"]
                 except KeyError as e:
-                    logger.error('KeyError: ' + str(e) + '\n')
-                    logger.error(str(results) + '\n')
+                    logger.error("KeyError: " + str(e) + "\n")
+                    logger.error(str(results) + "\n")
 
                 df = concat([df, df_tmp], sort=True)
-            self._paths_for_download = [path for path in df['download_path']]
+            self._paths_for_download = [path for path in df["download_path"]]
         return self._paths_for_download
 
     def download(self):
@@ -185,27 +203,23 @@ class SRADownloader(object):
             sra_run = path.split("/")[-1]
             logger.info("Analysing %s" % sra_run)
             url = type(self).FTP_ADDRESS_TPL.format(
-                range_subdir=sra_run[:6],
-                file_dir=sra_run)
+                range_subdir=sra_run[:6], file_dir=sra_run
+            )
             logger.debug("URL: %s", url)
-            filepath = os.path.abspath(
-                os.path.join(self.directory, "%s.sra" % sra_run))
+            filepath = os.path.abspath(os.path.join(self.directory, "%s.sra" % sra_run))
             utils.download_from_url(
-                url,
-                filepath,
-                aspera=self.aspera,
-                silent=self.silent,
-                force=self.force)
+                url, filepath, aspera=self.aspera, silent=self.silent, force=self.force
+            )
             logger.info("Successfully downloaded %s" % filepath)
 
             if self.filetype in ("fasta", "fastq"):
-                if utils.which('fastq-dump') is None:
+                if utils.which("fastq-dump") is None:
                     logger.error("fastq-dump command not found")
                 ftype = ""
                 if self.filetype == "fasta":
                     ftype = " --fasta "
                 cmd = "fastq-dump"
-                if utils.which('parallel-fastq-dump') is None:
+                if utils.which("parallel-fastq-dump") is None:
                     cmd += " %s --outdir %s %s"
                 else:
                     logger.debug("Using parallel fastq-dump")
@@ -216,37 +230,36 @@ class SRADownloader(object):
 
                 for fqoption, fqvalue in iteritems(self.fastq_dump_options):
                     if fqvalue:
-                        cmd += (" --%s %s" % (fqoption, fqvalue))
+                        cmd += " --%s %s" % (fqoption, fqvalue)
                     elif fqvalue is None:
-                        cmd += (" --%s" % fqoption)
+                        cmd += " --%s" % fqoption
                 logger.debug(cmd)
                 process = sp.Popen(
-                    cmd,
-                    stderr=sp.PIPE,
-                    stdout=sp.PIPE,
-                    shell=True,
-                    bufsize=9999999)
-                logger.info("Converting to %s/%s*.%s.gz\n" % (
-                    self.directory, sra_run, self.filetype))
+                    cmd, stderr=sp.PIPE, stdout=sp.PIPE, shell=True, bufsize=9999999
+                )
+                logger.info(
+                    "Converting to %s/%s*.%s.gz\n"
+                    % (self.directory, sra_run, self.filetype)
+                )
                 stdout, stderr = process.communicate()
                 if process.returncode != 0:
                     raise FastqDumpException("fastq-dump failed: %s" % stderr)
-                downloaded_path = glob.glob(os.path.join(
-                    self.directory,
-                    "%s*.%s.gz" % (sra_run, self.filetype)))
+                downloaded_path = glob.glob(
+                    os.path.join(self.directory, "%s*.%s.gz" % (sra_run, self.filetype))
+                )
 
-            elif self.filetype == 'sra':
-                downloaded_path = glob.glob(os.path.join(
-                    self.directory,
-                    "%s*.%s" % (sra_run, self.filetype)))
+            elif self.filetype == "sra":
+                downloaded_path = glob.glob(
+                    os.path.join(self.directory, "%s*.%s" % (sra_run, self.filetype))
+                )
 
             else:
-                downloaded_path = glob.glob(os.path.join(
-                    self.directory,
-                    "%s*" % sra_run))
+                downloaded_path = glob.glob(
+                    os.path.join(self.directory, "%s*" % sra_run)
+                )
                 logger.error("Filetype %s not supported." % self.filetype)
 
-            if not self.keep_sra and self.filetype != 'sra':
+            if not self.keep_sra and self.filetype != "sra":
                 # Delete sra file
                 os.unlink(filepath)
 

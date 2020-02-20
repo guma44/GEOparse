@@ -1,36 +1,48 @@
 # -*- coding: utf-8 -*-
-from os import path
-from re import sub, split, match
-from six import StringIO
-from tempfile import mkdtemp
-from itertools import groupby
 from collections import defaultdict
+from itertools import groupby
+from os import path
+from re import match, split, sub
+from tempfile import mkdtemp
+
+from pandas import DataFrame, read_csv
+from six import StringIO, iteritems
+
+from . import utils
+from .GEOTypes import GDS, GPL, GSE, GSM, GDSSubset, GEODatabase
+from .logger import geoparse_logger as logger
 
 try:
     from urllib.request import urlopen
     from urllib.error import URLError
 except ImportError:
     from urllib2 import urlopen, URLError
-from pandas import DataFrame, read_csv
-from .GEOTypes import GSE, GSM, GPL, GDS, GDSSubset, GEODatabase
-from six import iteritems
-from . import utils
-from .logger import geoparse_logger as logger
 
 
 class UnknownGEOTypeException(Exception):
     """Raised when the GEO type that do not correspond to any known."""
+
     pass
 
 
 class NoEntriesException(Exception):
     """Raised when no entries could be found in the SOFT file."""
+
     pass
 
 
-def get_GEO(geo=None, filepath=None, destdir="./", how='full',
-            annotate_gpl=False, geotype=None, include_data=False, silent=False,
-            aspera=False, partial=None):
+def get_GEO(
+    geo=None,
+    filepath=None,
+    destdir="./",
+    how="full",
+    annotate_gpl=False,
+    geotype=None,
+    include_data=False,
+    silent=False,
+    aspera=False,
+    partial=None,
+):
     """Get the GEO entry.
 
     The GEO entry is taken directly from the GEO database or read it from SOFT
@@ -72,11 +84,15 @@ def get_GEO(geo=None, filepath=None, destdir="./", how='full',
         logger.setLevel(100)  # More than critical
 
     if filepath is None:
-        filepath, geotype = get_GEO_file(geo, destdir=destdir, how=how,
-                                         annotate_gpl=annotate_gpl,
-                                         include_data=include_data,
-                                         silent=silent,
-                                         aspera=aspera)
+        filepath, geotype = get_GEO_file(
+            geo,
+            destdir=destdir,
+            how=how,
+            annotate_gpl=annotate_gpl,
+            include_data=include_data,
+            silent=silent,
+            aspera=aspera,
+        )
     else:
         if geotype is None:
             geotype = path.basename(filepath)[:3]
@@ -86,17 +102,26 @@ def get_GEO(geo=None, filepath=None, destdir="./", how='full',
         return parse_GSM(filepath)
     elif geotype.upper() == "GSE":
         return parse_GSE(filepath)
-    elif geotype.upper() == 'GPL':
+    elif geotype.upper() == "GPL":
         return parse_GPL(filepath, partial=partial)
-    elif geotype.upper() == 'GDS':
+    elif geotype.upper() == "GDS":
         return parse_GDS(filepath)
     else:
-        raise ValueError(("Unknown GEO type: %s. Available types: GSM, GSE, "
-                          "GPL and GDS.") % geotype.upper())
+        raise ValueError(
+            ("Unknown GEO type: %s. Available types: GSM, GSE, " "GPL and GDS.")
+            % geotype.upper()
+        )
 
 
-def get_GEO_file(geo, destdir=None, annotate_gpl=False, how="full",
-                 include_data=False, silent=False, aspera=False):
+def get_GEO_file(
+    geo,
+    destdir=None,
+    annotate_gpl=False,
+    how="full",
+    include_data=False,
+    silent=False,
+    aspera=False,
+):
     """Download corresponding SOFT file given GEO accession.
 
     Args:
@@ -125,66 +150,86 @@ def get_GEO_file(geo, destdir=None, annotate_gpl=False, how="full",
     range_subdir = sub(r"\d{1,3}$", "nnn", geo)
     if destdir is None:
         tmpdir = mkdtemp()
-        logger.info("No destination directory specified."
-                    " Temporary files will be downloaded at %s" % tmpdir)
+        logger.info(
+            "No destination directory specified."
+            " Temporary files will be downloaded at %s" % tmpdir
+        )
     else:
         tmpdir = destdir
         utils.mkdir_p(tmpdir)
 
     if geotype == "GDS":
-        gseurl = ("ftp://ftp.ncbi.nlm.nih.gov/geo/"
-                  "{root}/{range_subdir}/{record}/soft/{record_file}")
-        url = gseurl.format(root="datasets",
-                            range_subdir=range_subdir,
-                            record=geo,
-                            record_file="%s.soft.gz" % geo)
+        gseurl = (
+            "ftp://ftp.ncbi.nlm.nih.gov/geo/"
+            "{root}/{range_subdir}/{record}/soft/{record_file}"
+        )
+        url = gseurl.format(
+            root="datasets",
+            range_subdir=range_subdir,
+            record=geo,
+            record_file="%s.soft.gz" % geo,
+        )
         filepath = path.join(tmpdir, "{record}.soft.gz".format(record=geo))
     elif geotype == "GSE":
-        gseurl = ("ftp://ftp.ncbi.nlm.nih.gov/geo/"
-                  "{root}/{range_subdir}/{record}/soft/{record_file}")
-        url = gseurl.format(root="series",
-                            range_subdir=range_subdir,
-                            record=geo,
-                            record_file="%s_family.soft.gz" % geo)
-        filepath = path.join(tmpdir,
-                             "{record}_family.soft.gz".format(record=geo))
+        gseurl = (
+            "ftp://ftp.ncbi.nlm.nih.gov/geo/"
+            "{root}/{range_subdir}/{record}/soft/{record_file}"
+        )
+        url = gseurl.format(
+            root="series",
+            range_subdir=range_subdir,
+            record=geo,
+            record_file="%s_family.soft.gz" % geo,
+        )
+        filepath = path.join(tmpdir, "{record}_family.soft.gz".format(record=geo))
     elif geotype == "GSM":
-        gsmurl = ("http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi"
-                  "?targ=self&acc={record}&form=text&view={how}")
+        gsmurl = (
+            "http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi"
+            "?targ=self&acc={record}&form=text&view={how}"
+        )
         url = gsmurl.format(record=geo, how=how)
         filepath = path.join(tmpdir, "{record}.txt".format(record=geo))
     elif geotype == "GPL":
         if annotate_gpl:
-            gplurl = ("ftp://ftp.ncbi.nlm.nih.gov/geo/"
-                      "{root}/{range_subdir}/{record}/annot/{record_file}")
-            url = gplurl.format(root="platforms",
-                                range_subdir=range_subdir,
-                                record=geo,
-                                record_file="%s.annot.gz" % geo)
+            gplurl = (
+                "ftp://ftp.ncbi.nlm.nih.gov/geo/"
+                "{root}/{range_subdir}/{record}/annot/{record_file}"
+            )
+            url = gplurl.format(
+                root="platforms",
+                range_subdir=range_subdir,
+                record=geo,
+                record_file="%s.annot.gz" % geo,
+            )
             filepath = path.join(tmpdir, "{record}.annot.gz".format(record=geo))
             if not path.isfile(filepath):
                 try:
                     logger.info("Downloading %s to %s" % (url, filepath))
-                    utils.download_from_url(url, filepath, silent=silent,
-                                            aspera=aspera)
+                    utils.download_from_url(url, filepath, silent=silent, aspera=aspera)
                     return filepath, geotype
                 except URLError:
-                    logger.info(("Annotations for %s are not available, "
-                                 "trying submitter GPL") % geo)
+                    logger.info(
+                        (
+                            "Annotations for %s are not available, "
+                            "trying submitter GPL"
+                        )
+                        % geo
+                    )
             else:
                 logger.info("File already exist: using local version.")
                 return filepath, geotype
 
         if include_data:
-            url = ("ftp://ftp.ncbi.nlm.nih.gov/geo/platforms/"
-                   "{0}/{1}/soft/{1}_family.soft.gz").format(
-                range_subdir,
-                geo)
-            filepath = path.join(tmpdir,
-                                 "{record}_family.soft.gz".format(record=geo))
+            url = (
+                "ftp://ftp.ncbi.nlm.nih.gov/geo/platforms/"
+                "{0}/{1}/soft/{1}_family.soft.gz"
+            ).format(range_subdir, geo)
+            filepath = path.join(tmpdir, "{record}_family.soft.gz".format(record=geo))
         else:
-            gplurl = ("http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi"
-                      "?targ=self&acc={record}&form=text&view={how}")
+            gplurl = (
+                "http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi"
+                "?targ=self&acc={record}&form=text&view={how}"
+            )
             url = gplurl.format(record=geo, how=how)
             filepath = path.join(tmpdir, "{record}.txt".format(record=geo))
         if not path.isfile(filepath):
@@ -216,14 +261,14 @@ def __parse_entry(entry_line):
 
     """
     if entry_line.startswith("!"):
-        entry_line = sub(r"!\w*?_", '', entry_line)
+        entry_line = sub(r"!\w*?_", "", entry_line)
     else:
         entry_line = entry_line.strip()[1:]
     try:
         entry_type, entry_name = [i.strip() for i in entry_line.split("=", 1)]
     except ValueError:
         entry_type = [i.strip() for i in entry_line.split("=", 1)][0]
-        entry_name = ''
+        entry_name = ""
     return entry_type, entry_name
 
 
@@ -282,7 +327,7 @@ def parse_columns(lines):
             data.append(tmp[1])
             index.append(tmp[0])
 
-    return DataFrame(data, index=index, columns=['description'])
+    return DataFrame(data, index=index, columns=["description"])
 
 
 def parse_GDS_columns(lines, subsets):
@@ -305,17 +350,18 @@ def parse_GDS_columns(lines, subsets):
             data.append(tmp[1])
             index.append(tmp[0])
 
-    df = DataFrame(data, index=index, columns=['description'])
+    df = DataFrame(data, index=index, columns=["description"])
     subset_ids = defaultdict(dict)
     for subsetname, subset in iteritems(subsets):
         for expid in subset.metadata["sample_id"][0].split(","):
             try:
                 subset_type = subset.get_type()
-                subset_ids[subset_type][expid] = \
-                    subset.metadata['description'][0]
-            except Exception as err:
-                logger.error("Error processing subsets: %s for subset %s" % (
-                    subset.get_type(), subsetname))
+                subset_ids[subset_type][expid] = subset.metadata["description"][0]
+            except Exception:
+                logger.error(
+                    "Error processing subsets: %s for subset %s"
+                    % (subset.get_type(), subsetname)
+                )
 
     return df.join(DataFrame(subset_ids))
 
@@ -331,8 +377,9 @@ def parse_table_data(lines):
 
     """
     # filter lines that do not start with symbols
-    data = "\n".join([i.rstrip() for i in lines
-                      if not i.startswith(("^", "!", "#")) and i.rstrip()])
+    data = "\n".join(
+        [i.rstrip() for i in lines if not i.startswith(("^", "!", "#")) and i.rstrip()]
+    )
     if data:
         return read_csv(StringIO(data), index_col=None, sep="\t")
     else:
@@ -374,7 +421,8 @@ def parse_GSM(filepath, entry_name=None):
             raise Exception("More than one entry in GPL")
         if len(sets) == 0:
             raise NoEntriesException(
-                "No entries found. Check the if accession is correct!")
+                "No entries found. Check the if accession is correct!"
+            )
         entry_name = parse_entry_name(sets[0])
 
     columns = parse_columns(soft)
@@ -384,10 +432,7 @@ def parse_GSM(filepath, entry_name=None):
     else:
         table_data = DataFrame()
 
-    gsm = GSM(name=entry_name,
-              table=table_data,
-              metadata=metadata,
-              columns=columns)
+    gsm = GSM(name=entry_name, table=table_data, metadata=metadata, columns=columns)
 
     return gsm
 
@@ -425,8 +470,7 @@ def parse_GPL(filepath, entry_name=None, partial=None):
                         is_data, data_group = next(groupper)
                         gse_metadata = parse_metadata(data_group)
 
-                        gses[entry_name] = GSE(name=entry_name,
-                                               metadata=gse_metadata)
+                        gses[entry_name] = GSE(name=entry_name, metadata=gse_metadata)
                     elif entry_type == "SAMPLE":
                         if partial and entry_name not in partial:
                             continue
@@ -435,27 +479,30 @@ def parse_GPL(filepath, entry_name=None, partial=None):
                     elif entry_type == "DATABASE":
                         is_data, data_group = next(groupper)
                         database_metadata = parse_metadata(data_group)
-                        database = GEODatabase(name=entry_name,
-                                               metadata=database_metadata)
+                        database = GEODatabase(
+                            name=entry_name, metadata=database_metadata
+                        )
 
                     elif entry_type == "PLATFORM" or entry_type == "Annotation":
                         gpl_name = entry_name
                         is_data, data_group = next(groupper)
                         has_gpl_name = gpl_name or gpl_name is None
                         for line in data_group:
-                            if ("_table_begin" in line or
-                                    not line.startswith(("^", "!", "#"))):
+                            if "_table_begin" in line or not line.startswith(
+                                ("^", "!", "#")
+                            ):
                                 has_table = True
                             if not has_gpl_name:
-                                if match("!Annotation_platform\s*=\s*", line):
-                                    gpl_name = split("\s*=\s*", line)[-1].strip()
+                                if match(r"!Annotation_platform\s*=\s*", line):
+                                    gpl_name = split(r"\s*=\s*", line)[-1].strip()
                                     has_gpl_name = True
                             gpl_soft.append(line)
                     else:
                         raise RuntimeError(
                             "Cannot parse {etype}. Unknown for GPL.".format(
                                 etype=entry_type
-                            ))
+                            )
+                        )
     else:
         for line in filepath:
             if "_table_begin" in line or (not line.startswith(("^", "!", "#"))):
@@ -474,14 +521,15 @@ def parse_GPL(filepath, entry_name=None, partial=None):
     else:
         table_data = DataFrame()
 
-    gpl = GPL(name=gpl_name,
-              gses=gses,
-              gsms=gsms,
-              table=table_data,
-              metadata=metadata,
-              columns=columns,
-              database=database
-              )
+    gpl = GPL(
+        name=gpl_name,
+        gses=gses,
+        gsms=gsms,
+        table=table_data,
+        metadata=metadata,
+        columns=columns,
+        database=database,
+    )
 
     # link samples to series, if these were present in the GPL soft file
     for gse_id, gse in gpl.gses.items():
@@ -519,10 +567,13 @@ def parse_GSE(filepath):
                     series_counter += 1
                     if series_counter > 1:
                         raise Exception(
-                            "GSE file should contain only one series entry!")
+                            "GSE file should contain only one series entry!"
+                        )
                     is_data, data_group = next(groupper)
-                    message = ("The key is not False, probably there is an "
-                               "error in the SOFT file")
+                    message = (
+                        "The key is not False, probably there is an "
+                        "error in the SOFT file"
+                    )
                     assert not is_data, message
                     metadata = parse_metadata(data_group)
                 elif entry_type == "SAMPLE":
@@ -534,15 +585,10 @@ def parse_GSE(filepath):
                 elif entry_type == "DATABASE":
                     is_data, data_group = next(groupper)
                     database_metadata = parse_metadata(data_group)
-                    database = GEODatabase(name=entry_name,
-                                           metadata=database_metadata)
+                    database = GEODatabase(name=entry_name, metadata=database_metadata)
                 else:
                     logger.error("Cannot recognize type %s" % entry_type)
-    gse = GSE(name=gse_name,
-              metadata=metadata,
-              gpls=gpls,
-              gsms=gsms,
-              database=database)
+    gse = GSE(name=gse_name, metadata=metadata, gpls=gpls, gsms=gsms, database=database)
     return gse
 
 
@@ -568,21 +614,25 @@ def parse_GDS(filepath):
                 logger.debug("%s: %s" % (entry_type.upper(), entry_name))
                 if entry_type == "SUBSET":
                     is_data, data_group = next(groupper)
-                    message = ("The key is not False, probably there is an "
-                               "error in the SOFT file")
+                    message = (
+                        "The key is not False, probably there is an "
+                        "error in the SOFT file"
+                    )
                     assert not is_data, message
                     subset_metadata = parse_metadata(data_group)
-                    subsets[entry_name] = GDSSubset(name=entry_name,
-                                                    metadata=subset_metadata)
+                    subsets[entry_name] = GDSSubset(
+                        name=entry_name, metadata=subset_metadata
+                    )
                 elif entry_type == "DATABASE":
 
                     is_data, data_group = next(groupper)
-                    message = ("The key is not False, probably there is an "
-                               "error in the SOFT file")
+                    message = (
+                        "The key is not False, probably there is an "
+                        "error in the SOFT file"
+                    )
                     assert not is_data, message
                     database_metadata = parse_metadata(data_group)
-                    database = GEODatabase(name=entry_name,
-                                           metadata=database_metadata)
+                    database = GEODatabase(name=entry_name, metadata=database_metadata)
                 elif entry_type == "DATASET":
                     is_data, data_group = next(groupper)
                     dataset_name = entry_name
@@ -594,5 +644,11 @@ def parse_GDS(filepath):
     metadata = parse_metadata(dataset_lines)
     columns = parse_GDS_columns(dataset_lines, subsets)
     table = parse_table_data(dataset_lines)
-    return GDS(name=dataset_name, metadata=metadata, columns=columns,
-               table=table, subsets=subsets, database=database)
+    return GDS(
+        name=dataset_name,
+        metadata=metadata,
+        columns=columns,
+        table=table,
+        subsets=subsets,
+        database=database,
+    )

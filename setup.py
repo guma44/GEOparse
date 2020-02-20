@@ -4,71 +4,72 @@
 import io
 import re
 from glob import glob
-from os.path import basename
-from os.path import dirname
-from os.path import join
-from os.path import splitext
+from os.path import basename, dirname, join, splitext
+
+from setuptools import find_packages
 
 try:
     from setuptools import setup
 except ImportError:
     from distutils.core import setup
 
-from setuptools import find_packages
 
-
-with open('README.rst') as readme_file:
+with open("README.rst") as readme_file:
     readme = readme_file.read()
 
-with open('HISTORY.rst') as history_file:
-    history = history_file.read().replace('.. :changelog:', '')
+with open("HISTORY.rst") as history_file:
+    history = history_file.read().replace(".. :changelog:", "")
 
 # TODO: Automatically add requirements from requirements.txt
 requirements = [
-                'numpy>=1.7',
-                'pandas>=0.17',
-                'requests>=2.21.0',
-                'tqdm>=4.31.1',
-                ]
+    "numpy>=1.7",
+    "pandas>=0.17",
+    "requests>=2.21.0",
+    "tqdm>=4.31.1",
+]
 
 test_requirements = [
-                'tox',
+    "tox",
 ]
 
 setup(
-    name='GEOparse',
-    version='1.2.0',
+    name="GEOparse",
+    version="1.2.0",
     description="Python library to access Gene Expression Omnibus Database (GEO)",
-    long_description=readme + '\n\n' + history,
+    long_description=readme + "\n\n" + history,
     author="Rafal Gumienny",
-    author_email='guma44@gmail.com',
-    url='https://github.com/guma44/GEOparse',
-    packages=find_packages('src'),
-    package_dir={'': 'src'},
-    py_modules=[splitext(basename(path))[0] for path in glob('src/*.py')],
+    author_email="guma44@gmail.com",
+    url="https://github.com/guma44/GEOparse",
+    packages=find_packages("src"),
+    package_dir={"": "src"},
+    py_modules=[splitext(basename(path))[0] for path in glob("src/*.py")],
     include_package_data=True,
-    scripts=[
-        "scripts/geo2fastq",
-        ],
+    scripts=["scripts/geo2fastq"],
     install_requires=requirements,
     license="BSD",
     zip_safe=False,
-    keywords=['GEOparse', 'GEO', 'Gene Expression Omnibus', 'Bioinformatics', 'Microarray'],
-    classifiers=[
-        'Development Status :: 5 - Production/Stable',
-        'Intended Audience :: Developers',
-        'License :: OSI Approved :: BSD License',
-        'Natural Language :: English',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
+    keywords=[
+        "GEOparse",
+        "GEO",
+        "Gene Expression Omnibus",
+        "Bioinformatics",
+        "Microarray",
     ],
-    test_suite='tests',
+    classifiers=[
+        "Development Status :: 5 - Production/Stable",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: BSD License",
+        "Natural Language :: English",
+        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+    ],
+    test_suite="tests",
     tests_require=test_requirements,
     project_urls={
-            'Documentation': 'https://geoparse.readthedocs.io/',
-            'Changelog': 'https://geoparse.readthedocs.io/en/latest/history.html',
-            'Issue Tracker': 'https://github.com/guma44/GEOparse/issues',
-        },
+        "Documentation": "https://geoparse.readthedocs.io/",
+        "Changelog": "https://geoparse.readthedocs.io/en/latest/history.html",
+        "Issue Tracker": "https://github.com/guma44/GEOparse/issues",
+    },
 )
