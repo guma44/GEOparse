@@ -3,6 +3,18 @@
 History
 -------
 
+2.0.0 (2020-02-20)
+------------------
+
+ * Drop support for python 2
+
+ * Fix issue with SRR entiries not being available through FTP server
+
+ * Better error message if entry is not available
+
+ * Better code formatting
+
+ * Some small improvements
 
 1.2.0 (2019-08-21)
 ------------------
