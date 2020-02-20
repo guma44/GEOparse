@@ -3,6 +3,11 @@
 History
 -------
 
+2.0.1 (2020-02-20)
+------------------
+
+ * prevent installation on old python versions
+
 2.0.0 (2020-02-20)
 ------------------
 
@@ -15,6 +20,7 @@ History
  * Better code formatting
 
  * Some small improvements
+
 
 1.2.0 (2019-08-21)
 ------------------

@@ -34,7 +34,7 @@ test_requirements = [
 
 setup(
     name="GEOparse",
-    version="2.0.0",
+    version="2.0.1",
     description="Python library to access Gene Expression Omnibus Database (GEO)",
     long_description=readme + "\n\n" + history,
     author="Rafal Gumienny",
@@ -42,6 +42,7 @@ setup(
     url="https://github.com/guma44/GEOparse",
     packages=find_packages("src"),
     package_dir={"": "src"},
+    python_requires=">3.5.0",
     py_modules=[splitext(basename(path))[0] for path in glob("src/*.py")],
     include_package_data=True,
     scripts=["scripts/geo2fastq"],

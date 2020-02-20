@@ -8,3 +8,4 @@ pytest
 isort
 black
 pre-commit
+pytest-cov
