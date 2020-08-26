@@ -3,6 +3,11 @@
 History
 -------
 
+2.0.2 (2020-08-26)
+------------------
+
+ * Allow to pass kwargs to open function to controll eg. encoding
+
 2.0.1 (2020-02-20)
 ------------------
 

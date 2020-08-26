@@ -42,6 +42,7 @@ def get_GEO(
     silent=False,
     aspera=False,
     partial=None,
+    open_kwargs=None,
 ):
     """Get the GEO entry.
 
@@ -69,6 +70,8 @@ def get_GEO(
         partial (:obj:'iterable', optional): A list of accession IDs of GSMs
             to be partially extracted from GPL, works only if a file/accession
             is a GPL.
+        open_kwargs (:obj:'dict', optional): A dict of kwargs that will be
+            passed to `utils.smart_open` function.
 
 
     Returns:
@@ -79,6 +82,9 @@ def get_GEO(
         raise Exception("You have to specify filename or GEO accession!")
     if geo is not None and filepath is not None:
         raise Exception("You can specify filename or GEO accession - not both!")
+
+    if open_kwargs is None:
+        open_kwargs = {}
 
     if silent:
         logger.setLevel(100)  # More than critical
@@ -99,13 +105,13 @@ def get_GEO(
 
     logger.info("Parsing %s: " % filepath)
     if geotype.upper() == "GSM":
-        return parse_GSM(filepath)
+        return parse_GSM(filepath, open_kwargs=open_kwargs)
     elif geotype.upper() == "GSE":
-        return parse_GSE(filepath)
+        return parse_GSE(filepath, open_kwargs=open_kwargs)
     elif geotype.upper() == "GPL":
-        return parse_GPL(filepath, partial=partial)
+        return parse_GPL(filepath, partial=partial, open_kwargs=open_kwargs)
     elif geotype.upper() == "GDS":
-        return parse_GDS(filepath)
+        return parse_GDS(filepath, open_kwargs=open_kwargs)
     else:
         raise ValueError(
             ("Unknown GEO type: %s. Available types: GSM, GSE, " "GPL and GDS.")
@@ -386,7 +392,7 @@ def parse_table_data(lines):
         return DataFrame()
 
 
-def parse_GSM(filepath, entry_name=None):
+def parse_GSM(filepath, entry_name=None, open_kwargs=None):
     """Parse GSM entry from SOFT file.
 
     Args:
@@ -394,13 +400,17 @@ def parse_GSM(filepath, entry_name=None):
             or list of lines representing GSM from GSE file.
         entry_name (:obj:`str`, optional): Name of the entry. By default it is
             inferred from the data.
+        open_kwargs (:obj:'dict', optional): A dict of kwargs that will be
+            passed to `utils.smart_open` function.
 
     Returns:
         :obj:`GEOparse.GSM`: A GSM object.
 
     """
+    if open_kwargs is None:
+        open_kwargs = {}
     if isinstance(filepath, str):
-        with utils.smart_open(filepath) as f:
+        with utils.smart_open(filepath, **open_kwargs) as f:
             soft = []
             has_table = False
             for line in f:
@@ -437,7 +447,7 @@ def parse_GSM(filepath, entry_name=None):
     return gsm
 
 
-def parse_GPL(filepath, entry_name=None, partial=None):
+def parse_GPL(filepath, entry_name=None, partial=None, open_kwargs=None):
     """Parse GPL entry from SOFT file.
 
     Args:
@@ -448,6 +458,8 @@ def parse_GPL(filepath, entry_name=None, partial=None):
         partial (:obj:'iterable', optional): A list of accession IDs of GSMs
             to be partially extracted from GPL, works only if a file/accession
             is a GPL.
+        open_kwargs (:obj:'dict', optional): A dict of kwargs that will be
+            passed to `utils.smart_open` function.
 
     Returns:
         :obj:`GEOparse.GPL`: A GPL object.
@@ -459,8 +471,10 @@ def parse_GPL(filepath, entry_name=None, partial=None):
     has_table = False
     gpl_name = entry_name
     database = None
+    if open_kwargs is None:
+        open_kwargs = {}
     if isinstance(filepath, str):
-        with utils.smart_open(filepath) as soft:
+        with utils.smart_open(filepath, **open_kwargs) as soft:
             groupper = groupby(soft, lambda x: x.startswith("^"))
             for is_new_entry, group in groupper:
                 if is_new_entry:
@@ -540,11 +554,13 @@ def parse_GPL(filepath, entry_name=None, partial=None):
     return gpl
 
 
-def parse_GSE(filepath):
+def parse_GSE(filepath, open_kwargs=None):
     """Parse GSE SOFT file.
 
     Args:
         filepath (:obj:`str`): Path to GSE SOFT file.
+        open_kwargs (:obj:'dict', optional): A dict of kwargs that will be
+            passed to `utils.smart_open` function.
 
     Returns:
         :obj:`GEOparse.GSE`: A GSE object.
@@ -556,7 +572,7 @@ def parse_GSE(filepath):
     database = None
     metadata = {}
     gse_name = None
-    with utils.smart_open(filepath) as soft:
+    with utils.smart_open(filepath, **open_kwargs) as soft:
         groupper = groupby(soft, lambda x: x.startswith("^"))
         for is_new_entry, group in groupper:
             if is_new_entry:
@@ -592,11 +608,13 @@ def parse_GSE(filepath):
     return gse
 
 
-def parse_GDS(filepath):
+def parse_GDS(filepath, open_kwargs=None):
     """Parse GDS SOFT file.
 
     Args:
         filepath (:obj:`str`): Path to GDS SOFT file.
+        open_kwargs (:obj:'dict', optional): A dict of kwargs that will be
+            passed to `utils.smart_open` function.
 
     Returns:
         :obj:`GEOparse.GDS`: A GDS object.
@@ -606,7 +624,7 @@ def parse_GDS(filepath):
     subsets = {}
     database = None
     dataset_name = None
-    with utils.smart_open(filepath) as soft:
+    with utils.smart_open(filepath, **open_kwargs) as soft:
         groupper = groupby(soft, lambda x: x.startswith("^"))
         for is_new_entry, group in groupper:
             if is_new_entry:

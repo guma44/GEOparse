@@ -86,7 +86,7 @@ def download_from_url(url, destination_path, force=False, aspera=False, silent=F
 
 
 @contextmanager
-def smart_open(filepath):
+def smart_open(filepath, **open_kwargs):
     """Open file intelligently depending on the source and python version.
 
     Args:
@@ -96,16 +96,18 @@ def smart_open(filepath):
         Context manager for file handle.
 
     """
+    if "errors" not in open_kwargs:
+        open_kwargs["errors"] = "ignore"
     if filepath[-2:] == "gz":
-        mode = "rt"
+        open_kwargs["mode"] = "rt"
         fopen = gzip.open
     else:
-        mode = "r"
+        open_kwargs["mode"] = "r"
         fopen = open
     if sys.version_info[0] < 3:
-        fh = fopen(filepath, mode)
+        fh = fopen(filepath, **open_kwargs)
     else:
-        fh = fopen(filepath, mode, errors="ignore")
+        fh = fopen(filepath, **open_kwargs)
     try:
         yield fh
     except IOError:
