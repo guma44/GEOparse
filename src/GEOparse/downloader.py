@@ -54,7 +54,7 @@ class Downloader(object):
             else:
                 raise ValueError("Invalid URL %s" % self.url)
             logger.debug("Moving %s to %s" % (self._temp_file_name, self.destination))
-            shutil.move(self._temp_file_name, self.destination)
+            shutil.copyfile(self._temp_file_name, self.destination)
             logger.debug("Successfully downloaded %s" % self.url)
 
         try:
