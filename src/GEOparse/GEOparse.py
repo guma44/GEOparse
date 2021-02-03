@@ -13,10 +13,10 @@ from .GEOTypes import GDS, GPL, GSE, GSM, GDSSubset, GEODatabase
 from .logger import geoparse_logger as logger
 
 try:
-    from urllib.request import urlopen
     from urllib.error import URLError
+    from urllib.request import urlopen
 except ImportError:
-    from urllib2 import urlopen, URLError
+    from urllib2 import URLError, urlopen
 
 
 class UnknownGEOTypeException(Exception):
@@ -55,6 +55,7 @@ def get_GEO(
         destdir (:obj:`str`, optional): Directory to download data. Defaults to
             None.
         how (:obj:`str`, optional): GSM download mode. Defaults to "full".
+            Possible options are: full, quick and brief
         annotate_gpl (:obj:`bool`, optional): Download the GPL annotation
             instead of regular GPL. If not available, fallback to regular GPL
             file. Defaults to False.
@@ -82,6 +83,8 @@ def get_GEO(
         raise Exception("You have to specify filename or GEO accession!")
     if geo is not None and filepath is not None:
         raise Exception("You can specify filename or GEO accession - not both!")
+    if how not in {"full", "brief", "quick"}:
+        raise Exception("Option 'how' can take only 'full', 'brief' or 'quick' values")
 
     if open_kwargs is None:
         open_kwargs = {}
@@ -177,17 +180,25 @@ def get_GEO_file(
         )
         filepath = path.join(tmpdir, "{record}.soft.gz".format(record=geo))
     elif geotype == "GSE":
-        gseurl = (
-            "ftp://ftp.ncbi.nlm.nih.gov/geo/"
-            "{root}/{range_subdir}/{record}/soft/{record_file}"
-        )
-        url = gseurl.format(
-            root="series",
-            range_subdir=range_subdir,
-            record=geo,
-            record_file="%s_family.soft.gz" % geo,
-        )
-        filepath = path.join(tmpdir, "{record}_family.soft.gz".format(record=geo))
+        if how == "full":
+            gseurl = (
+                "ftp://ftp.ncbi.nlm.nih.gov/geo/"
+                "{root}/{range_subdir}/{record}/soft/{record_file}"
+            )
+            url = gseurl.format(
+                root="series",
+                range_subdir=range_subdir,
+                record=geo,
+                record_file="%s_family.soft.gz" % geo,
+            )
+            filepath = path.join(tmpdir, "{record}_family.soft.gz".format(record=geo))
+        else:
+            gseurl = (
+                "http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi"
+                "?targ=gsm&acc={record}&form=text&view={how}"
+            )
+            url = gseurl.format(record=geo, how=how)
+            filepath = path.join(tmpdir, "{record}.txt".format(record=geo))
     elif geotype == "GSM":
         gsmurl = (
             "http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi"
@@ -373,7 +384,7 @@ def parse_GDS_columns(lines, subsets):
 
 
 def parse_table_data(lines):
-    """"Parse list of lines from SOFT file into DataFrame.
+    """ "Parse list of lines from SOFT file into DataFrame.
 
     Args:
         lines (:obj:`Iterable`): Iterator over the lines.
