@@ -3,6 +3,14 @@
 History
 -------
 
+2.0.3 (2021-02-03)
+------------------
+
+ * BUGFIX: shutil.move can lead to "operation not permitted" error
+ * Allow to download small GSE object by using `how` parameter
+
+
+
 2.0.2 (2020-08-26)
 ------------------
 
