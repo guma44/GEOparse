@@ -2,7 +2,7 @@ language: python
 env:
   - GEOPARSE_USE_HTTP_FOR_FTP=yes
 python:
-  - 3.7
+  - 3.8
 os: linux
 dist: xenial
 install: pip install -U tox tox-travis
@@ -18,4 +18,4 @@ deploy:
     tags: true
     condition: "$TRAVIS_TAG =~ ^v.*$"
     repo: guma44/GEOparse
-    python: 3.7
+    python: 3.8
