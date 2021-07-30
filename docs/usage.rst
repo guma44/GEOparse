@@ -60,7 +60,7 @@ specifying path to the file::
 
 This will read the file into GSE object.
 
-Crating and saving SOFT file
+Creating and saving SOFT file
 ----------------------------
 
 When doing own experiments one might want to submit the data to the GEO. In this case, one shuld
