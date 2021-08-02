@@ -15,8 +15,8 @@ To simplest example of usage::
         print("Metadata:",)
         for key, value in gsm.metadata.items():
             print(" - %s : %s" % (key, ", ".join(value)))
-        print ("Table data:",)
-        print (gsm.table.head())
+        print("Table data:",)
+        print(gsm.table.head())
         break
 
     print()
