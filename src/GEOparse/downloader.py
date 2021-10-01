@@ -148,7 +148,7 @@ class Downloader(object):
             ftp = FTP(parsed_url.netloc)
             ftp.login()
             ftp_size = ftp.size(parsed_url.path)
-            if ftp_size is None:
+            if ftp_size is not None:
                 total_size = ftp_size
             wrote = list()  # cannot add in the callback, has to be a list
             with open(self._temp_file_name, "wb") as f:
