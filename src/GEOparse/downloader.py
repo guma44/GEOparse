@@ -142,13 +142,14 @@ class Downloader(object):
         return filename
 
     def _download_ftp(self, silent=False):
+        total_size = 0
         parsed_url = urlparse(self.url)
         try:
             ftp = FTP(parsed_url.netloc)
             ftp.login()
-            total_size = ftp.size(parsed_url.path)
-            if total_size is None:
-                total_size = 0
+            ftp_size = ftp.size(parsed_url.path)
+            if ftp_size is None:
+                total_size = ftp_size
             wrote = list()  # cannot add in the callback, has to be a list
             with open(self._temp_file_name, "wb") as f:
                 if silent:
