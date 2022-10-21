@@ -487,31 +487,32 @@ class GSM(SimpleGEO):
         # Possible erroneous values that could be identified and skipped right
         # after
         blacklist = ("NONE",)
+
         for metakey, metavalue in iteritems(self.metadata):
             if "supplementary_file" in metakey:
-                assert len(metavalue) == 1 and metavalue != ""
-                if metavalue[0] in blacklist:
-                    logger.warning(
-                        "%s value is blacklisted as '%s' - skipping"
-                        % (metakey, metavalue[0])
-                    )
-                    continue
                 # SRA will be downloaded elsewhere
-                if "sra" not in metavalue[0]:
-                    download_path = os.path.abspath(
-                        os.path.join(
-                            directory,
-                            os.path.join(directory_path, metavalue[0].split("/")[-1]),
+                for one_metavalue in metavalue:
+                    if one_metavalue in blacklist:
+                        logger.warning(
+                            "%s value is blacklisted as '%s' - skipping"
+                            % (metakey, one_metavalue)
                         )
-                    )
-                    try:
-                        utils.download_from_url(metavalue[0], download_path)
-                        downloaded_paths[metavalue[0]] = download_path
-                    except Exception as err:
-                        logger.error(
-                            "Cannot download %s supplementary file (%s)"
-                            % (self.get_accession(), err)
+                        continue
+                    if "sra" not in one_metavalue:
+                        download_path = os.path.abspath(
+                            os.path.join(
+                                directory,
+                                os.path.join(directory_path, one_metavalue.split("/")[-1]),
+                            )
                         )
+                        try:
+                            utils.download_from_url(one_metavalue, download_path)
+                            downloaded_paths[one_metavalue] = download_path
+                        except Exception as err:
+                            logger.error(
+                                "Cannot download %s supplementary file (%s)"
+                                % (self.get_accession(), err)
+                            )
         if download_sra:
             try:
                 downloaded_files = self.download_SRA(
