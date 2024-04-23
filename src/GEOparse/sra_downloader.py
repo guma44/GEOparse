@@ -1,13 +1,14 @@
 """A module that helps to deal with SRA files."""
 
 import glob
+from io import StringIO
 import json
 import os
 import platform
 import re
 import subprocess as sp
 
-from pandas import DataFrame, concat
+from pandas import DataFrame, concat, read_xml
 from six import iteritems
 
 from . import utils
@@ -159,15 +160,10 @@ class SRADownloader(object):
                     raise ValueError("There should be one and only one ID per SRX")
 
                 results = utils.efetch(
-                    db="sra", id=ids[0], rettype="runinfo", email=self.email
+                    db="sra", id=ids[0], rettype="runinfo", retmode="xml", email=self.email
                 )
                 try:
-                    df_tmp = DataFrame(
-                        [i.split(",") for i in results.split("\n") if i != ""][1:],
-                        columns=[i.split(",") for i in results.split("\n") if i != ""][
-                            0
-                        ],
-                    )
+                    df_tmp = read_xml(StringIO(results))
                 except IndexError:
                     logger.error(
                         (
