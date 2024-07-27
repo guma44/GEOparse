@@ -432,7 +432,7 @@ class GSM(SimpleGEO):
         if merge_on_column:
             logger.info("merge_on_column is not None. Using this option.")
             tmp_data = self.table.merge(gpl.table, on=merge_on_column, how="outer")
-            tmp_data = tmp_data.groupby(group_by_column).mean()[[expression_column]]
+            tmp_data = tmp_data.groupby(group_by_column)[[expression_column]].mean()
         else:
             if gpl_on is None or gsm_on is None:
                 raise Exception(
@@ -442,7 +442,7 @@ class GSM(SimpleGEO):
             tmp_data = self.table.merge(
                 gpl.table, left_on=gsm_on, right_on=gpl_on, how="outer"
             )
-            tmp_data = tmp_data.groupby(group_by_column).mean()[[expression_column]]
+            tmp_data = tmp_data.groupby(group_by_column)[[expression_column]].mean()
         if rename:
             tmp_data.columns = [self.name]
         return tmp_data
